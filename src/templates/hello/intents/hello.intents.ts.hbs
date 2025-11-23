@@ -1,0 +1,45 @@
+import { CommandIntents } from '@fathym/cli';
+import HelloCommand from '../commands/hello.ts';
+import initFn from '../.cli.init.ts';
+
+const cmd = HelloCommand.Build();
+const origin = import.meta.resolve('../.cli.json');
+
+CommandIntents('Hello Command Suite', cmd, origin)
+  .WithInit(initFn)
+  .Intent('Greet default world', (int) =>
+    int
+      .Args([undefined])
+      .Flags({})
+      .ExpectLogs('👋 Hello, world')
+      .ExpectExit(0),
+  )
+  .Intent('Greet a specific name', (int) =>
+    int
+      .Args(['me'])
+      .Flags({})
+      .ExpectLogs('👋 Hello, me')
+      .ExpectExit(0),
+  )
+  .Intent('Greet loudly', (int) =>
+    int
+      .Args(['team'])
+      .Flags({ loud: true })
+      .ExpectLogs('👋 HELLO, TEAM')
+      .ExpectExit(0),
+  )
+  .Intent('Dry run greeting', (int) =>
+    int
+      .Args(['sandbox'])
+      .Flags({ 'dry-run': true })
+      .ExpectLogs('🛑 Dry run: "Hello, sandbox!" would have been printed.')
+      .ExpectExit(0),
+  )
+  .Intent('Dry run loud greeting', (int) =>
+    int
+      .Args(['everyone'])
+      .Flags({ 'dry-run': true, loud: true })
+      .ExpectLogs('🛑 Dry run: "HELLO, EVERYONE!" would have been printed.')
+      .ExpectExit(0),
+  )
+  .Run();

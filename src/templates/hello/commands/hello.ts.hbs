@@ -1,0 +1,51 @@
+import { z } from '@fathym/common/third-party/zod';
+import { Command, CommandParams } from '@fathym/cli';
+import type { SayHello } from '../.cli.init.ts';
+
+const HelloFlagsSchema = z.object({
+  loud: z.boolean().optional().describe('Shout the greeting'),
+  'dry-run': z
+    .boolean()
+    .optional()
+    .describe('Show the message without printing'),
+});
+
+const HelloArgsSchema = z.tuple([
+  z.string().optional().describe('Name to greet'),
+]);
+
+class HelloCommandParams extends CommandParams<
+  z.infer<typeof HelloArgsSchema>,
+  z.infer<typeof HelloFlagsSchema>
+> {
+  get Name(): string {
+    return this.Arg(0) ?? 'world';
+  }
+
+  get Loud(): boolean {
+    return this.Flag('loud') ?? false;
+  }
+}
+
+export default Command('hello', 'Prints a friendly greeting.')
+  .Args(HelloArgsSchema)
+  .Flags(HelloFlagsSchema)
+  .Params(HelloCommandParams)
+  .Services(async (_, ioc) => ({
+    SayHello: await ioc.Resolve<SayHello>(ioc.Symbol('SayHello')),
+  }))
+  .Run(async ({ Params, Log, Services }) => {
+    const sayHelloSvc = await Services.SayHello;
+
+    let message = sayHelloSvc.Speak(Params.Name);
+
+    if (Params.Loud) {
+      message = message.toUpperCase();
+    }
+
+    if (Params.DryRun) {
+      Log.Info(`🛑 Dry run: "${message}" would have been printed.`);
+    } else {
+      Log.Info(`👋 ${message}`);
+    }
+  });

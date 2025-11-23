@@ -1,0 +1,69 @@
+import { z } from '@fathym/common/third-party/zod';
+import {
+  type CommandContext,
+  CommandParams,
+  CommandRuntime,
+  defineCommandModule,
+} from '@fathym/cli';
+
+// 🧩 Define schemas
+const WaveFlagsSchema = z.object({
+  excited: z.boolean().optional().describe('Add extra enthusiasm to the wave'),
+  'dry-run': z
+    .boolean()
+    .optional()
+    .describe('Show the wave without printing it'),
+});
+
+const WaveArgsSchema = z.tuple([
+  z.string().optional().describe('Name to wave at'),
+]);
+
+// 🧩 Parameter class
+class WaveCommandParams extends CommandParams<
+  z.infer<typeof WaveArgsSchema>,
+  z.infer<typeof WaveFlagsSchema>
+> {
+  get Name(): string {
+    return this.Arg(0) ?? 'friend';
+  }
+
+  get Excited(): boolean {
+    return this.Flag('excited') ?? false;
+  }
+}
+
+// 🚀 Command logic
+export class WaveCommand extends CommandRuntime<WaveCommandParams> {
+  public Run(ctx: CommandContext<WaveCommandParams>): Promise<void> {
+    const { Name, Excited, DryRun } = ctx.Params;
+    const { Log } = ctx;
+
+    let message = `👋 Waving at ${Name}`;
+    if (Excited) message += '!!!';
+
+    if (DryRun) {
+      Log.Info(`🛑 Dry run: "${message}" would have been printed.`);
+    } else {
+      Log.Info(message);
+    }
+
+    return Promise.resolve();
+  }
+
+  public BuildMetadata() {
+    return this.buildMetadataFromSchemas(
+      'Wave',
+      'Waves at a friend with optional excitement.',
+      WaveArgsSchema,
+      WaveFlagsSchema
+    );
+  }
+}
+
+export default defineCommandModule({
+  FlagsSchema: WaveFlagsSchema,
+  ArgsSchema: WaveArgsSchema,
+  Params: WaveCommandParams,
+  Command: WaveCommand,
+});

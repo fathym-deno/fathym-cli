@@ -1,0 +1,90 @@
+import type {
+  CLIFileSystemHooks,
+  CLIInitFn,
+  CLICommandEntry,
+  CommandModule,
+  CLIConfig,
+  TemplateLocator,
+} from "@fathym/cli";
+import { CommandModuleBuilder, EmbeddedTemplateLocator } from "@fathym/cli";
+import type { DFSFileHandler } from '@fathym/dfs';
+
+import { fromFileUrl } from "jsr:@std/path@^1.0.9/from-file-url";
+
+import embeddedConfig from "../.cli.json" with { type: "json" };
+import embeddedTemplates from "./embedded-templates.json" with { type: "json" };
+import embeddedCommandEntries from "./embedded-command-entries.json" with { type: "json" };
+
+import { EmbeddedCommandModules } from "./EmbeddedCommandModules.ts";
+
+{{#if importInitFn}}
+import embeddedInit from "{{importInitFn}}";
+{{/if}}
+
+export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
+  async ResolveCommandEntryPaths(
+    _baseCommandDir: string,
+  ): Promise<Map<string, CLICommandEntry>> {
+    const map = new Map<string, CLICommandEntry>(
+      Object.entries(embeddedCommandEntries as Record<string, CLICommandEntry>)
+    );
+    return map;
+  }
+
+  async ResolveConfig(args: string[]): Promise<{
+    config: CLIConfig;
+    resolvedPath: string;
+    remainingArgs: string[];
+  }> {
+    const remainingArgs = args[0]?.endsWith(".json") ? args.slice(1) : args;
+
+    return {
+      config: embeddedConfig,
+      resolvedPath: fromFileUrl(import.meta.resolve('../.cli.json')),
+      remainingArgs,
+    };
+  }
+
+  async LoadInitFn(
+    initPath: string
+  ): Promise<{ initFn: CLIInitFn | undefined; resolvedInitPath: string }> {
+    {{#if importInitFn}}
+    return {
+      initFn: embeddedInit,
+      resolvedInitPath: fromFileUrl(import.meta.resolve("{{importInitFn}}")),
+    };
+    {{else}}
+    return {
+      initFn: undefined,
+      resolvedInitPath: fromFileUrl(import.meta.resolve(initPath)),
+    };
+    {{/if}}
+  }
+
+  async LoadCommandModule(path: string): Promise<CommandModule> {
+    const key = Object.entries(embeddedCommandEntries).find(
+      ([_, entry]) => (entry as any).CommandPath && (entry as any).CommandPath === path,
+    )?.[0];
+
+    if (!key) {
+      throw new Error(`❌ No embedded command key found for path: ${path}`);
+    }
+
+    let mod = (EmbeddedCommandModules as any)[key];
+
+    if (!mod) {
+      throw new Error(`❌ No embedded command module found for key: ${key}`);
+    }
+
+    if (mod instanceof CommandModuleBuilder) mod = mod.Build();
+    return mod as CommandModule;
+  }
+
+  async ResolveTemplateLocator(
+    _dfsHandler?: DFSFileHandler,
+  ): Promise<TemplateLocator | undefined> {
+    return new EmbeddedTemplateLocator(
+      embeddedTemplates as Record<string, string>,
+    );
+  }
+}

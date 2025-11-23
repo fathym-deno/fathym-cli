@@ -1,0 +1,260 @@
+# Authoring CLI Commands
+
+In the Fathym CLI framework, commands are modular, composable, and testable units of logic. You can define them fluently or as classes, each with a shared lifecycle and access to services via the IoC container. This guide shows you how to build CLI commands the right way—from quick scripts to deeply integrated toolchains.
+
+## Fluent API (Recommended)
+
+The preferred approach is the fluent `Command()` builder, which provides a clean, typesafe DSL for defining logic, parameters, and lifecycle hooks. Every command must include typed argument and flag schemas, and must specify a `CommandParams` class for runtime access.
+
+Here’s a simple command to get started:
+
+```ts
+export default Command('hello', 'Prints a friendly greeting.')
+  .Args(HelloArgsSchema)
+  .Flags(HelloFlagsSchema)
+  .Params(HelloParams)
+  .Run(({ Params, Log }) => {
+    const message = Params.Loud
+      ? `HELLO, ${Params.Name.toUpperCase()}!`
+      : `Hello, ${Params.Name}.`;
+
+    if (Params.DryRun) {
+      Log.Info(`🛑 Dry run: "${message}" would have been printed.`);
+    } else {
+      Log.Info(message);
+    }
+  });
+```
+
+✅ You only need to export the command as `default`. No need to export `Args`, `Flags`, or `Params` unless reused elsewhere.
+
+## Subcommands
+
+Use `.Commands({})` to define nested subcommands under a shared namespace.
+
+```ts
+export default Command('schema', 'Schema-related commands')
+  .Commands({
+    promote: Promote,
+    diff: Diff,
+  });
+```
+
+📁 The parent does not require `.Run()`; it delegates to the appropriate subcommand at runtime. Subcommands should be authored as complete command modules and exported as the default from their respective files.
+
+## Class-Based Commands
+
+For full control and deeper customization, extend the `CommandRuntime` base class.
+
+```ts
+import { CommandRuntime, CommandContext } from '@fathym/cli';
+
+export class HelloCommand extends CommandRuntime {
+  override async Run(ctx: CommandContext) {
+    const name = ctx.Params.Arg(0) ?? 'world';
+    ctx.Log.Info(`Hello, ${name}!`);
+  }
+}
+```
+
+To define and register it:
+
+```ts
+import { defineCommandModule } from '@fathym/cli';
+
+export default defineCommandModule({
+  ArgsSchema: z.tuple([z.string().optional()]),
+  FlagsSchema: z.object({ loud: z.boolean().optional() }),
+  Params: HelloParams,
+  Command: HelloCommand,
+});
+```
+
+Used for advanced generators, devtools, or commands with dynamic metadata.
+
+---
+
+### 🔄 Fluent API Under the Hood
+
+Every fluent `Command()` definition compiles into a class-based equivalent at runtime. Specifically:
+
+* Your `.Run()` becomes a class method `Run(ctx)`.
+* Lifecycle hooks like `.Init()` and `.Cleanup()` map to their method counterparts.
+* `.Args()`, `.Flags()`, and `.Params()` are preserved as static metadata.
+
+This means:
+
+* Fluent commands are fully compatible with the class runtime.
+* You can promote any fluent command to a class manually for advanced use cases.
+* Intent tests, lifecycle hooks, and service resolution work identically in both forms.
+
+🧠 Think of the fluent API as ergonomic syntax sugar — underneath, everything flows through `CommandRuntime`.
+
+## Lifecycle Hooks
+
+Both APIs support the same lifecycle methods:
+
+| Hook        | Purpose                                       |
+| ----------- | --------------------------------------------- |
+| `Init()`    | Prepare command before execution              |
+| `Run()`     | Main logic body                               |
+| `Cleanup()` | Finalization (even after failure)             |
+| `DryRun()`  | Simulated execution for `--dry-run` scenarios |
+
+All hooks receive the `CommandContext` and access to the shared IoC container.
+
+🧠 Use these for setup, teardown, config resolution, or simulating effects.
+
+## Arguments, Flags, and Params
+
+Every command requires a definition of its input contract via `.Args()`, `.Flags()`, and `.Params()`.
+
+```ts
+const ArgsSchema = z.tuple([
+  z.string().describe('The target name'),
+]);
+
+const FlagsSchema = z.object({
+  debug: z.boolean().optional().describe('Enable debug mode'),
+});
+
+class MyParams extends CommandParams<
+  z.infer<typeof ArgsSchema>,
+  z.infer<typeof FlagsSchema>
+> {
+  get Target() {
+    return this.Arg(0);
+  }
+
+  get Debug() {
+    return this.Flag('debug') ?? false;
+  }
+}
+```
+
+📦 `Args` and `Flags` define the raw shape, while `Params` creates expressive accessors and derived behavior.
+
+✅ Always attach all three to your command. This ensures:
+
+* Type inference in CLI help and tests
+* Input validation and normalization
+* Cleaner command body via `Params` methods
+
+## Testing Commands with Intents
+
+Fathym CLI provides intent-based testing primitives that simulate full command execution, validate outputs, and assert behavior. You can test individual behaviors with `CommandIntent()`, or define grouped test suites using `CommandIntents()`.
+
+### ✅ Individual CommandIntent
+
+Use `CommandIntent()` when testing a single behavior inline:
+
+```ts
+import { CommandIntent } from '@fathym/cli';
+import HelloCommand from '../commands/hello.ts';
+
+const origin = import.meta.resolve('../.cli.json');
+
+CommandIntent('greets by default', HelloCommand, origin)
+  .Args([])
+  .Flags({})
+  .ExpectLogs('👋 Hello, world')
+  .ExpectExit(0)
+  .Run();
+```
+
+### 🧪 Grouped CommandIntents Suite
+
+Use `CommandIntents()` to organize and execute multiple test cases together:
+
+```ts
+import { CommandIntents } from '@fathym/cli';
+import HelloCommand from '../commands/hello.ts';
+
+const origin = import.meta.resolve('../.cli.json');
+const cmd = HelloCommand.Build();
+
+CommandIntents('Hello Command Suite', cmd, origin)
+  .Intent('default greeting', (int) =>
+    int.Args([]).Flags({}).ExpectLogs('👋 Hello, world').ExpectExit(0),
+  )
+  .Intent('loud greeting', (int) =>
+    int.Args(['you']).Flags({ loud: true }).ExpectLogs('👋 HELLO, YOU').ExpectExit(0),
+  )
+  .Run();
+```
+
+📦 These helpers exercise the full CLI lifecycle — including argument parsing, flag resolution, parameter derivation, service injection, logging, and exit code evaluation — with zero CLI startup.
+
+🧠 Add `.WithInit()` if your command depends on runtime-bound services from `.cli.init.ts`.
+
+## Tips & Best Practices
+
+Here’s how to build commands that scale with your team and remain easy to maintain over time:
+
+✅ Use the fluent API for clarity and speed — most commands don’t need class inheritance.
+📁 Isolate each command in its own file — they’re composable units, not static scripts.
+🎯 Wrap argument and flag logic in a `Params` class — it simplifies access and behavior.
+🧪 Add an intent test (`*.intent.ts`) for each command — ensure logic works before it’s compiled.
+🪄 Register shared services in `.cli.init.ts` — centralize service wiring, keep command files focused.
+📦 Use `.Commands({})` for clean subcommand nesting — avoid hand-written `switch` or `if/else` chains.
+
+---
+
+### 📌 Full Example: Hello Command
+
+```ts
+import { z } from '@fathym/common/third-party/zod';
+import { Command, CommandParams } from '@fathym/cli';
+
+const HelloArgsSchema = z.tuple([
+  z.string().optional().describe('Name to greet'),
+]);
+
+const HelloFlagsSchema = z.object({
+  loud: z.boolean().optional().describe('Shout the greeting'),
+  'dry-run': z.boolean().optional().describe('Show the message without printing'),
+});
+
+class HelloParams extends CommandParams<
+  z.infer<typeof HelloArgsSchema>,
+  z.infer<typeof HelloFlagsSchema>
+> {
+  get Name() {
+    return this.Arg(0) ?? 'world';
+  }
+
+  get Loud() {
+    return this.Flag('loud') ?? false;
+  }
+
+  get DryRun() {
+    return this.Flag('dry-run') ?? false;
+  }
+}
+
+export default Command('hello', 'Prints a friendly greeting.')
+  .Args(HelloArgsSchema)
+  .Flags(HelloFlagsSchema)
+  .Params(HelloParams)
+  .Run(({ Params, Log }) => {
+    const message = Params.Loud
+      ? `HELLO, ${Params.Name.toUpperCase()}!`
+      : `Hello, ${Params.Name}.`;
+
+    if (Params.DryRun) {
+      Log.Info(`🛑 Dry run: "${message}" would have been printed.`);
+    } else {
+      Log.Info(message);
+    }
+  });
+```
+
+This pattern is the foundation: declarative schema, expressive params, clean logic, and lifecycle-ready. Build from here.
+
+## Related Topics
+
+* [Command Lifecycle](./command-lifecycle.md)
+* [Command Intents (Testing)](./command-intents.md)
+* [Templates & Scaffolding](./templates.md)
+* [CLI Configuration](./configuration.md)
+* [Compiling CLI Binaries](./compilation.md)

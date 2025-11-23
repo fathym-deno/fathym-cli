@@ -1,0 +1,44 @@
+import { CommandIntent } from '@fathym/cli';
+import WaveCommand from '../commands/wave.ts';
+
+const origin = import.meta.resolve('../.cli.json');
+
+// ✅ Default wave (no args, no flags)
+CommandIntent('waves at default friend', WaveCommand, origin)
+  .Args([undefined])
+  .Flags({})
+  .ExpectLogs('👋 Waving at friend')
+  .ExpectExit(0)
+  .Run();
+
+// ✅ Wave with a name
+CommandIntent('waves at a specific person', WaveCommand, origin)
+  .Args(['me'])
+  .Flags({})
+  .ExpectLogs('👋 Waving at me')
+  .ExpectExit(0)
+  .Run();
+
+// ✅ Wave with excitement
+CommandIntent('waves excitedly', WaveCommand, origin)
+  .Args(['you'])
+  .Flags({ excited: true })
+  .ExpectLogs('👋 Waving at you!!!')
+  .ExpectExit(0)
+  .Run();
+
+// ✅ Dry run suppresses actual wave
+CommandIntent('dry run prevents wave from printing', WaveCommand, origin)
+  .Args(['nobody'])
+  .Flags({ 'dry-run': true })
+  .ExpectLogs('🛑 Dry run: "👋 Waving at nobody" would have been printed.')
+  .ExpectExit(0)
+  .Run();
+
+// ✅ Dry run + excited together
+CommandIntent('dry run with excitement', WaveCommand, origin)
+  .Args(['the crowd'])
+  .Flags({ 'dry-run': true, excited: true })
+  .ExpectLogs('🛑 Dry run: "👋 Waving at the crowd!!!" would have been printed.')
+  .ExpectExit(0)
+  .Run();
