@@ -10,8 +10,8 @@
   "tasks": {
     "fmt": "deno fmt",
     "lint": "deno lint",
-    "test": "deno test",
-    "build": "deno fmt && deno lint && deno test",
+    "test": "deno test -A ./tests/.tests.ts",
+    "build": "deno fmt && deno lint && deno test -A ./tests",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
     "ftm:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json build",
     "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile"
