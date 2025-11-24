@@ -1,12 +1,12 @@
-import { join, pascalCase, z } from '../../.deps.ts';
-import { Command } from '../../fluent/Command.ts';
-import { TemplateScaffolder } from '../../.exports.ts';
-import { CommandParams } from '../../commands/CommandParams.ts';
-import type { TemplateLocator } from '../../templates/TemplateLocator.ts';
-import type { DFSFileHandler } from '../../.deps.ts';
-import type { CommandLog } from '../../commands/CommandLog.ts';
-import type { CLICommandEntry } from '../../types/CLICommandEntry.ts';
-import { CLIDFSContextManager } from '../../CLIDFSContextManager.ts';
+import { join, pascalCase, z } from '@fathym/cli/.deps.ts';
+import { Command } from '@fathym/cli/fluent/Command.ts';
+import { TemplateScaffolder } from '@fathym/cli';
+import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
+import type { TemplateLocator } from '@fathym/cli/templates/TemplateLocator.ts';
+import type { DFSFileHandler } from '@fathym/cli/.deps.ts';
+import type { CommandLog } from '@fathym/cli/commands/CommandLog.ts';
+import type { CLICommandEntry } from '@fathym/cli/types/CLICommandEntry.ts';
+import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
 
 export const BuildArgsSchema = z.tuple([]);
 

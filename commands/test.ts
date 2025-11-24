@@ -1,8 +1,9 @@
-import { z } from '../../.deps.ts';
-import { Command } from '../../fluent/Command.ts';
-import { CommandParams } from '../../commands/CommandParams.ts';
-import { CLIDFSContextManager } from '../../CLIDFSContextManager.ts';
-import { runCommandWithLogs } from '../../utils/runCommandWithLogs.ts';
+import { type DFSFileHandler, z } from '@fathym/cli/.deps.ts';
+import { Command } from '@fathym/cli/fluent/Command.ts';
+import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
+import type { CommandContext } from '@fathym/cli/commands/CommandContext.ts';
+import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
+import { runCommandWithLogs } from '@fathym/cli/utils/runCommandWithLogs.ts';
 
 export const TestArgsSchema = z.tuple([
   z
@@ -60,7 +61,7 @@ export default Command('test', 'Run CLI tests using Deno')
   .Args(TestArgsSchema)
   .Flags(TestFlagsSchema)
   .Params(TestParams)
-  .Services(async (ctx, ioc) => {
+  .Services(async (ctx, ioc): Promise<{ CLIDFS: DFSFileHandler }> => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
     await dfsCtx.RegisterProjectDFS(
@@ -77,7 +78,9 @@ export default Command('test', 'Run CLI tests using Deno')
       CLIDFS: cliDFS,
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async (
+    { Params, Log, Services }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>,
+  ) => {
     const rootPath = Services.CLIDFS.Root.replace(
       /[-/\\^$*+?.()|[\]{}]/g,
       '\\$&',

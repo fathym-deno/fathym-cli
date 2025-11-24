@@ -1,7 +1,7 @@
-import { dirname, join, z } from '../../.deps.ts';
-import { Command } from '../../fluent/Command.ts';
-import { CommandParams } from '../../commands/CommandParams.ts';
-import { CLIDFSContextManager } from '../../CLIDFSContextManager.ts';
+import { dirname, join, z } from '@fathym/cli/.deps.ts';
+import { Command } from '@fathym/cli/fluent/Command.ts';
+import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
+import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
 
 export const InstallArgsSchema = z.tuple([]);
 

@@ -1,0 +1,5 @@
+import { CLI } from '@fathym/cli';
+
+const cli = new CLI();
+
+await cli.RunFromArgs(Deno.args);

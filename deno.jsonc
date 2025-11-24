@@ -1,10 +1,20 @@
 {
   "name": "fathym-cli",
   "version": "0.0.0",
+  "imports": {
+    "@fathym/cli": "../../ref-arch/command-line-interface/src/cli/.exports.ts",
+    "@fathym/cli/": "../../ref-arch/command-line-interface/src/cli/",
+    "@fathym/common/third-party/zod": "jsr:@fathym/common@0.2.289-integration/third-party/zod",
+    "@fathym/dfs": "jsr:@fathym/dfs@0.0.11-integration"
+  },
   "tasks": {
     "fmt": "deno fmt",
     "lint": "deno lint",
-    "test": "deno test"
+    "test": "deno test",
+    "build": "deno fmt && deno lint && deno test",
+    "cli:run": "deno run -A ./scripts/cli-runtime.ts",
+    "ftm:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json build",
+    "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile"
   },
   "lint": {
     "rules": {

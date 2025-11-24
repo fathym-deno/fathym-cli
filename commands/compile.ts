@@ -1,9 +1,9 @@
-import { join, z } from '../../.deps.ts';
-import { Command } from '../../fluent/Command.ts';
-import { CommandParams } from '../../commands/CommandParams.ts';
+import { join, z } from '@fathym/cli/.deps.ts';
+import { Command } from '@fathym/cli/fluent/Command.ts';
+import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
 import BuildCommand from './build.ts';
-import { CLIDFSContextManager } from '../../CLIDFSContextManager.ts';
-import { runCommandWithLogs } from '../../utils/runCommandWithLogs.ts';
+import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
+import { runCommandWithLogs } from '@fathym/cli/utils/runCommandWithLogs.ts';
 
 export const CompileArgsSchema = z.tuple([]);
 
