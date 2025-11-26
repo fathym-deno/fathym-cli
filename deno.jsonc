@@ -9,8 +9,7 @@
     "build": "deno fmt && deno lint && deno test -A ./tests",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
     "ftm:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json build",
-    "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile",
-    "my:compile": "deno run -A ./scripts/cli-runtime.ts ./.temp/my-cli/.cli.json compile"
+    "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile"
   },
   "imports": {
     "@fathym/cli": "jsr:@fathym/cli@0.0.50",
