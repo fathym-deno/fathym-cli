@@ -16,9 +16,9 @@ CommandIntents(
       .ExpectLogs(
         'Fathym CLI', // CLI name from .cli.json
         'Usage:',
-        'Commands:',
-        'hello',
-        'wave',
+        '🔸 Available Commands',
+        'hello - hello - Prints a friendly greeting',
+        'wave - Wave - Waves at a friend with optional excitement',
       )
       .ExpectExit(0))
   // hello command help
