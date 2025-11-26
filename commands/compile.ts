@@ -5,7 +5,7 @@ import {
   Command,
   CommandParams,
   runCommandWithLogs,
-} from '@fathym/cli';
+} from '../../../ref-arch/command-line-interface/src/.exports.ts';
 import BuildCommand from './build.ts';
 
 export const CompileArgsSchema = z.tuple([]);

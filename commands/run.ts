@@ -6,9 +6,11 @@ import {
   runCommandWithLogs,
   TemplateScaffolder,
   TemplateLocator,
-} from '@fathym/cli';
+} from '../../../ref-arch/command-line-interface/src/.exports.ts';
 
-const RunArgsSchema = z.tuple([z.string()]).rest(z.string());
+const RunArgsSchema = z
+  .tuple([z.string().meta({ argName: 'command' })])
+  .rest(z.string());
 
 const RunFlagsSchema = z
   .object({
@@ -46,13 +48,15 @@ export default Command('run', 'Run a specific command in a CLI project')
       await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
     }
 
-    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath
+      ? await dfsCtx.GetDFS('CLI')
+      : await dfsCtx.GetExecutionDFS();
 
     return {
       CLIDFS: dfs,
       Scaffolder: new TemplateScaffolder(
         await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
-        dfs,
+        dfs
       ),
     };
   })
@@ -77,11 +81,10 @@ export default Command('run', 'Run a specific command in a CLI project')
     Log.Info(`🚀 Executing CLI in new process:`);
     Log.Info(`→ deno run -A ${runner} ${cliArgs.join(' ')}`);
 
-    await runCommandWithLogs(
-      ['run', '-A', runner, ...cliArgs],
-      Log,
-      { exitOnFail: true, cwd: Services.CLIDFS.Root },
-    );
+    await runCommandWithLogs(['run', '-A', runner, ...cliArgs], Log, {
+      exitOnFail: true,
+      cwd: Services.CLIDFS.Root,
+    });
 
     Log.Success('🎉 CLI run completed');
   });

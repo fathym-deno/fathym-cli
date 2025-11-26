@@ -6,11 +6,12 @@ import {
   CommandContext,
   CommandParams,
   runCommandWithLogs,
-} from '@fathym/cli';
+} from '../../../ref-arch/command-line-interface/src/.exports.ts';
 
 export const TestArgsSchema = z.tuple([
   z
     .string()
+    .meta({ argName: 'testFile' })
     .optional()
     .describe('Test file to run (default: test/my-cli/intents/.intents.ts)'),
 ]);
@@ -69,7 +70,7 @@ export default Command('test', 'Run CLI tests using Deno')
 
     await dfsCtx.RegisterProjectDFS(
       ctx.Params.ConfigPath || ctx.Params.TestFile,
-      'CLI',
+      'CLI'
     );
 
     const cliDFS = await dfsCtx.GetDFS('CLI');
@@ -81,29 +82,33 @@ export default Command('test', 'Run CLI tests using Deno')
       CLIDFS: cliDFS,
     };
   })
-  .Run(async (
-    { Params, Log, Services }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>,
-  ) => {
-    const rootPath = Services.CLIDFS.Root.replace(
-      /[-/\\^$*+?.()|[\]{}]/g,
-      '\\$&',
-    );
+  .Run(
+    async ({
+      Params,
+      Log,
+      Services,
+    }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>) => {
+      const rootPath = Services.CLIDFS.Root.replace(
+        /[-/\\^$*+?.()|[\]{}]/g,
+        '\\$&'
+      );
 
-    const testFileRel = Params.TestFile.replace(
-      new RegExp(`^${rootPath}[\\/]*`),
-      '',
-    );
+      const testFileRel = Params.TestFile.replace(
+        new RegExp(`^${rootPath}[\\/]*`),
+        ''
+      );
 
-    const testPath = await Services.CLIDFS.ResolvePath(testFileRel);
-    const denoFlags = Params.DenoFlags;
+      const testPath = await Services.CLIDFS.ResolvePath(testFileRel);
+      const denoFlags = Params.DenoFlags;
 
-    Log.Info(`🧪 Running tests from: ${testFileRel}`);
-    Log.Info(`➡️  deno test -A ${denoFlags.join(' ')} ${testPath}`);
+      Log.Info(`🧪 Running tests from: ${testFileRel}`);
+      Log.Info(`➡️  deno test -A ${denoFlags.join(' ')} ${testPath}`);
 
-    await runCommandWithLogs(['test', '-A', ...denoFlags, testPath], Log, {
-      exitOnFail: true,
-      cwd: Services.CLIDFS.Root,
-    });
+      await runCommandWithLogs(['test', '-A', ...denoFlags, testPath], Log, {
+        exitOnFail: true,
+        cwd: Services.CLIDFS.Root,
+      });
 
-    Log.Success('✅ Tests passed successfully');
-  });
+      Log.Success('✅ Tests passed successfully');
+    }
+  );

@@ -11,7 +11,7 @@ const HelloFlagsSchema = z.object({
 });
 
 const HelloArgsSchema = z.tuple([
-  z.string().optional().describe('Name to greet'),
+  z.string().optional().describe('Name to greet').meta({ argName: 'name' }),
 ]);
 
 class HelloCommandParams extends CommandParams<

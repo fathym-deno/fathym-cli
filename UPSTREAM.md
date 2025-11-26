@@ -18,7 +18,7 @@ References:
 
 # Upstream & Packaging
 
-- Source: migrated from `projects/ref-arch/command-line-interface/src/cli/ftm-cli`.
+- Source: migrated from `projects/ref-arch/command-line-interface/src/ftm-cli`.
 - Runtime dependency: uses `@fathym/cli` from the ref-arch CLI repo (import-mapped in `deno.jsonc`).
 - Distribution: pending decision (Deno task, npm package, or compiled binary). Current tasks support build/compile via `scripts/cli-runtime.ts`.
 

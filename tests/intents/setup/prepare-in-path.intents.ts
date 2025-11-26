@@ -1,4 +1,4 @@
-import { CommandIntent } from '@fathym/cli';
+import { CommandIntent } from '../../../../../ref-arch/command-line-interface/src/.exports.ts';
 import BuildCommand from '../../../commands/build.ts';
 import CompileCommand from '../../../commands/compile.ts';
 import InstallCommand from '../../../commands/install.ts';

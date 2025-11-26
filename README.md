@@ -26,7 +26,7 @@ References:
 
 # Fathym CLI
 
-Open-source home for the Fathym CLI. This repo will house the CLI commands, templates, docs, and packaging tasks currently living under `projects/ref-arch/command-line-interface/src/cli/ftm-cli/`.
+Open-source home for the Fathym CLI. This repo will house the CLI commands, templates, docs, and packaging tasks currently living under `projects/ref-arch/command-line-interface/src/ftm-cli/`.
 
 ## Status
 

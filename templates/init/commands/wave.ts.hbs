@@ -16,7 +16,7 @@ const WaveFlagsSchema = z.object({
 });
 
 const WaveArgsSchema = z.tuple([
-  z.string().optional().describe('Name to wave at'),
+  z.string().optional().describe('Name to wave at').meta({ argName: 'target' }),
 ]);
 
 // 🧩 Parameter class

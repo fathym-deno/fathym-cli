@@ -1,4 +1,4 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntents } from '../../../../../ref-arch/command-line-interface/src/.exports.ts';
 import RunCommand from '../../../commands/run.ts';
 
 // Help intent suite validates root and command-level help output
@@ -29,7 +29,7 @@ CommandIntents(
       .ExpectLogs(
         'Prints a friendly greeting.',
         'Args:',
-        '<arg1> - Name to greet',
+        '<name> - Name to greet',
         'Flags:',
         '--loud - Shout the greeting',
         '--dry-run - Show the message without printing',
@@ -43,7 +43,7 @@ CommandIntents(
       .ExpectLogs(
         'Waves at a friend with optional excitement.',
         'Args:',
-        '<arg1> - Name to wave at',
+        '<target> - Name to wave at',
         'Flags:',
         '--excited - Add extra enthusiasm to the wave',
         '--dry-run - Show the wave without printing it',

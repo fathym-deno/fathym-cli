@@ -10,7 +10,7 @@ import {
   CommandParams,
   TemplateScaffolder,
   TemplateLocator,
-} from '@fathym/cli';
+} from '../../../ref-arch/command-line-interface/src/.exports.ts';
 
 export const BuildArgsSchema = z.tuple([]);
 

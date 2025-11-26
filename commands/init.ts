@@ -5,18 +5,15 @@ import {
   CommandParams,
   TemplateScaffolder,
   TemplateLocator,
-} from '@fathym/cli';
+} from '../../../ref-arch/command-line-interface/src/.exports.ts';
 
 // --- Schemas ---
 const InitArgsSchema = z.tuple([
-  z.string().optional().describe('Project name'),
+  z.string().meta({ argName: 'name' }).optional().describe('Project name'),
 ]);
 
 const InitFlagsSchema = z.object({
-  template: z
-    .string()
-    .optional()
-    .describe('Template to use (e.g. init)'),
+  template: z.string().optional().describe('Template to use (e.g. init)'),
 
   baseTemplatesDir: z
     .string()
@@ -73,7 +70,7 @@ export default Command('init', 'Initialize a new CLI project')
       Scaffolder: new TemplateScaffolder(
         await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
         buildDFS,
-        { name: ctx.Params.Name },
+        { name: ctx.Params.Name }
       ),
     };
   })
