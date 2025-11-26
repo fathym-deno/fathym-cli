@@ -13,7 +13,7 @@
     "my:compile": "deno run -A ./scripts/cli-runtime.ts ./.temp/my-cli/.cli.json compile"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.49",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.50",
     "@fathym/common": "jsr:@fathym/common@0.2.292-integration",
     "@fathym/dfs": "jsr:@fathym/dfs@0.0.12",
     "@luca/cases": "jsr:@luca/cases@1.0.0",
