@@ -80,7 +80,7 @@ export default Command('run', 'Run a specific command in a CLI project')
     await runCommandWithLogs(
       ['run', '-A', runner, ...cliArgs],
       Log,
-      { exitOnFail: true },
+      { exitOnFail: true, cwd: Services.CLIDFS.Root },
     );
 
     Log.Success('🎉 CLI run completed');

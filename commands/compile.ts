@@ -111,7 +111,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
     await runCommandWithLogs(
       ['compile', ...permissions, '--output', outputBinaryPath, entryPath],
       Log,
-      { stdin: 'null', exitOnFail: true }
+      { stdin: 'null', exitOnFail: true, cwd: Services.CLIDFS.Root }
     );
 
     Log.Success(`✅ Compiled: ${outputBinaryPath}`);

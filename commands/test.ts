@@ -102,6 +102,7 @@ export default Command('test', 'Run CLI tests using Deno')
 
     await runCommandWithLogs(['test', '-A', ...denoFlags, testPath], Log, {
       exitOnFail: true,
+      cwd: Services.CLIDFS.Root,
     });
 
     Log.Success('✅ Tests passed successfully');
