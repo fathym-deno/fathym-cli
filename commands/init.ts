@@ -40,7 +40,7 @@ class InitParams extends CommandParams<
   }
 
   get Template(): string {
-    return this.Flag('template') ?? 'cli-init';
+    return this.Flag('template') ?? 'init';
   }
 
   get BaseTemplatesDir(): string | undefined {
