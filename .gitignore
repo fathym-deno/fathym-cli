@@ -1,10 +1,10 @@
 .DS_Store
 *.log
 node_modules/
-.vscode/
 .idea/
 .build/
 .dist/
 .temp/
 cov/
 coverage/
+templates/**/.vscode
