@@ -1,3 +1,4 @@
+import { fromFileUrl } from "@std/path";
 import type {
   CLIFileSystemHooks,
   CLIInitFn,
@@ -8,8 +9,6 @@ import type {
 } from "@fathym/cli";
 import { CommandModuleBuilder, EmbeddedTemplateLocator } from "@fathym/cli";
 import type { DFSFileHandler } from '@fathym/dfs';
-
-import { fromFileUrl } from "jsr:@std/path@^1.0.9/from-file-url";
 
 import embeddedConfig from "../.cli.json" with { type: "json" };
 import embeddedTemplates from "./embedded-templates.json" with { type: "json" };
