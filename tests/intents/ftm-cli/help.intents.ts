@@ -16,9 +16,9 @@ CommandIntents(
       .ExpectLogs(
         'Fathym CLI', // CLI name from .cli.json
         'Usage:',
-        '🔸 Available Commands',
-        'hello - hello - Prints a friendly greeting',
-        'wave - Wave - Waves at a friend with optional excitement',
+        'Available Commands',
+        'hello - hello - Prints a friendly greeting.',
+        'wave - Wave - Waves at a friend with optional excitement.',
       )
       .ExpectExit(0))
   // hello command help
@@ -29,10 +29,10 @@ CommandIntents(
       .ExpectLogs(
         'Prints a friendly greeting.',
         'Args:',
-        'Name to greet',
+        '<arg1> - Name to greet',
         'Flags:',
-        '--loud',
-        '--dry-run',
+        '--loud - Shout the greeting',
+        '--dry-run - Show the message without printing',
       )
       .ExpectExit(0))
   // wave command help
@@ -43,10 +43,10 @@ CommandIntents(
       .ExpectLogs(
         'Waves at a friend with optional excitement.',
         'Args:',
-        'Name to wave at',
+        '<arg1> - Name to wave at',
         'Flags:',
-        '--excited',
-        '--dry-run',
+        '--excited - Add extra enthusiasm to the wave',
+        '--dry-run - Show the wave without printing it',
       )
       .ExpectExit(0))
   .Run();
