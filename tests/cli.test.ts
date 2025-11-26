@@ -1,6 +1,5 @@
 import { assertMatch } from 'jsr:@std/assert@1.0.3';
-import { CLI } from '@fathym/cli';
-import { captureLogs } from '@fathym/cli/utils/captureLogs.ts';
+import { captureLogs, CLI } from '@fathym/cli';
 
 Deno.test('Fathym CLI – help renders', async () => {
   const configPath = './.cli.json';

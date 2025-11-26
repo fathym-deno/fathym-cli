@@ -1,4 +1,4 @@
-import { CommandIntents } from '../../test.deps.ts';
+import { CommandIntents } from '@fathym/cli';
 import CompileCommand from '../../../commands/compile.ts';
 
 CommandIntents(
@@ -10,7 +10,7 @@ CommandIntents(
     int
       .Args([])
       .Flags({
-        entry: './test/my-cli/.build/cli.ts',
+        entry: './.temp/my-cli/.build/cli.ts',
       })
       .ExpectLogs(
         '🔧 Compiling CLI for:',

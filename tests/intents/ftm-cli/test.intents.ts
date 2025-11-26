@@ -1,4 +1,4 @@
-import { CommandIntents } from '../../test.deps.ts';
+import { CommandIntents } from '@fathym/cli';
 import TestCommand from '../../../commands/test.ts';
 
 CommandIntents(
@@ -10,7 +10,7 @@ CommandIntents(
     int
       .Args([undefined]) // defaults to test/my-cli/intents/.intents.ts
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
       })
       .ExpectLogs(
         '🧪 Running tests from:',
@@ -22,7 +22,7 @@ CommandIntents(
     int
       .Args(['./intents/.intents.ts'])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
         filter: 'hello',
       })
       .ExpectLogs(
@@ -35,7 +35,7 @@ CommandIntents(
     int
       .Args([undefined])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
         coverage: './coverage',
         'no-check': true,
       })

@@ -1,9 +1,12 @@
-import { type DFSFileHandler, z } from '@fathym/cli/.deps.ts';
-import { Command } from '@fathym/cli/fluent/Command.ts';
-import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
-import type { CommandContext } from '@fathym/cli/commands/CommandContext.ts';
-import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
-import { runCommandWithLogs } from '@fathym/cli/utils/runCommandWithLogs.ts';
+import { z } from '@fathym/common/third-party/zod';
+import { DFSFileHandler } from '@fathym/dfs';
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandContext,
+  CommandParams,
+  runCommandWithLogs,
+} from '@fathym/cli';
 
 export const TestArgsSchema = z.tuple([
   z

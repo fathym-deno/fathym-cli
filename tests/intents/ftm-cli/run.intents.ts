@@ -1,4 +1,4 @@
-import { CommandIntents } from '../../test.deps.ts';
+import { CommandIntents } from '@fathym/cli';
 import RunCommand from '../../../commands/run.ts';
 
 CommandIntents(
@@ -10,7 +10,7 @@ CommandIntents(
   .Intent("Run 'hello' command with default args", (int) =>
     int
       .Args(['hello'])
-      .Flags({ config: './test/my-cli/.cli.json' })
+      .Flags({ config: './.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Hello, world!',
         '🎉 CLI run completed',
@@ -19,7 +19,7 @@ CommandIntents(
   .Intent("Run 'hello' command with a name", (int) =>
     int
       .Args(['hello', 'testy'])
-      .Flags({ config: './test/my-cli/.cli.json' })
+      .Flags({ config: './.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Hello, testy!',
         '🎉 CLI run completed',
@@ -29,7 +29,7 @@ CommandIntents(
     int
       .Args(['hello', 'team'])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
         loud: true,
       })
       .ExpectLogs(
@@ -41,7 +41,7 @@ CommandIntents(
   .Intent("Run 'wave' command with default args", (int) =>
     int
       .Args(['wave'])
-      .Flags({ config: './test/my-cli/.cli.json' })
+      .Flags({ config: './.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Waving at friend',
         '🎉 CLI run completed',
@@ -50,7 +50,7 @@ CommandIntents(
   .Intent("Run 'wave' command with a name", (int) =>
     int
       .Args(['wave', 'me'])
-      .Flags({ config: './test/my-cli/.cli.json' })
+      .Flags({ config: './.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Waving at me',
         '🎉 CLI run completed',
@@ -60,7 +60,7 @@ CommandIntents(
     int
       .Args(['wave', 'you'])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
         excited: true,
       })
       .ExpectLogs(
@@ -72,7 +72,7 @@ CommandIntents(
     int
       .Args(['wave', 'nobody'])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
         'dry-run': true,
       })
       .ExpectLogs(
@@ -84,7 +84,7 @@ CommandIntents(
     int
       .Args(['wave', 'everyone'])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
         'dry-run': true,
         excited: true,
       })

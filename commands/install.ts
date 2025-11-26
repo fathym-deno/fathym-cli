@@ -1,7 +1,6 @@
-import { dirname, join, z } from '@fathym/cli/.deps.ts';
-import { Command } from '@fathym/cli/fluent/Command.ts';
-import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
-import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
+import { dirname, join } from '@std/path';
+import { z } from '@fathym/common/third-party/zod';
+import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 
 export const InstallArgsSchema = z.tuple([]);
 
@@ -36,7 +35,7 @@ export class InstallParams extends CommandParams<
 
 export default Command(
   'install',
-  'Install a compiled CLI binary to your system',
+  'Install a compiled CLI binary to your system'
 )
   .Args(InstallArgsSchema)
   .Flags(InstallFlagsSchema)
@@ -52,7 +51,9 @@ export default Command(
       ? await dfsCtx.GetDFS('CLI')
       : await dfsCtx.GetExecutionDFS();
 
-    const installDFS = ctx.Params.UseHome ? await dfsCtx.GetUserHomeDFS() : configDFS;
+    const installDFS = ctx.Params.UseHome
+      ? await dfsCtx.GetUserHomeDFS()
+      : configDFS;
 
     return {
       ConfigDFS: configDFS,

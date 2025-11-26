@@ -1,4 +1,4 @@
-import { CommandIntents } from '../../test.deps.ts';
+import { CommandIntents } from '@fathym/cli';
 import InstallCommand from '../../../commands/install.ts';
 
 CommandIntents(
@@ -10,7 +10,7 @@ CommandIntents(
     int
       .Args([])
       .Flags({
-        config: './test/my-cli/.cli.json',
+        config: './.temp/my-cli/.cli.json',
       })
       .ExpectLogs(
         '✅ Installed: ', // main binary copy success

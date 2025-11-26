@@ -1,9 +1,11 @@
-import { z } from '@fathym/cli/.deps.ts';
-import { Command } from '@fathym/cli/fluent/Command.ts';
-import { TemplateScaffolder } from '@fathym/cli';
-import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
-import type { TemplateLocator } from '@fathym/cli/templates/TemplateLocator.ts';
-import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
+import { z } from '@fathym/common/third-party/zod';
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  TemplateScaffolder,
+  TemplateLocator,
+} from '@fathym/cli';
 
 // --- Schemas ---
 const InitArgsSchema = z.tuple([

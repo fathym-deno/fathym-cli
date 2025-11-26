@@ -1,10 +1,12 @@
-import { z } from '@fathym/cli/.deps.ts';
-import { Command } from '@fathym/cli/fluent/Command.ts';
-import { CommandParams } from '@fathym/cli/commands/CommandParams.ts';
-import { CLIDFSContextManager } from '@fathym/cli/CLIDFSContextManager.ts';
-import type { TemplateLocator } from '@fathym/cli/templates/TemplateLocator.ts';
-import { TemplateScaffolder } from '@fathym/cli';
-import { runCommandWithLogs } from '@fathym/cli/utils/runCommandWithLogs.ts'; // <-- new helper
+import { z } from '@fathym/common/third-party/zod';
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  runCommandWithLogs,
+  TemplateScaffolder,
+  TemplateLocator,
+} from '@fathym/cli';
 
 const RunArgsSchema = z.tuple([z.string()]).rest(z.string());
 

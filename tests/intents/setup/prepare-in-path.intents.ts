@@ -1,4 +1,4 @@
-import { CommandIntent } from '../../test.deps.ts';
+import { CommandIntent } from '@fathym/cli';
 import BuildCommand from '../../../commands/build.ts';
 import CompileCommand from '../../../commands/compile.ts';
 import InstallCommand from '../../../commands/install.ts';

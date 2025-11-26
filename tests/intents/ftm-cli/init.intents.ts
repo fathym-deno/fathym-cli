@@ -1,4 +1,4 @@
-import { CommandIntents } from '../../test.deps.ts';
+import { CommandIntents } from '@fathym/cli';
 import InitCommand from '../../../commands/init.ts';
 
 CommandIntents(
@@ -8,7 +8,7 @@ CommandIntents(
 )
   .Intent("Init with default 'hello' template", (int) =>
     int
-      .Args(['./test/my-cli'])
+      .Args(['./.temp/my-cli'])
       .Flags({})
       .ExpectLogs(
         `Project created from "hello" template.`,
