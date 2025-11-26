@@ -6,12 +6,12 @@ CommandIntents(
   InitCommand.Build(),
   import.meta.resolve('../../../.cli.json'),
 )
-  .Intent("Init with default 'hello' template", (int) =>
+  .Intent("Init with default 'init' template", (int) =>
     int
       .Args(['./.temp/my-cli'])
       .Flags({})
       .ExpectLogs(
-        `Project created from "hello" template.`,
+        `Project created from "init" template.`,
         '📂 Initialized at:',
       )
       .ExpectExit(0))

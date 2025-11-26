@@ -16,7 +16,7 @@ const InitFlagsSchema = z.object({
   template: z
     .string()
     .optional()
-    .describe('Template to use (e.g. hello, web, api)'),
+    .describe('Template to use (e.g. init)'),
 
   baseTemplatesDir: z
     .string()
@@ -40,7 +40,7 @@ class InitParams extends CommandParams<
   }
 
   get Template(): string {
-    return this.Flag('template') ?? 'hello';
+    return this.Flag('template') ?? 'cli-init';
   }
 
   get BaseTemplatesDir(): string | undefined {
