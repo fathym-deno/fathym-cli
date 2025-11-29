@@ -1,0 +1,113 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm compile
+Summary: API reference for the compile command that creates native binaries.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm build
+    Path: ./build.mdx
+  - Label: ftm install
+    Path: ./install.mdx
+  - Label: CLI Lifecycle
+    Path: ../concepts/cli-lifecycle.mdx
+---
+
+# ftm compile
+
+Compile the CLI into a native binary using `deno compile`.
+
+## Usage
+
+```bash
+ftm compile [flags]
+```
+
+## Arguments
+
+The compile command takes no positional arguments.
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--entry` | string | `./.build/cli.ts` | Entry point file (build output) |
+| `--config` | string | (alongside entry) | Path to `.cli.json` |
+| `--output` | string | `./.dist` | Output directory for binary |
+| `--permissions` | string | (full access) | Space-separated Deno permission flags |
+
+## Examples
+
+```bash
+# Compile CLI in current directory
+ftm compile
+
+# Compile with custom entry point
+ftm compile --entry=./my-cli/.build/cli.ts
+
+# Compile with restricted permissions
+ftm compile --permissions="--allow-read --allow-env"
+
+# Compile to custom output directory
+ftm compile --output=./bin
+```
+
+## Default Permissions
+
+By default, the compiled binary has full permissions:
+
+- `--allow-read` - File system read access
+- `--allow-env` - Environment variable access
+- `--allow-net` - Network access
+- `--allow-write` - File system write access
+- `--allow-run` - Subprocess execution
+
+Override with `--permissions` flag for restricted binaries.
+
+## Output Structure
+
+```
+.dist/
+└── <token-name>       # Native binary (e.g., 'my-cli' or 'my-cli.exe')
+```
+
+The binary name is derived from `Tokens[0]` in `.cli.json`.
+
+## How It Works
+
+1. Register project DFS using entry point path
+2. Resolve entry point, output directory, and permissions
+3. Read `.cli.json` to get binary name from `Tokens[0]`
+4. **Invoke Build sub-command** to prepare static artifacts
+5. Execute `deno compile` with permissions and output path
+6. Output binary to `.dist/<token-name>`
+
+## Sub-Command Pattern
+
+The compile command demonstrates invoking other commands programmatically:
+
+```typescript
+.Commands({
+  Build: BuildCommand.Build(),
+})
+.Run(async ({ Commands }) => {
+  // Invoke build before compiling
+  await Commands.Build([], { config: '...' });
+})
+```
+
+## Source
+
+- Implementation: [`commands/compile.ts`](../../commands/compile.ts)
+- Tests: [`tests/intents/ftm-cli/compile.intents.ts`](../../tests/intents/ftm-cli/compile.intents.ts)
+
+## Related
+
+- [ftm build](./build.mdx) - Prerequisite: prepare build artifacts
+- [ftm install](./install.mdx) - Next step: install to PATH
+- [Distribution Guide](../guides/distribution.mdx) - Full distribution workflow

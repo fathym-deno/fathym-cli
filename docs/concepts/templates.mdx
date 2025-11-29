@@ -1,0 +1,182 @@
+---
+FrontmatterVersion: 1
+DocumentType: Concept
+Title: Templates
+Summary: Understanding the Handlebars-based scaffolding system.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm init
+    Path: ../api/init.mdx
+  - Label: ftm build
+    Path: ../api/build.mdx
+---
+
+# Templates
+
+The Fathym CLI uses a Handlebars-based template system for scaffolding projects and generating code.
+
+## Template Structure
+
+Templates live in the `templates/` directory:
+
+```txt
+templates/
+├── init/                    # Default project template
+│   ├── .cli.json.hbs
+│   ├── .cli.init.ts.hbs
+│   ├── deno.jsonc.hbs
+│   ├── .gitignore.hbs
+│   ├── commands/
+│   │   ├── hello.ts.hbs
+│   │   └── wave.ts.hbs
+│   └── intents/
+│       ├── .intents.ts.hbs
+│       └── hello.intents.ts.hbs
+└── component/               # Custom template example
+    └── {{name}}.ts.hbs
+```
+
+Each top-level folder is a template name used with `--template` flag.
+
+## Handlebars Syntax
+
+Templates use Handlebars for variable substitution:
+
+```handlebars
+{
+  "Name": "{{name}}",
+  "Version": "{{version}}",
+  "Tokens": ["{{token}}"]
+}
+```
+
+### Variables
+
+Variables come from the scaffolder context:
+
+```typescript
+new TemplateScaffolder(locator, dfs, {
+  name: 'my-cli',
+  version: '1.0.0',
+  token: 'my-cli'
+});
+```
+
+### Conditionals
+
+```handlebars
+{{#if includeTests}}
+import { test } from 'test-framework';
+{{/if}}
+```
+
+### Loops
+
+```handlebars
+{{#each commands}}
+import {{alias}} from "{{path}}";
+{{/each}}
+```
+
+## Built-in Templates
+
+### init
+
+The default project scaffolding template. Creates:
+
+- `.cli.json` - CLI identity
+- `.cli.init.ts` - IoC initialization
+- `deno.jsonc` - Deno configuration
+- `commands/hello.ts` - Sample fluent command
+- `commands/wave.ts` - Sample class-based command
+- `intents/` - Sample intent tests
+
+### cli-build-static
+
+Used by `ftm build` to generate embedded CLI artifacts:
+
+- `cli.ts` - Entry point
+- `EmbeddedCommandModules.ts` - Command registry
+- `EmbeddedCLIFileSystemHooks.ts` - Filesystem abstraction
+
+### cli-run
+
+Used by `ftm run` to scaffold the development runner.
+
+### cli-compile
+
+Used by `ftm compile` for installation scripts.
+
+## Template Embedding
+
+During `ftm build`, templates are embedded into JSON:
+
+```json
+{
+  "init/.cli.json.hbs": "{ \"Name\": \"{{name}}\" ... }",
+  "init/commands/hello.ts.hbs": "export default Command(...)..."
+}
+```
+
+This allows compiled CLIs to scaffold without filesystem access.
+
+## Creating Custom Templates
+
+1. Create a folder in `templates/`:
+
+```txt
+templates/
+└── my-template/
+    ├── src/
+    │   └── index.ts.hbs
+    └── package.json.hbs
+```
+
+2. Use Handlebars variables:
+
+```handlebars
+// templates/my-template/src/index.ts.hbs
+export const {{name}} = () => {
+  console.log('Hello from {{name}}!');
+};
+```
+
+3. Invoke with custom template flag:
+
+```bash
+ftm init my-project --template=my-template
+```
+
+## Using Templates in Commands
+
+Access templates via `TemplateScaffolder`:
+
+```typescript
+import { Command, TemplateScaffolder, TemplateLocator } from '@fathym/cli';
+
+export default Command('generate', 'Generate a component')
+  .Services(async (ctx, ioc) => ({
+    Scaffolder: new TemplateScaffolder(
+      await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
+      await ioc.Resolve(CLIDFSContextManager).GetExecutionDFS(),
+      { name: ctx.Params.Name }
+    ),
+  }))
+  .Run(async ({ Services, Params }) => {
+    await Services.Scaffolder.Scaffold({
+      templateName: 'component',
+      outputDir: `./src/${Params.Name}`,
+    });
+  });
+```
+
+## Related
+
+- [ftm init](../api/init.mdx) - Uses init template
+- [ftm build](../api/build.mdx) - Embeds templates
+- [Configuration](./configuration.mdx) - Project structure

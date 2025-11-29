@@ -1,0 +1,220 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: Distribution
+Summary: Guide to compiling and distributing CLI binaries.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm build
+    Path: ../api/build.mdx
+  - Label: ftm compile
+    Path: ../api/compile.mdx
+  - Label: ftm install
+    Path: ../api/install.mdx
+---
+
+# Distribution
+
+This guide covers compiling your CLI to a native binary and distributing it.
+
+## Build → Compile → Install
+
+The distribution workflow has three steps:
+
+```bash
+# 1. Prepare static build
+ftm build
+
+# 2. Compile to native binary
+ftm compile
+
+# 3. Install to PATH
+ftm install --useHome
+```
+
+## Step 1: Build
+
+The build step embeds all commands and templates:
+
+```bash
+ftm build
+```
+
+Creates `.build/` directory with:
+- `cli.ts` - Static entry point
+- `EmbeddedCommandModules.ts` - Command registry
+- `embedded-templates.json` - Embedded templates
+- `embedded-command-entries.json` - Command metadata
+
+## Step 2: Compile
+
+Compile to a native binary using Deno:
+
+```bash
+ftm compile
+```
+
+Creates `.dist/<token-name>` binary (e.g., `.dist/my-cli`).
+
+### Custom Permissions
+
+By default, binaries have full permissions. Restrict them:
+
+```bash
+ftm compile --permissions="--allow-read --allow-env"
+```
+
+### Custom Output
+
+```bash
+ftm compile --output=./bin
+```
+
+## Step 3: Install
+
+Copy the binary to your PATH:
+
+```bash
+# Install to home directory
+ftm install --useHome --to=.bin
+
+# Install to custom path
+ftm install --to=/usr/local/bin
+```
+
+### Add to PATH
+
+**Bash/Zsh:**
+```bash
+echo 'export PATH="$HOME/.bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Fish:**
+```fish
+fish_add_path ~/.bin
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:PATH = "$env:USERPROFILE\.bin;$env:PATH"
+```
+
+## Cross-Platform Binary Names
+
+| Platform | Binary | Aliases |
+|----------|--------|---------|
+| Unix | `my-cli` | `mc` (shell script) |
+| Windows | `my-cli.exe` | `mc.cmd` (batch script) |
+
+Aliases are created from additional tokens in `.cli.json`:
+
+```json
+{
+  "Tokens": ["my-cli", "mc"]
+}
+```
+
+## Distribution Options
+
+### 1. GitHub Releases
+
+1. Build and compile
+2. Create release with binary attached
+3. Users download and add to PATH
+
+### 2. Install Script
+
+Create an install script for users:
+
+```bash
+#!/bin/bash
+curl -fsSL https://github.com/you/my-cli/releases/latest/download/my-cli -o ~/.bin/my-cli
+chmod +x ~/.bin/my-cli
+```
+
+### 3. Deno Task (No Binary)
+
+Users can run directly via Deno:
+
+```bash
+deno run -A jsr:@you/my-cli hello
+```
+
+Add to `deno.jsonc`:
+```json
+{
+  "name": "@you/my-cli",
+  "exports": "./scripts/cli-runtime.ts"
+}
+```
+
+### 4. npm Package
+
+Create a wrapper for npm users:
+
+```json
+{
+  "name": "my-cli",
+  "bin": {
+    "my-cli": "./bin/my-cli"
+  }
+}
+```
+
+## Automated Releases
+
+Example GitHub Actions workflow:
+
+```yaml
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+      - run: deno task ftm-cli:build
+      - run: deno task ftm-cli:compile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.os }}
+          path: .dist/
+```
+
+## Versioning
+
+Update version in `.cli.json`:
+
+```json
+{
+  "Name": "My CLI",
+  "Version": "1.2.0"
+}
+```
+
+View version with `--version` flag:
+
+```bash
+my-cli --version
+# My CLI v1.2.0
+```
+
+## Related
+
+- [ftm build](../api/build.mdx) - Build command reference
+- [ftm compile](../api/compile.mdx) - Compile command reference
+- [ftm install](../api/install.mdx) - Install command reference
+- [CLI Lifecycle](../concepts/cli-lifecycle.mdx) - Build/compile workflow

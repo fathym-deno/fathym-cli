@@ -1,0 +1,126 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm install
+Summary: API reference for the install command that copies CLI binary to system PATH.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm compile
+    Path: ./compile.mdx
+  - Label: Distribution Guide
+    Path: ../guides/distribution.mdx
+---
+
+# ftm install
+
+Install a compiled CLI binary to your system PATH.
+
+## Usage
+
+```bash
+ftm install [flags]
+```
+
+## Arguments
+
+The install command takes no positional arguments.
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--to` | string | `./.bin` | Target installation directory |
+| `--config` | string | `./.cli.json` | Path to CLI configuration |
+| `--useHome` | boolean | `false` | Use user home directory as DFS root |
+
+## Examples
+
+```bash
+# Install to default location (./.bin)
+ftm install
+
+# Install to custom directory
+ftm install --to=~/.local/bin
+
+# Install to user home directory
+ftm install --useHome --to=.bin
+
+# Install from specific project
+ftm install --config=./my-cli/.cli.json
+```
+
+## Cross-Platform Handling
+
+| Platform | Binary Extension | Alias Extension | Line Endings |
+|----------|------------------|-----------------|--------------|
+| Windows | `.exe` | `.cmd` | CRLF |
+| Unix | (none) | (none) | LF |
+
+## Alias Scripts
+
+When `.cli.json` defines multiple tokens (e.g., `["my-cli", "mc"]`), the first token becomes the binary name and subsequent tokens get wrapper scripts:
+
+**Unix (`mc`):**
+```bash
+#!/bin/sh
+exec my-cli "$@"
+```
+
+**Windows (`mc.cmd`):**
+```batch
+@echo off
+my-cli.exe %*
+```
+
+## Installation Structure
+
+```
+~/.bin/                   # Or custom --to path
+├── my-cli                # Primary binary (from Tokens[0])
+├── my-cli.exe            # (Windows only)
+├── mc                    # Alias script (from Tokens[1])
+└── mc.cmd                # (Windows only)
+```
+
+## PATH Warning
+
+If the installation directory is not in your PATH, the command will warn:
+
+```
+⚠️  Install path (~/.bin) is not in your PATH
+👉 Add it to your shell profile to use CLI globally
+```
+
+Add to your shell profile:
+
+```bash
+# bash/zsh
+export PATH="$HOME/.bin:$PATH"
+
+# fish
+fish_add_path ~/.bin
+```
+
+## How It Works
+
+1. Resolve config DFS and install DFS (project or home)
+2. Read `.cli.json` to get binary name from `Tokens[0]`
+3. Copy binary from `.dist/<token>` to install directory
+4. For each alias token, create shell/batch wrapper script
+5. Set executable permissions on Unix (chmod 755)
+6. Check if install directory is in PATH and warn if not
+
+## Source
+
+- Implementation: [`commands/install.ts`](../../commands/install.ts)
+- Tests: [`tests/intents/ftm-cli/install.intents.ts`](../../tests/intents/ftm-cli/install.intents.ts)
+
+## Related
+
+- [ftm compile](./compile.mdx) - Prerequisite: compile binary
+- [Distribution Guide](../guides/distribution.mdx) - Full distribution workflow

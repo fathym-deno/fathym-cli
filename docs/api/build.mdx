@@ -1,0 +1,117 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm build
+Summary: API reference for the build command that prepares static CLI artifacts.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm compile
+    Path: ./compile.mdx
+  - Label: CLI Lifecycle
+    Path: ../concepts/cli-lifecycle.mdx
+---
+
+# ftm build
+
+Prepare static CLI build artifacts for compilation.
+
+## Usage
+
+```bash
+ftm build [flags]
+```
+
+## Arguments
+
+The build command takes no positional arguments.
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | `./.cli.json` | Path to CLI configuration file |
+| `--templates` | string | `./templates` | Path to templates directory |
+
+## Examples
+
+```bash
+# Build CLI in current directory
+ftm build
+
+# Build CLI with custom config path
+ftm build --config=./my-cli/.cli.json
+
+# Build with custom templates directory
+ftm build --templates=./src/templates
+```
+
+## Generated Artifacts
+
+The build command creates the `.build/` directory with:
+
+```
+.build/
+├── cli.ts                        # Static CLI entry point
+├── EmbeddedCommandModules.ts     # Command module registry
+├── EmbeddedCLIFileSystemHooks.ts # Filesystem abstraction
+├── embedded-templates.json       # All templates as JSON
+└── embedded-command-entries.json # Command metadata registry
+```
+
+## How It Works
+
+1. Resolve DFS context (execution directory or `--config` path)
+2. Collect all templates from `templates/` into JSON
+3. Read `.cli.json` configuration
+4. Collect command metadata from `commands/` directory
+5. Write `embedded-templates.json` and `embedded-command-entries.json`
+6. Scaffold `cli-build-static` template with embedded artifacts
+7. Output static entry point to `.build/cli.ts`
+
+## Embedding Process
+
+### Templates
+
+All `.hbs` files in `templates/` are read and stored as key-value pairs in `embedded-templates.json`:
+
+```json
+{
+  "init/.cli.json.hbs": "{ \"Name\": \"{{name}}\" ... }",
+  "init/commands/hello.ts.hbs": "..."
+}
+```
+
+### Commands
+
+Each `.ts` file in `commands/` is registered with its path and alias:
+
+```typescript
+// EmbeddedCommandModules.ts
+import HelloCommand from "../commands/hello.ts";
+import WaveCommand from "../commands/wave.ts";
+
+export const EmbeddedCommandModules = {
+  "hello": HelloCommand,
+  "wave": WaveCommand,
+};
+```
+
+### Init Hook
+
+If `.cli.init.ts` exists, it's wired into the embedded filesystem hooks for IoC initialization.
+
+## Source
+
+- Implementation: [`commands/build.ts`](../../commands/build.ts)
+- Tests: [`tests/intents/ftm-cli/build.intents.ts`](../../tests/intents/ftm-cli/build.intents.ts)
+
+## Related
+
+- [ftm compile](./compile.mdx) - Next step: compile to binary
+- [CLI Lifecycle](../concepts/cli-lifecycle.mdx) - Build/compile workflow
+- [Templates](../concepts/templates.mdx) - Template system

@@ -1,0 +1,124 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm test
+Summary: API reference for the test command that runs CLI intent tests.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm run
+    Path: ./run.mdx
+  - Label: Authoring Commands Guide
+    Path: ../guides/authoring-commands.mdx
+---
+
+# ftm test
+
+Run CLI intent tests using Deno's test runner.
+
+## Usage
+
+```bash
+ftm test [testFile] [flags]
+```
+
+## Arguments
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `testFile` | No | `./intents/.intents.ts` | Test file to run |
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | `./.cli.json` | Path to CLI configuration |
+| `--coverage` | string | - | Directory for coverage output |
+| `--filter` | string | - | Run only tests matching this name |
+| `--no-check` | boolean | `false` | Skip TypeScript type checking |
+| `--watch` | boolean | `false` | Re-run tests on file changes |
+| `--doc` | boolean | `false` | Run JSDoc example tests |
+| `--shuffle` | boolean | `false` | Randomize test order |
+
+## Examples
+
+```bash
+# Run all tests with defaults
+ftm test
+
+# Run specific test file
+ftm test ./intents/hello.intents.ts
+
+# Filter tests by name
+ftm test --filter=hello
+
+# Run with coverage output
+ftm test --coverage=./coverage
+
+# Watch mode for development
+ftm test --watch
+
+# Skip type checking for faster runs
+ftm test --no-check
+
+# Combine flags
+ftm test --filter=hello --coverage=./cov --no-check
+```
+
+## Flag Mapping
+
+Flags are automatically mapped to `deno test` format:
+
+| Input | Deno Test Flag |
+|-------|----------------|
+| `--filter=hello` | `--filter=hello` |
+| `--coverage=./cov` | `--coverage=./cov` |
+| `--no-check` | `--no-check` |
+| `--watch` | `--watch` |
+| `--shuffle` | `--shuffle` |
+
+Boolean flags become presence flags:
+- `--watch` (true) → `--watch`
+- `--watch` (false) → omitted
+
+## Intent Testing Pattern
+
+Tests use the `CommandIntent` API to simulate CLI invocations:
+
+```typescript
+import { CommandIntents } from '@fathym/cli';
+
+CommandIntents('my-cli hello', ({ Intent }) => {
+  Intent('greets with default name')
+    .Args([])
+    .ExpectLogs(['Hello, World!'])
+    .ExpectExit(0);
+
+  Intent('greets with custom name')
+    .Args(['Alice'])
+    .ExpectLogs(['Hello, Alice!'])
+    .ExpectExit(0);
+});
+```
+
+## How It Works
+
+1. Register project DFS using config path or test file
+2. Resolve test file path relative to DFS root
+3. Map Zod flags to Deno test CLI format
+4. Execute `deno test -A [flags] [test-path]`
+5. Report success or forward test failures
+
+## Source
+
+- Implementation: [`commands/test.ts`](../../commands/test.ts)
+- Tests: [`tests/intents/ftm-cli/test.intents.ts`](../../tests/intents/ftm-cli/test.intents.ts)
+
+## Related
+
+- [ftm run](./run.mdx) - Run commands during development
+- [Authoring Commands](../guides/authoring-commands.mdx) - Writing tests

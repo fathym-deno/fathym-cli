@@ -2,9 +2,9 @@
 FrontmatterVersion: 1
 DocumentType: Guide
 Title: Fathym CLI Guide
-Summary: Playbook for building, packaging, and maintaining the Fathym CLI project.
+Summary: Operating playbook for developing and maintaining the Fathym CLI.
 Created: 2025-11-20
-Updated: 2025-11-20
+Updated: 2025-11-29
 Owners:
   - fathym
 References:
@@ -12,6 +12,8 @@ References:
     Path: ./README.md
   - Label: Project Agents Guide
     Path: ./AGENTS.md
+  - Label: Documentation
+    Path: ./docs/README.mdx
   - Label: Open-Source Agents Guide
     Path: ../AGENTS.md
   - Label: Open-Source Guide
@@ -22,24 +24,93 @@ References:
 
 # Fathym CLI Guide
 
-Use this guide to manage the open-source Fathym CLI packaging and releases.
+Operating playbook for developing and maintaining the Fathym CLI.
 
-## Current Focus
+## Development Workflow
 
-- Migrate the `ftm-cli` implementation into this repo.
-- Wire build/compile tasks to the shared CLI runtime and templates.
-- Define distribution channel (Deno task, npm package, or compiled binary).
+### 1. Understand Before Changing
 
-## Workflow
+```bash
+# Type check
+deno task build
 
-1. Align scope in `README.md` and note intended release/packaging target.
-2. Port commands/templates/docs from the ref-arch CLI and update import paths to the shared runtime.
-3. Set up tasks for build/compile/test; keep `.build` outputs generated, not committed, unless required.
-4. Add smoke tests for command execution and packaging.
-5. Document breaking changes and release notes before publishing.
+# Run tests
+deno task test
 
-## Verification
+# Format and lint
+deno fmt && deno lint
+```
 
-- `deno fmt`, `deno lint`, and `deno test` should succeed.
-- Build/compile tasks should produce a runnable binary or Deno entry as defined.
-- Links remain relative and frontmatter-complete across docs.
+Key files to understand:
+- `commands/*.ts` - Command implementations with JSDoc
+- `.cli.json` - CLI identity configuration
+- `templates/` - Scaffolding templates
+
+### 2. Make Changes
+
+Follow these patterns:
+- Commands use fluent `Command()` API or class-based `CommandRuntime`
+- Params classes extend `CommandParams<ArgsType, FlagsType>`
+- Use `this.Arg(n)` and `this.Flag('name')` only in Params getters
+- Services resolved via IoC: `ioc.Resolve(ServiceClass)`
+
+### 3. Test Thoroughly
+
+```bash
+# Run all intent tests
+deno task test
+
+# Run specific test file
+ftm test ./intents/hello.intents.ts --config=./.cli.json
+
+# Run with filter
+ftm test --filter=hello --config=./.cli.json
+```
+
+### 4. Document
+
+- Add JSDoc to all public APIs
+- Update relevant docs in `docs/` folder
+- Include examples from intent tests
+
+## Common Tasks
+
+### Adding a Command
+
+1. Create `commands/my-command.ts` with JSDoc
+2. Define `ArgsSchema` and `FlagsSchema` with Zod
+3. Create `MyCommandParams` class with getters
+4. Build command with fluent API
+5. Add intent tests in `intents/my-command.intents.ts`
+
+### Building and Compiling
+
+```bash
+# Build static artifacts to .build/
+deno task ftm-cli:build
+
+# Compile to native binary in .dist/
+deno task ftm-cli:compile
+
+# Run from source
+deno task ftm-cli:run <command>
+```
+
+### Running Intent Tests
+
+```bash
+# Full test suite
+deno task test
+
+# Release preparation (builds, compiles, installs, tests)
+deno task ftm-cli:release
+```
+
+## Verification Checklist
+
+- [ ] `deno fmt` and `deno lint` pass
+- [ ] `deno task test` passes
+- [ ] Build/compile produce working artifacts
+- [ ] All docs have proper frontmatter
+- [ ] JSDoc added to new/modified code
+- [ ] Links remain relative

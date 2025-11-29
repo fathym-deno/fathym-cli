@@ -1,3 +1,62 @@
+/**
+ * Build command - prepares a static CLI build for compilation.
+ *
+ * The build command collects all commands and templates from a CLI project,
+ * embeds them into JSON files, and scaffolds the static runtime entry point.
+ * This is the prerequisite step before `ftm compile` generates the native binary.
+ *
+ * ## Execution Flow
+ *
+ * ```
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │  1. Resolve DFS context (execution dir or --config path)           │
+ * │  2. Collect all templates from templates/ into JSON                │
+ * │  3. Read .cli.json configuration                                   │
+ * │  4. Collect command metadata from commands/ directory              │
+ * │  5. Write embedded-templates.json and embedded-command-entries.json│
+ * │  6. Scaffold cli-build-static template with embedded artifacts     │
+ * │  7. Output static entry point to .build/cli.ts                     │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * ```
+ *
+ * ## Generated Artifacts (.build/)
+ *
+ * ```
+ * .build/
+ * ├── cli.ts                        # Static CLI entry point
+ * ├── EmbeddedCommandModules.ts     # Command module registry
+ * ├── EmbeddedCLIFileSystemHooks.ts # Filesystem abstraction for embedded CLI
+ * ├── embedded-templates.json       # All templates as JSON
+ * └── embedded-command-entries.json # Command metadata registry
+ * ```
+ *
+ * ## How Embedding Works
+ *
+ * - **Templates**: All `.hbs` files in `templates/` are read and stored
+ *   as key-value pairs in `embedded-templates.json`
+ * - **Commands**: Each `.ts` file in `commands/` is registered with its
+ *   path and alias for static imports in `EmbeddedCommandModules.ts`
+ * - **Init Hook**: If `.cli.init.ts` exists, it's wired into the embedded
+ *   filesystem hooks for IoC initialization
+ *
+ * @example Build CLI in current directory
+ * ```bash
+ * ftm build
+ * ```
+ *
+ * @example Build CLI with custom config path
+ * ```bash
+ * ftm build --config=./my-cli/.cli.json
+ * ```
+ *
+ * @example Build with custom templates directory
+ * ```bash
+ * ftm build --templates=./src/templates
+ * ```
+ *
+ * @module
+ */
+
 import { join } from '@std/path/join';
 import { pascalCase } from '@luca/cases';
 import { z } from 'zod';
@@ -12,8 +71,18 @@ import {
   TemplateScaffolder,
 } from '@fathym/cli';
 
+/**
+ * Zod schema for build command positional arguments.
+ * The build command takes no positional arguments.
+ */
 export const BuildArgsSchema = z.tuple([]);
 
+/**
+ * Zod schema for build command flags.
+ *
+ * @property config - Path to .cli.json configuration file
+ * @property templates - Path to templates directory for embedding
+ */
 export const BuildFlagsSchema = z
   .object({
     config: z
@@ -27,19 +96,46 @@ export const BuildFlagsSchema = z
   })
   .passthrough();
 
+/**
+ * Typed parameter accessor for the build command.
+ *
+ * Provides strongly-typed getters for the templates directory and
+ * optional config file override. Exported for use in compile command
+ * which invokes build as a sub-command.
+ *
+ * @example
+ * ```typescript
+ * const templatesDir = Params.TemplatesDir;  // './templates' or custom
+ * const configPath = Params.ConfigOverride;  // undefined or custom path
+ * ```
+ */
 export class BuildParams extends CommandParams<
   z.infer<typeof BuildArgsSchema>,
   z.infer<typeof BuildFlagsSchema>
 > {
+  /**
+   * Path to templates directory for embedding.
+   * Defaults to './templates' if --templates flag not provided.
+   */
   get TemplatesDir(): string {
     return this.Flag('templates') ?? './templates';
   }
 
+  /**
+   * Override path to .cli.json configuration.
+   * When undefined, uses './.cli.json' in current directory.
+   */
   get ConfigOverride(): string | undefined {
     return this.Flag('config');
   }
 }
 
+/**
+ * Build command - prepares static CLI artifacts for compilation.
+ *
+ * Collects templates, command metadata, and scaffolds the embedded
+ * CLI runtime. Output is written to `.build/` directory.
+ */
 export default Command('build', 'Prepare static CLI build folder')
   .Args(BuildArgsSchema)
   .Flags(BuildFlagsSchema)
@@ -122,6 +218,17 @@ export default Command('build', 'Prepare static CLI build folder')
     );
   });
 
+/**
+ * Resolves configuration paths and output directories for the build.
+ *
+ * Validates that .cli.json exists and computes paths for config,
+ * output directory, and templates directory.
+ *
+ * @param params - Build command parameters
+ * @param dfs - DFS handler for file operations
+ * @returns Object with resolved paths
+ * @throws Error if .cli.json cannot be found
+ */
 async function resolveConfigAndOutDir(
   params: BuildParams,
   dfs: DFSFileHandler,
@@ -146,6 +253,20 @@ async function resolveConfigAndOutDir(
   return { configPath, outDir, configDir, templatesDir };
 }
 
+/**
+ * Collects all template files and embeds them into a JSON file.
+ *
+ * Reads all files from the templates directory, stores their contents
+ * as key-value pairs (relative path → content), and writes to
+ * `embedded-templates.json` in the output directory.
+ *
+ * @param templatesDir - Source directory containing templates
+ * @param outDir - Output directory for embedded JSON
+ * @param fromDFS - DFS handler to read templates from
+ * @param toDFS - DFS handler to write embedded JSON to
+ * @param log - Command logger for progress output
+ * @returns Path to the generated embedded-templates.json
+ */
 async function collectTemplates(
   templatesDir: string,
   outDir: string,
@@ -173,6 +294,25 @@ async function collectTemplates(
   return outputPath;
 }
 
+/**
+ * Collects metadata about all commands for static embedding.
+ *
+ * Scans the commands directory for `.ts` files, generates import aliases
+ * using PascalCase naming, and builds the command entry registry. Handles
+ * both command files and `.metadata.ts` group files.
+ *
+ * @param commandsDir - Directory containing command modules
+ * @param dfs - DFS handler for file operations
+ * @returns Object containing imports, modules, and command entries
+ *
+ * @example Generated imports array
+ * ```typescript
+ * [
+ *   { alias: 'HelloCommand', path: '../commands/hello.ts' },
+ *   { alias: 'WaveCommand', path: '../commands/wave.ts' }
+ * ]
+ * ```
+ */
 async function collectCommandMetadata(
   commandsDir: string,
   dfs: DFSFileHandler,
@@ -217,6 +357,18 @@ async function collectCommandMetadata(
   return { imports, modules, commandEntries };
 }
 
+/**
+ * Writes command entries registry to JSON file.
+ *
+ * Serializes the command entry metadata and writes it to
+ * `embedded-command-entries.json` in the output directory.
+ *
+ * @param entries - Command entries registry
+ * @param outDir - Output directory
+ * @param dfs - DFS handler for file operations
+ * @param log - Command logger for progress output
+ * @returns Path to the generated embedded-command-entries.json
+ */
 async function writeCommandEntries(
   entries: Record<string, unknown>,
   outDir: string,

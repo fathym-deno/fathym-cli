@@ -1,0 +1,99 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm run
+Summary: API reference for the run command that executes CLI commands during development.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm test
+    Path: ./test.mdx
+  - Label: Getting Started Guide
+    Path: ../guides/getting-started.mdx
+---
+
+# ftm run
+
+Execute CLI commands during development without compiling.
+
+## Usage
+
+```bash
+ftm run <command> [args...] [flags]
+```
+
+## Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `command` | Yes | Command name to execute |
+| `args...` | No | Additional arguments forwarded to command |
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | `./.cli.json` | Path to CLI configuration (not forwarded) |
+| `*` | any | - | All other flags forwarded to target command |
+
+## Examples
+
+```bash
+# Run hello command with default args
+ftm run hello
+
+# Run hello command with a name argument
+ftm run hello world
+
+# Run command with flags
+ftm run hello --loud
+
+# Run command from a specific project
+ftm run hello --config=./my-cli/.cli.json
+
+# Run with multiple forwarded flags
+ftm run deploy prod --force --verbose
+```
+
+## Argument Forwarding
+
+All positional arguments after the command name and all flags (except `--config`) are forwarded to the target command:
+
+```bash
+ftm run hello world --loud --config=./my-cli/.cli.json
+         ↓     ↓      ↓           ↓
+     command  arg   flag    (not forwarded)
+```
+
+## Development Workflow
+
+Use `ftm run` for rapid iteration during command development:
+
+1. Edit command source in `commands/`
+2. Run `ftm run <command>` to test
+3. Iterate without rebuilding
+
+This is faster than the full build/compile cycle for development.
+
+## How It Works
+
+1. Resolve DFS context (execution directory or `--config` path)
+2. Scaffold `cli-run` template to `.temp/cli-runner.ts`
+3. Build CLI args: `.cli.json` path + forwarded args + flags
+4. Execute `deno run -A .temp/cli-runner.ts [args]`
+5. Forward exit code from CLI process
+
+## Source
+
+- Implementation: [`commands/run.ts`](../../commands/run.ts)
+- Tests: [`tests/intents/ftm-cli/run.intents.ts`](../../tests/intents/ftm-cli/run.intents.ts)
+
+## Related
+
+- [ftm test](./test.mdx) - Run tests during development
+- [Getting Started](../guides/getting-started.mdx) - Development workflow
+- [Authoring Commands](../guides/authoring-commands.mdx) - Writing commands

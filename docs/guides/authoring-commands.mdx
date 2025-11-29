@@ -1,0 +1,234 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: Authoring Commands
+Summary: Guide to writing CLI commands with the fluent and class-based APIs.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: Getting Started Guide
+    Path: ./getting-started.mdx
+  - Label: ftm test
+    Path: ../api/test.mdx
+---
+
+# Authoring Commands
+
+Commands are modular, composable, and testable units of CLI logic. You can define them using the fluent API or as classes.
+
+## Fluent API (Recommended)
+
+The preferred approach using the `Command()` builder:
+
+```typescript
+import { Command, CommandParams } from '@fathym/cli';
+import { z } from 'zod';
+
+// 1. Define schemas
+const ArgsSchema = z.tuple([
+  z.string().optional().describe('Name to greet').meta({ argName: 'name' }),
+]);
+
+const FlagsSchema = z.object({
+  loud: z.boolean().optional().describe('Shout the greeting'),
+  'dry-run': z.boolean().optional().describe('Show without executing'),
+});
+
+// 2. Create Params class
+class GreetParams extends CommandParams<
+  z.infer<typeof ArgsSchema>,
+  z.infer<typeof FlagsSchema>
+> {
+  get Name(): string {
+    return this.Arg(0) ?? 'World';
+  }
+
+  get Loud(): boolean {
+    return this.Flag('loud') ?? false;
+  }
+
+  get DryRun(): boolean {
+    return this.Flag('dry-run') ?? false;
+  }
+}
+
+// 3. Build command
+export default Command('greet', 'Prints a greeting')
+  .Args(ArgsSchema)
+  .Flags(FlagsSchema)
+  .Params(GreetParams)
+  .Run(({ Params, Log }) => {
+    const msg = `Hello, ${Params.Name}!`;
+    const output = Params.Loud ? msg.toUpperCase() : msg;
+
+    if (Params.DryRun) {
+      Log.Info(`[DRY RUN] Would print: ${output}`);
+    } else {
+      Log.Info(output);
+    }
+  });
+```
+
+> **Important:** `this.Arg()` and `this.Flag()` are **protected methods**. They can only be called from within your Params class getters, not directly in command handlers.
+
+## Params Class Pattern
+
+Every command should have a custom Params class:
+
+```typescript
+class MyParams extends CommandParams<ArgsType, FlagsType> {
+  // Getters wrap protected Arg/Flag methods
+  get Name(): string {
+    return this.Arg(0) ?? 'default';
+  }
+
+  get Verbose(): boolean {
+    return this.Flag('verbose') ?? false;
+  }
+
+  // Can include computed properties
+  get FormattedName(): string {
+    return this.Name.toUpperCase();
+  }
+}
+```
+
+## Lifecycle Hooks
+
+Commands support lifecycle methods:
+
+```typescript
+export default Command('deploy', 'Deploy the application')
+  .Init(async ({ Log }) => {
+    Log.Info('Preparing deployment...');
+  })
+  .Run(async ({ Params, Services }) => {
+    await Services.deployer.deploy(Params.Target);
+  })
+  .Cleanup(async ({ Log }) => {
+    Log.Info('Cleanup complete');
+  })
+  .DryRun(async ({ Log }) => {
+    Log.Info('[DRY RUN] Would deploy');
+  });
+```
+
+| Hook | When Called |
+|------|-------------|
+| `Init()` | Before `Run()`, setup phase |
+| `Run()` | Main command logic |
+| `Cleanup()` | After `Run()`, always called |
+| `DryRun()` | When `--dry-run` flag is set (instead of `Run()`) |
+
+## Services Injection
+
+Inject dependencies via the `.Services()` method:
+
+```typescript
+export default Command('build', 'Build the project')
+  .Services(async (ctx, ioc) => {
+    const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
+    return {
+      BuildDFS: await dfsCtx.GetExecutionDFS(),
+      Scaffolder: new TemplateScaffolder(...),
+    };
+  })
+  .Run(async ({ Services, Log }) => {
+    await Services.Scaffolder.Scaffold({...});
+    Log.Success('Build complete!');
+  });
+```
+
+## Subcommands
+
+Create command groups with `.Commands()`:
+
+```typescript
+import PromoteCommand from './promote.ts';
+import DiffCommand from './diff.ts';
+
+export default Command('schema', 'Schema-related commands')
+  .Commands({
+    promote: PromoteCommand,
+    diff: DiffCommand,
+  });
+```
+
+Usage: `my-cli schema promote` or `my-cli schema diff`
+
+## Class-Based Commands
+
+For full control, extend `CommandRuntime`:
+
+```typescript
+import { CommandRuntime, CommandContext, defineCommandModule } from '@fathym/cli';
+
+class DeployCommand extends CommandRuntime {
+  override async Init(ctx: CommandContext) {
+    ctx.Log.Info('Initializing...');
+  }
+
+  override async Run(ctx: CommandContext) {
+    const target = ctx.Params.Arg(0) ?? 'production';
+    ctx.Log.Info(`Deploying to ${target}...`);
+  }
+
+  override async Cleanup(ctx: CommandContext) {
+    ctx.Log.Info('Done!');
+  }
+}
+
+export default defineCommandModule({
+  ArgsSchema: z.tuple([z.string().optional()]),
+  FlagsSchema: z.object({ force: z.boolean().optional() }),
+  Params: DeployParams,
+  Command: DeployCommand,
+});
+```
+
+## Testing Commands
+
+Use `CommandIntents` to test command behavior:
+
+```typescript
+import { CommandIntents } from '@fathym/cli';
+
+CommandIntents('my-cli greet', ({ Intent }) => {
+  Intent('greets with default name')
+    .Args([])
+    .ExpectLogs(['Hello, World!'])
+    .ExpectExit(0);
+
+  Intent('greets with custom name')
+    .Args(['Alice'])
+    .ExpectLogs(['Hello, Alice!'])
+    .ExpectExit(0);
+
+  Intent('shouts when loud')
+    .Args(['Bob'])
+    .Flags({ loud: true })
+    .ExpectLogs(['HELLO, BOB!'])
+    .ExpectExit(0);
+});
+```
+
+Run tests with `ftm test`.
+
+## Best Practices
+
+1. **Always use a Params class** - Don't access args/flags directly in Run
+2. **Use Zod schemas** - For validation and help text generation
+3. **Add `.describe()` and `.meta()`** - For better help output
+4. **Write intent tests** - For every command behavior
+5. **Keep commands focused** - One responsibility per command
+6. **Use Services for dependencies** - Don't hardcode external services
+
+## Related
+
+- [Getting Started](./getting-started.mdx) - First CLI tutorial
+- [ftm test](../api/test.mdx) - Running tests
+- [CLI Lifecycle](../concepts/cli-lifecycle.mdx) - Execution flow

@@ -1,0 +1,144 @@
+---
+FrontmatterVersion: 1
+DocumentType: Concept
+Title: CLI Lifecycle
+Summary: Understanding the build, compile, and run workflow of the Fathym CLI.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm build
+    Path: ../api/build.mdx
+  - Label: ftm compile
+    Path: ../api/compile.mdx
+  - Label: ftm run
+    Path: ../api/run.mdx
+---
+
+# CLI Lifecycle
+
+The Fathym CLI Framework follows a structured lifecycle from authoring to execution. Understanding this flow is key to building effective CLIs.
+
+## Workflow Overview
+
+```txt
+Author → Scaffold → Build → Compile → Run → Test
+```
+
+| Phase | Command | Description |
+|-------|---------|-------------|
+| **Author** | - | Create commands using `Command()` or `CommandRuntime` |
+| **Scaffold** | `ftm init` | Generate project structure from templates |
+| **Build** | `ftm build` | Embed templates + commands into `.build/` |
+| **Compile** | `ftm compile` | Generate native binary via `deno compile` |
+| **Run** | `ftm run` | Execute command in development mode |
+| **Test** | `ftm test` | Validate CLI behavior with intent tests |
+
+Each step can be used independently or chained in pipelines.
+
+## Execution Lifecycle
+
+When a command executes, it flows through these phases:
+
+```txt
+Invocation → Parse → Match → Load Config → Inject Services → Init → Run → Cleanup
+```
+
+### Phase Details
+
+| Phase | Responsibility |
+|-------|---------------|
+| **Invocation** | CLI receives command-line arguments |
+| **Parse** | Arguments and flags parsed via Zod schemas |
+| **Match** | Command matched from registry by name |
+| **Load Config** | `.cli.json` loaded and validated |
+| **Inject Services** | IoC container resolves dependencies |
+| **Init** | Command's `Init()` hook runs (if defined) |
+| **Run** | Main command logic executes |
+| **Cleanup** | Command's `Cleanup()` hook runs (if defined) |
+
+## Core Components
+
+### CLIConfig (`.cli.json`)
+
+The declarative root configuration:
+
+```json
+{
+  "Name": "My CLI",
+  "Tokens": ["my-cli", "mc"],
+  "Version": "1.0.0",
+  "Description": "My awesome CLI tool",
+  "Commands": "./commands"
+}
+```
+
+### CLIDFSContextManager
+
+Manages scoped filesystems:
+
+- **execution** - Default runtime directory
+- **project** - Resolved via `.cli.json` location
+- **custom** - Passed via flags or registered in services
+
+### IoCContainer
+
+Dependency injection system:
+
+- Register services like `TemplateLocator`, `Scaffolder`, `Logger`
+- Resolve and wire services into each command
+- Available in `.Services()` and `.Run()` handlers
+
+### CommandRuntime
+
+Class-based command authoring with lifecycle hooks:
+
+- `Init()` - Prepare command before execution
+- `Run()` - Main logic body
+- `Cleanup()` - Post-run cleanup
+- `DryRun()` - Simulated execution (when `--dry-run` flag)
+
+## Build vs Run Modes
+
+### Development Mode (`ftm run`)
+
+```bash
+ftm run hello --loud
+```
+
+1. Scaffolds temporary runner to `.temp/`
+2. Executes via `deno run -A`
+3. No compilation required
+4. Fast iteration cycle
+
+### Production Mode (Compiled Binary)
+
+```bash
+ftm build && ftm compile
+./dist/my-cli hello --loud
+```
+
+1. Embeds all commands and templates
+2. Creates standalone native binary
+3. No Deno installation required
+4. Distributable artifact
+
+## Why This Design?
+
+| Feature | Fathym CLI | Traditional Tools |
+|---------|-----------|-------------------|
+| Declarative project root | `.cli.json` | Hardcoded or CLI args |
+| DFS context aware | execution, project, home, custom | N/A |
+| IoC lifecycle | Full dependency injection | Usually hardcoded |
+| Lifecycle phases | Init, Run, Cleanup, DryRun, Test | Often just Run() |
+| Static binary support | `deno compile` | Uncommon or OS-specific |
+| Intent-based testing | `CommandIntents` + assertions | Manual or shell-based |
+
+## Related
+
+- [ftm build](../api/build.mdx) - Build command reference
+- [ftm compile](../api/compile.mdx) - Compile command reference
+- [Configuration](./configuration.mdx) - Project structure

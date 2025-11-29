@@ -2,9 +2,9 @@
 FrontmatterVersion: 1
 DocumentType: Guide
 Title: Fathym CLI
-Summary: Standalone Fathym CLI project (open-source).
+Summary: Open-source CLI tool for scaffolding, building, and distributing command-line interfaces.
 Created: 2025-11-20
-Updated: 2025-11-20
+Updated: 2025-11-29
 Owners:
   - fathym
 References:
@@ -12,6 +12,8 @@ References:
     Path: ./AGENTS.md
   - Label: Project Guide
     Path: ./GUIDE.md
+  - Label: Documentation
+    Path: ./docs/README.mdx
   - Label: Open-Source Agents Guide
     Path: ../AGENTS.md
   - Label: Open-Source Guide
@@ -26,16 +28,68 @@ References:
 
 # Fathym CLI
 
-Open-source home for the Fathym CLI. This repo will house the CLI commands, templates, docs, and packaging tasks currently living under `projects/ref-arch/command-line-interface/src/ftm-cli/`.
+Open-source CLI framework for building, scaffolding, and distributing command-line interfaces. Built on Deno with the `@fathym/cli` runtime.
+
+## Features
+
+- **Declarative** - Configure CLI identity, commands, and tokens in `.cli.json`
+- **Scaffolding** - Initialize new CLI projects with `ftm init`
+- **Compilation** - Build native binaries with `ftm compile`
+- **Testing** - Intent-based testing with `CommandIntent` API
+- **Cross-Platform** - Windows and Unix support with proper alias handling
+
+## Quick Start
+
+```bash
+# Initialize a new CLI project
+ftm init my-cli
+
+# Navigate to project
+cd my-cli
+
+# Run a command in development mode
+ftm run hello
+
+# Build and compile to native binary
+ftm build
+ftm compile
+
+# Install to PATH
+ftm install --useHome
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `ftm init [name]` | Scaffold a new CLI project |
+| `ftm build` | Prepare static build artifacts |
+| `ftm compile` | Compile to native binary |
+| `ftm run <command>` | Execute command in development mode |
+| `ftm test [file]` | Run intent tests |
+| `ftm install` | Install compiled binary to PATH |
+
+## Project Structure
+
+```
+my-cli/
+├── .cli.json           # CLI identity (Name, Tokens, Version)
+├── .cli.init.ts        # IoC initialization hook
+├── deno.jsonc          # Deno configuration
+├── commands/           # Command implementations
+├── intents/            # Intent test files
+└── templates/          # Scaffolding templates (optional)
+```
 
 ## Status
 
-- Migration planned: port commands/templates/docs and packaging scripts from the ref-arch CLI runtime.
-- Depends on the shared CLI runtime (`@fathym/cli` or local ref-arch path) for execution and packaging.
+- **Version**: 0.0.0 (pre-release)
+- **Runtime**: `@fathym/cli@0.0.65-integration`
+- **Distribution**: Pending (Deno task, npm, or compiled binary)
 
 ## How to Work Here
 
 1. Review project guardrails in [`AGENTS.md`](./AGENTS.md) and the playbook in [`GUIDE.md`](./GUIDE.md).
 2. Keep docs frontmatter-complete; link back to parent guides.
-3. Capture provenance and distribution strategy (Deno, npm, binary) when wiring build/compile tasks.
-4. Add smoke tests for key commands and packaging flows.
+3. See [`docs/`](./docs/) for detailed documentation.
+4. Run `deno task test` to verify changes.

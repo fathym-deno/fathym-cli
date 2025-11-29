@@ -1,0 +1,97 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm init
+Summary: API reference for the init command that scaffolds new CLI projects.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: Getting Started Guide
+    Path: ../guides/getting-started.mdx
+  - Label: Configuration Concept
+    Path: ../concepts/configuration.mdx
+---
+
+# ftm init
+
+Scaffold a new CLI project from templates.
+
+## Usage
+
+```bash
+ftm init [name] [flags]
+```
+
+## Arguments
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `name` | No | `.` | Project name or path. Use `.` for current directory. |
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--template` | string | `init` | Template to use for scaffolding |
+| `--baseTemplatesDir` | string | (injected) | Root directory for templates |
+| `--targetDir` | string | (cwd) | Where to scaffold the project |
+
+## Examples
+
+```bash
+# Initialize new CLI project
+ftm init my-cli
+
+# Initialize in current directory
+ftm init .
+
+# Use custom template
+ftm init my-cli --template=minimal
+
+# Scaffold to specific directory
+ftm init my-cli --targetDir=./projects
+```
+
+## Generated Structure
+
+When using the default `init` template:
+
+```
+my-cli/
+├── .cli.json           # CLI identity (Name, Tokens, Version)
+├── .cli.init.ts        # IoC initialization hook
+├── deno.jsonc          # Deno configuration and tasks
+├── .gitignore          # Standard ignores (.build/, .dist/, etc.)
+├── .vscode/
+│   └── settings.json   # IDE configuration for Deno
+├── commands/
+│   ├── hello.ts        # Sample fluent API command
+│   └── wave.ts         # Sample class-based command
+└── intents/
+    ├── .intents.ts     # Intent test index
+    ├── hello.intents.ts
+    └── wave.intents.ts
+```
+
+## How It Works
+
+1. Parse arguments and flags via Zod schemas
+2. Resolve target DFS (execution directory or `--targetDir`)
+3. Initialize `TemplateScaffolder` with template locator
+4. Scaffold project from selected template (default: `init`)
+5. Log success with output path
+
+## Source
+
+- Implementation: [`commands/init.ts`](../../commands/init.ts)
+- Tests: [`tests/intents/ftm-cli/init.intents.ts`](../../tests/intents/ftm-cli/init.intents.ts)
+
+## Related
+
+- [Getting Started](../guides/getting-started.mdx) - Full tutorial using init
+- [Configuration](../concepts/configuration.mdx) - Understanding `.cli.json`
+- [Templates](../concepts/templates.mdx) - How scaffolding works

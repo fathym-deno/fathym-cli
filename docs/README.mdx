@@ -1,0 +1,84 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: Fathym CLI Documentation
+Summary: Documentation index for the Fathym CLI framework.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Project README
+    Path: ../README.md
+  - Label: Project Guide
+    Path: ../GUIDE.md
+  - Label: Project Agents Guide
+    Path: ../AGENTS.md
+---
+
+# Fathym CLI Documentation
+
+Welcome to the Fathym CLI documentation. This CLI framework enables you to build, scaffold, and distribute command-line interfaces using Deno.
+
+## Quick Links
+
+### Getting Started
+
+- [Getting Started](./guides/getting-started.mdx) - Quick start guide for new users
+
+### API Reference
+
+Command documentation with arguments, flags, and examples:
+
+| Command | Description |
+|---------|-------------|
+| [ftm init](./api/init.mdx) | Scaffold a new CLI project |
+| [ftm build](./api/build.mdx) | Prepare static build artifacts |
+| [ftm compile](./api/compile.mdx) | Compile to native binary |
+| [ftm run](./api/run.mdx) | Execute command in development mode |
+| [ftm test](./api/test.mdx) | Run intent tests |
+| [ftm install](./api/install.mdx) | Install compiled binary to PATH |
+
+### Concepts
+
+Deep-dives into how the CLI framework works:
+
+- [CLI Lifecycle](./concepts/cli-lifecycle.mdx) - Build, compile, and run workflow
+- [Configuration](./concepts/configuration.mdx) - Project structure and `.cli.json`
+- [Templates](./concepts/templates.mdx) - Scaffolding system
+
+### Guides
+
+Step-by-step tutorials:
+
+- [Getting Started](./guides/getting-started.mdx) - First CLI in 5 minutes
+- [Authoring Commands](./guides/authoring-commands.mdx) - Writing CLI commands
+- [Distribution](./guides/distribution.mdx) - Compiling and installing
+
+## Documentation Structure
+
+```
+docs/
+├── README.mdx              # This index
+├── api/                    # Command reference
+│   ├── init.mdx
+│   ├── build.mdx
+│   ├── compile.mdx
+│   ├── run.mdx
+│   ├── test.mdx
+│   └── install.mdx
+├── concepts/               # Architecture and concepts
+│   ├── cli-lifecycle.mdx
+│   ├── configuration.mdx
+│   └── templates.mdx
+└── guides/                 # Tutorials and how-tos
+    ├── getting-started.mdx
+    ├── authoring-commands.mdx
+    └── distribution.mdx
+```
+
+## Related
+
+- [Project README](../README.md) - Project overview and quick start
+- [GUIDE.md](../GUIDE.md) - Development workflow
+- [AGENTS.md](../AGENTS.md) - Collaboration guardrails

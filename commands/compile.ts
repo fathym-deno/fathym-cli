@@ -1,10 +1,97 @@
+/**
+ * Compile command - generates a native binary from the CLI build.
+ *
+ * The compile command takes the static build output from `ftm build` and
+ * uses `deno compile` to create a standalone native executable. It
+ * automatically invokes the build command first to ensure artifacts are current.
+ *
+ * ## Execution Flow
+ *
+ * ```
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │  1. Register project DFS using entry point path                    │
+ * │  2. Resolve entry point, output directory, and permissions         │
+ * │  3. Read .cli.json to get binary name from Tokens[0]               │
+ * │  4. Invoke Build sub-command to prepare static artifacts           │
+ * │  5. Execute `deno compile` with permissions and output path        │
+ * │  6. Output binary to .dist/<token-name>                            │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * ```
+ *
+ * ## Output Structure
+ *
+ * ```
+ * .dist/
+ * └── <token-name>       # Native binary (e.g., 'my-cli' or 'my-cli.exe')
+ * ```
+ *
+ * ## Deno Permissions
+ *
+ * By default, the compiled binary has full permissions:
+ * - `--allow-read` - File system read access
+ * - `--allow-env` - Environment variable access
+ * - `--allow-net` - Network access
+ * - `--allow-write` - File system write access
+ * - `--allow-run` - Subprocess execution
+ *
+ * Override with `--permissions` flag for restricted binaries.
+ *
+ * ## Sub-Command Pattern
+ *
+ * This command demonstrates the `.Commands()` pattern for invoking
+ * other commands programmatically:
+ *
+ * ```typescript
+ * .Commands({
+ *   Build: BuildCommand.Build(),
+ * })
+ * .Run(async ({ Commands }) => {
+ *   await Commands.Build([], { config: '...' });
+ * })
+ * ```
+ *
+ * @example Compile CLI in current directory
+ * ```bash
+ * ftm compile
+ * ```
+ *
+ * @example Compile with custom entry point
+ * ```bash
+ * ftm compile --entry=./my-cli/.build/cli.ts
+ * ```
+ *
+ * @example Compile with restricted permissions
+ * ```bash
+ * ftm compile --permissions="--allow-read --allow-env"
+ * ```
+ *
+ * @example Compile to custom output directory
+ * ```bash
+ * ftm compile --output=./bin
+ * ```
+ *
+ * @module
+ */
+
 import { join } from '@std/path/join';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, runCommandWithLogs } from '@fathym/cli';
 import BuildCommand from './build.ts';
 
+/**
+ * Zod schema for compile command positional arguments.
+ * The compile command takes no positional arguments.
+ */
 export const CompileArgsSchema = z.tuple([]);
 
+/**
+ * Zod schema for compile command flags.
+ *
+ * @property entry - Entry point file (output of build command)
+ * @property config - Path to .cli.json configuration
+ * @property output - Output directory for compiled binary
+ * @property permissions - Space-separated Deno permission flags
+ */
 export const CompileFlagsSchema = z
   .object({
     entry: z
@@ -23,22 +110,53 @@ export const CompileFlagsSchema = z
   })
   .passthrough();
 
+/**
+ * Typed parameter accessor for the compile command.
+ *
+ * Provides strongly-typed getters for entry point, output directory,
+ * and Deno permissions. The Permissions getter parses the space-separated
+ * string flag into an array of permission flags.
+ *
+ * @example
+ * ```typescript
+ * const entry = Params.Entry;           // './.build/cli.ts' or custom
+ * const perms = Params.Permissions;     // ['--allow-read', '--allow-env', ...]
+ * ```
+ */
 export class CompileParams extends CommandParams<
   z.infer<typeof CompileArgsSchema>,
   z.infer<typeof CompileFlagsSchema>
 > {
+  /**
+   * Entry point file for compilation.
+   * Defaults to './.build/cli.ts' (output of build command).
+   */
   get Entry(): string {
     return this.Flag('entry') ?? './.build/cli.ts';
   }
 
+  /**
+   * Override path to .cli.json configuration.
+   * When undefined, looks for .cli.json alongside the entry point.
+   */
   get ConfigPath(): string | undefined {
     return this.Flag('config');
   }
 
+  /**
+   * Output directory for the compiled binary.
+   * Defaults to './.dist'.
+   */
   get OutputDir(): string {
     return this.Flag('output') ?? './.dist';
   }
 
+  /**
+   * Deno permission flags for the compiled binary.
+   *
+   * Parses space-separated string into array. Defaults to full permissions:
+   * `--allow-read --allow-env --allow-net --allow-write --allow-run`
+   */
   get Permissions(): string[] {
     return (
       this.Flag('permissions')?.split(' ') ?? [
@@ -52,6 +170,12 @@ export class CompileParams extends CommandParams<
   }
 }
 
+/**
+ * Compile command - creates native binary from CLI build.
+ *
+ * Invokes Build as a sub-command, then runs `deno compile` to generate
+ * a standalone executable. Binary name is derived from .cli.json Tokens[0].
+ */
 export default Command('compile', 'Compile the CLI into a native binary')
   .Args(CompileArgsSchema)
   .Flags(CompileFlagsSchema)

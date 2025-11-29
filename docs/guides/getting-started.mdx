@@ -1,0 +1,151 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: Getting Started
+Summary: Quick start guide to create your first CLI with Fathym CLI.
+Created: 2025-11-29
+Updated: 2025-11-29
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm init
+    Path: ../api/init.mdx
+  - Label: Configuration Concept
+    Path: ../concepts/configuration.mdx
+---
+
+# Getting Started
+
+Create your first CLI in 5 minutes.
+
+## Prerequisites
+
+- [Deno](https://deno.land/) installed (v1.40+)
+
+## Quick Start
+
+### 1. Initialize a New Project
+
+```bash
+ftm init my-cli
+cd my-cli
+```
+
+This creates a complete CLI project with sample commands.
+
+### 2. Explore the Structure
+
+```txt
+my-cli/
+├── .cli.json           # CLI identity
+├── .cli.init.ts        # IoC initialization
+├── deno.jsonc          # Deno configuration
+├── commands/
+│   ├── hello.ts        # Sample command
+│   └── wave.ts         # Another sample
+└── intents/
+    └── *.intents.ts    # Intent tests
+```
+
+### 3. Run a Command
+
+```bash
+# Development mode (no compilation)
+ftm run hello
+
+# Output: Hello, World!
+```
+
+```bash
+# With arguments
+ftm run hello Alice
+
+# Output: Hello, Alice!
+```
+
+```bash
+# With flags
+ftm run hello Alice --loud
+
+# Output: HELLO, ALICE!
+```
+
+### 4. Run Tests
+
+```bash
+ftm test
+```
+
+### 5. Build and Compile
+
+```bash
+# Prepare static build
+ftm build
+
+# Compile to native binary
+ftm compile
+```
+
+### 6. Run the Compiled Binary
+
+```bash
+# Unix
+./dist/my-cli hello
+
+# Windows
+.\dist\my-cli.exe hello
+```
+
+### 7. Install Globally (Optional)
+
+```bash
+ftm install --useHome --to=.bin
+```
+
+Add `~/.bin` to your PATH to use globally.
+
+## Understanding the Sample Commands
+
+### hello.ts (Fluent API)
+
+```typescript
+export default Command('hello', 'Prints a friendly greeting.')
+  .Args(HelloArgsSchema)
+  .Flags(HelloFlagsSchema)
+  .Params(HelloParams)
+  .Run(({ Params, Log }) => {
+    const name = Params.Name;
+    const message = Params.Loud
+      ? `HELLO, ${name.toUpperCase()}!`
+      : `Hello, ${name}.`;
+
+    if (Params.DryRun) {
+      Log.Info(`🛑 Dry run: "${message}" would have been printed.`);
+    } else {
+      Log.Info(message);
+    }
+  });
+```
+
+### wave.ts (Class-Based)
+
+Demonstrates the alternative class-based approach using `CommandRuntime`.
+
+## Next Steps
+
+- [Authoring Commands](./authoring-commands.mdx) - Learn to write your own commands
+- [Distribution](./distribution.mdx) - Compile and distribute your CLI
+- [Configuration](../concepts/configuration.mdx) - Understand project structure
+
+## Common Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `ftm init [name]` | Create new CLI project |
+| `ftm run <cmd>` | Run command in dev mode |
+| `ftm test` | Run intent tests |
+| `ftm build` | Prepare static build |
+| `ftm compile` | Compile to binary |
+| `ftm install` | Install to PATH |
