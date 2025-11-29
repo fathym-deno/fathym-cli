@@ -3,6 +3,7 @@ import type {
   CLIFileSystemHooks,
   CLIInitFn,
   CLICommandEntry,
+  CLICommandSource,
   CommandModule,
   CLIConfig,
   TemplateLocator,
@@ -22,7 +23,7 @@ import embeddedInit from "{{importInitFn}}";
 
 export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
   async ResolveCommandEntryPaths(
-    _baseCommandDir: string,
+    _source: CLICommandSource,
   ): Promise<Map<string, CLICommandEntry>> {
     const map = new Map<string, CLICommandEntry>(
       Object.entries(embeddedCommandEntries as Record<string, CLICommandEntry>)
