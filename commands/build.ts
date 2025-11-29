@@ -1,6 +1,6 @@
 import { join } from '@std/path/join';
 import { pascalCase } from '@luca/cases';
-import { z } from '@fathym/common/third-party/zod';
+import { z } from 'zod';
 import { DFSFileHandler } from '@fathym/dfs';
 import {
   CLICommandEntry,
@@ -10,7 +10,7 @@ import {
   CommandParams,
   TemplateScaffolder,
   TemplateLocator,
-} from '../../../ref-arch/command-line-interface/src/.exports.ts';
+} from '@fathym/cli';
 
 export const BuildArgsSchema = z.tuple([]);
 

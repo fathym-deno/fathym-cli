@@ -1,4 +1,4 @@
-import { CommandIntents } from '../../../../../ref-arch/command-line-interface/src/.exports.ts';
+import { CommandIntents } from '@fathym/cli';
 import RunCommand from '../../../commands/run.ts';
 
 // Help intent suite validates root and command-level help output

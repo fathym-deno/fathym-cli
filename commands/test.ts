@@ -1,4 +1,4 @@
-import { z } from '@fathym/common/third-party/zod';
+import { z } from 'zod';
 import { DFSFileHandler } from '@fathym/dfs';
 import {
   CLIDFSContextManager,
@@ -6,7 +6,7 @@ import {
   CommandContext,
   CommandParams,
   runCommandWithLogs,
-} from '../../../ref-arch/command-line-interface/src/.exports.ts';
+} from '@fathym/cli';
 
 export const TestArgsSchema = z.tuple([
   z

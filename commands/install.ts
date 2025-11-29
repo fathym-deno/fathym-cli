@@ -1,5 +1,5 @@
 import { dirname, join } from '@std/path';
-import { z } from '@fathym/common/third-party/zod';
+import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 
 export const InstallArgsSchema = z.tuple([]);

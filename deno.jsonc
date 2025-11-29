@@ -12,11 +12,12 @@
     "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.54",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.56-integration",
     "@fathym/common": "jsr:@fathym/common@0.2.299",
     "@fathym/dfs": "jsr:@fathym/dfs@0.0.16",
     "@luca/cases": "jsr:@luca/cases@1.0.0",
-    "@std/path": "jsr:@std/path@1.0.9"
+    "@std/path": "jsr:@std/path@1.0.9",
+    "zod": "npm:zod@4.1.13"
   },
   "lint": {
     "rules": {

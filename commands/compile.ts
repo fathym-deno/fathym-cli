@@ -1,11 +1,11 @@
 import { join } from '@std/path/join';
-import { z } from '@fathym/common/third-party/zod';
+import { z } from 'zod';
 import {
   CLIDFSContextManager,
   Command,
   CommandParams,
   runCommandWithLogs,
-} from '../../../ref-arch/command-line-interface/src/.exports.ts';
+} from '@fathym/cli';
 import BuildCommand from './build.ts';
 
 export const CompileArgsSchema = z.tuple([]);

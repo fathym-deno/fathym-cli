@@ -1,4 +1,4 @@
-import { z } from '@fathym/common/third-party/zod';
+import { z } from 'zod';
 import {
   CLIDFSContextManager,
   Command,
@@ -6,7 +6,7 @@ import {
   runCommandWithLogs,
   TemplateScaffolder,
   TemplateLocator,
-} from '../../../ref-arch/command-line-interface/src/.exports.ts';
+} from '@fathym/cli';
 
 const RunArgsSchema = z
   .tuple([z.string().meta({ argName: 'command' })])

@@ -1,11 +1,11 @@
-import { z } from '@fathym/common/third-party/zod';
+import { z } from 'zod';
 import {
   CLIDFSContextManager,
   Command,
   CommandParams,
   TemplateScaffolder,
   TemplateLocator,
-} from '../../../ref-arch/command-line-interface/src/.exports.ts';
+} from '@fathym/cli';
 
 // --- Schemas ---
 const InitArgsSchema = z.tuple([
