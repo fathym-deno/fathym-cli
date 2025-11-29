@@ -1,14 +1,19 @@
 import { CommandIntents } from '@fathym/cli';
 import InitCommand from '../../../commands/init.ts';
 
+const TEMP_CLI_PATH = './.temp/my-cli';
+
 CommandIntents(
   'Init Command Suite',
   InitCommand.Build(),
   import.meta.resolve('../../../.cli.json'),
 )
+  .BeforeAll(async () => {
+    await Deno.remove(TEMP_CLI_PATH, { recursive: true }).catch(() => {});
+  })
   .Intent("Init with default 'init' template", (int) =>
     int
-      .Args(['./.temp/my-cli'])
+      .Args([TEMP_CLI_PATH])
       .Flags({})
       .ExpectLogs(
         `Project created from "init" template.`,
