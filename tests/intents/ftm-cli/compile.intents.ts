@@ -10,7 +10,7 @@ CommandIntents(
     int
       .Args([])
       .Flags({
-        entry: './.temp/my-cli/.build/cli.ts',
+        entry: './tests/.temp/my-cli/.build/cli.ts',
       })
       .ExpectLogs(
         '🔧 Compiling CLI for:',

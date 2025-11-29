@@ -1,7 +1,7 @@
 import { CommandIntents } from '@fathym/cli';
 import InitCommand from '../../../commands/init.ts';
 
-const TEMP_CLI_PATH = './.temp/my-cli';
+const TEMP_CLI_PATH = './tests/.temp/my-cli';
 
 CommandIntents(
   'Init Command Suite',

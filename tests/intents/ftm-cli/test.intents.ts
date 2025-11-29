@@ -10,7 +10,7 @@ CommandIntents(
     int
       .Args([undefined]) // defaults to test/my-cli/intents/.intents.ts
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
       })
       .ExpectLogs(
         '🧪 Running tests from:',
@@ -22,7 +22,7 @@ CommandIntents(
     int
       .Args(['./intents/.intents.ts'])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
         filter: 'hello',
       })
       .ExpectLogs(
@@ -35,7 +35,7 @@ CommandIntents(
     int
       .Args([undefined])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
         coverage: './coverage',
         'no-check': true,
       })

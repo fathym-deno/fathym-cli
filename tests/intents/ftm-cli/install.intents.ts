@@ -10,7 +10,7 @@ CommandIntents(
     int
       .Args([])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
       })
       .ExpectLogs(
         '✅ Installed: ', // main binary copy success

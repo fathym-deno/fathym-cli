@@ -10,7 +10,7 @@ CommandIntents(
   .Intent("Run 'hello' command with default args", (int) =>
     int
       .Args(['hello'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Hello, world!',
         '🎉 CLI run completed',
@@ -19,7 +19,7 @@ CommandIntents(
   .Intent("Run 'hello' command with a name", (int) =>
     int
       .Args(['hello', 'testy'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Hello, testy!',
         '🎉 CLI run completed',
@@ -29,7 +29,7 @@ CommandIntents(
     int
       .Args(['hello', 'team'])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
         loud: true,
       })
       .ExpectLogs(
@@ -41,7 +41,7 @@ CommandIntents(
   .Intent("Run 'wave' command with default args", (int) =>
     int
       .Args(['wave'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Waving at friend',
         '🎉 CLI run completed',
@@ -50,7 +50,7 @@ CommandIntents(
   .Intent("Run 'wave' command with a name", (int) =>
     int
       .Args(['wave', 'me'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Waving at me',
         '🎉 CLI run completed',
@@ -60,7 +60,7 @@ CommandIntents(
     int
       .Args(['wave', 'you'])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
         excited: true,
       })
       .ExpectLogs(
@@ -72,7 +72,7 @@ CommandIntents(
     int
       .Args(['wave', 'nobody'])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
         'dry-run': true,
       })
       .ExpectLogs(
@@ -84,7 +84,7 @@ CommandIntents(
     int
       .Args(['wave', 'everyone'])
       .Flags({
-        config: './.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.json',
         'dry-run': true,
         excited: true,
       })

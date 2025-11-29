@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import RunCommand from '../../../commands/run.ts';
 
 // Help intent suite validates root and command-level help output
-// for the scaffolded .temp/my-cli project.
+// for the scaffolded tests/.temp/my-cli project.
 CommandIntents(
   'Help Command Suite',
   RunCommand.Build(),
@@ -12,7 +12,7 @@ CommandIntents(
   .Intent('Show root help', (int) =>
     int
       .Args(['--help'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Fathym CLI', // CLI name from .cli.json
         'Usage:',
@@ -25,7 +25,7 @@ CommandIntents(
   .Intent("Show 'hello' command help", (int) =>
     int
       .Args(['hello', '--help'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Prints a friendly greeting.',
         'Args:',
@@ -39,7 +39,7 @@ CommandIntents(
   .Intent("Show 'wave' command help", (int) =>
     int
       .Args(['wave', '--help'])
-      .Flags({ config: './.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Waves at a friend with optional excitement.',
         'Args:',
