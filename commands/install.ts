@@ -37,7 +37,7 @@ export class InstallParams extends CommandParams<
 
 export default Command(
   'install',
-  'Install a compiled CLI binary to your system'
+  'Install a compiled CLI binary to your system',
 )
   .Args(InstallArgsSchema)
   .Flags(InstallFlagsSchema)
@@ -53,9 +53,7 @@ export default Command(
       ? await dfsCtx.GetDFS('CLI')
       : await dfsCtx.GetExecutionDFS();
 
-    const installDFS = ctx.Params.UseHome
-      ? await dfsCtx.GetUserHomeDFS()
-      : configDFS;
+    const installDFS = ctx.Params.UseHome ? await dfsCtx.GetUserHomeDFS() : configDFS;
 
     return {
       ConfigDFS: configDFS,

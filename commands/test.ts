@@ -70,7 +70,7 @@ export default Command('test', 'Run CLI tests using Deno')
 
     await dfsCtx.RegisterProjectDFS(
       ctx.Params.ConfigPath || ctx.Params.TestFile,
-      'CLI'
+      'CLI',
     );
 
     const cliDFS = await dfsCtx.GetDFS('CLI');
@@ -90,12 +90,12 @@ export default Command('test', 'Run CLI tests using Deno')
     }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>) => {
       const rootPath = Services.CLIDFS.Root.replace(
         /[-/\\^$*+?.()|[\]{}]/g,
-        '\\$&'
+        '\\$&',
       );
 
       const testFileRel = Params.TestFile.replace(
         new RegExp(`^${rootPath}[\\/]*`),
-        ''
+        '',
       );
 
       const testPath = await Services.CLIDFS.ResolvePath(testFileRel);
@@ -110,5 +110,5 @@ export default Command('test', 'Run CLI tests using Deno')
       });
 
       Log.Success('✅ Tests passed successfully');
-    }
+    },
   );

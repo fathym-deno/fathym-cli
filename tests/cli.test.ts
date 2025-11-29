@@ -6,9 +6,7 @@ Deno.test('Fathym CLI – help renders', async () => {
   const config = JSON.parse(await Deno.readTextFile(configPath));
   const cli = new CLI();
 
-  const logs = await captureLogs(() =>
-    cli.RunWithConfig(config, ['--help'], configPath)
-  );
+  const logs = await captureLogs(() => cli.RunWithConfig(config, ['--help'], configPath));
 
   assertMatch(logs, /Fathym CLI/i);
   assertMatch(logs, /Usage:/i);

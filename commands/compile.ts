@@ -1,11 +1,6 @@
 import { join } from '@std/path/join';
 import { z } from 'zod';
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  runCommandWithLogs,
-} from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, runCommandWithLogs } from '@fathym/cli';
 import BuildCommand from './build.ts';
 
 export const CompileArgsSchema = z.tuple([]);
@@ -78,7 +73,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
 
     const relativeEntry = Params.Entry.replace(
       CLIDFS.Root.replace(/^\.\/?/, ''),
-      ''
+      '',
     ).replace(/^\.\/?/, '');
     const entryPath = await CLIDFS.ResolvePath(`./${relativeEntry}`);
     const outputDir = await CLIDFS.ResolvePath(Params.OutputDir);
@@ -113,11 +108,11 @@ export default Command('compile', 'Compile the CLI into a native binary')
     await runCommandWithLogs(
       ['compile', ...permissions, '--output', outputBinaryPath, entryPath],
       Log,
-      { stdin: 'null', exitOnFail: true, cwd: Services.CLIDFS.Root }
+      { stdin: 'null', exitOnFail: true, cwd: Services.CLIDFS.Root },
     );
 
     Log.Success(`✅ Compiled: ${outputBinaryPath}`);
     Log.Info(
-      `👉 To install, run: \`your-cli install --from ${outputBinaryPath}\``
+      `👉 To install, run: \`your-cli install --from ${outputBinaryPath}\``,
     );
   });

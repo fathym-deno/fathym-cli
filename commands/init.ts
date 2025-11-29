@@ -3,8 +3,8 @@ import {
   CLIDFSContextManager,
   Command,
   CommandParams,
-  TemplateScaffolder,
   TemplateLocator,
+  TemplateScaffolder,
 } from '@fathym/cli';
 
 // --- Schemas ---
@@ -72,7 +72,7 @@ export default Command('init', 'Initialize a new CLI project')
       Scaffolder: new TemplateScaffolder(
         await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
         buildDFS,
-        { name: ctx.Params.Name }
+        { name: ctx.Params.Name },
       ),
     };
   })

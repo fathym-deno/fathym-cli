@@ -3,14 +3,17 @@
   "version": "0.0.0",
   "exports": {},
   "tasks": {
+    "build": "deno fmt && deno lint && deno test -A ./tests",
     "fmt": "deno fmt",
     "lint": "deno lint",
-    "test": "deno test -A ./tests/.tests.ts",
-    "build": "deno fmt && deno lint && deno test -A ./tests",
+    "deploy": "npx rimraf cov && deno task publish:check && deno task build && ftm git",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
     "ftm:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json build",
     "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile",
-    "ftm-cli:release": "deno test -A ./tests/intents/setup/prepare-in-path.intents.ts"
+    "ftm:run": "deno run -A ./scripts/cli-runtime.ts ./.cli.json run",
+    "ftm-cli:release": "deno test -A ./tests/intents/setup/prepare-in-path.intents.ts",
+    "publish:check": "deno publish --dry-run --allow-dirty",
+    "test": "deno test -A ./tests/.tests.ts"
   },
   "imports": {
     "@fathym/cli": "jsr:@fathym/cli@0.0.62-integration",

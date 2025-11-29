@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import { z } from 'zod';
 
 export interface ArgMeta {
@@ -14,27 +15,23 @@ export interface FlagMeta {
  * Unwraps a Zod schema to find meta with argName.
  * Handles optional/nullable wrappers where meta is on the inner type.
  */
-// deno-lint-ignore no-explicit-any
 function findArgNameMeta(item: any): any {
   // Check outer meta first
-  const outerMeta =
-    typeof item.meta === 'function' ? item.meta() : item._def?.meta;
+  const outerMeta = typeof item.meta === 'function' ? item.meta() : item._def?.meta;
   if (outerMeta?.argName) return outerMeta;
 
   // Check inner type (for optional/nullable wrappers)
   const inner = item._def?.innerType;
   if (inner) {
-    const innerMeta =
-      typeof inner.meta === 'function' ? inner.meta() : inner._def?.meta;
+    const innerMeta = typeof inner.meta === 'function' ? inner.meta() : inner._def?.meta;
     if (innerMeta?.argName) return innerMeta;
 
     // Go one level deeper if needed
     const innerInner = inner._def?.innerType;
     if (innerInner) {
-      const deepMeta =
-        typeof innerInner.meta === 'function'
-          ? innerInner.meta()
-          : innerInner._def?.meta;
+      const deepMeta = typeof innerInner.meta === 'function'
+        ? innerInner.meta()
+        : innerInner._def?.meta;
       if (deepMeta?.argName) return deepMeta;
     }
   }
@@ -48,7 +45,6 @@ function findArgNameMeta(item: any): any {
  * Supports Zod 4 (meta() method) and older versions (_def.meta property).
  */
 export function extractArgMeta(schema: z.ZodTuple<any>): ArgMeta[] {
-  // deno-lint-ignore no-explicit-any
   return (schema as any)._def.items.map((item: any, i: number) => {
     // Find meta with argName, unwrapping optional/nullable wrappers
     const meta = findArgNameMeta(item);
@@ -69,11 +65,9 @@ export function extractArgMeta(schema: z.ZodTuple<any>): ArgMeta[] {
  */
 export function extractFlagMeta(schema: z.ZodObject<any>): FlagMeta[] {
   const shape = schema.shape;
-  // deno-lint-ignore no-explicit-any
   return Object.entries(shape).map(([key, field]: [string, any]) => {
     // Zod 4: meta is accessed via .meta() method, fallback to _def.meta for older versions
-    const meta =
-      typeof field.meta === 'function' ? field.meta() : field._def?.meta;
+    const meta = typeof field.meta === 'function' ? field.meta() : field._def?.meta;
     const displayName = meta?.flagName ?? key;
     // Zod 4: description is a direct property, fallback to _def for older versions
     const desc = field.description ?? field._def?.description;

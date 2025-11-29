@@ -4,8 +4,8 @@ import {
   Command,
   CommandParams,
   runCommandWithLogs,
-  TemplateScaffolder,
   TemplateLocator,
+  TemplateScaffolder,
 } from '@fathym/cli';
 
 const RunArgsSchema = z
@@ -48,15 +48,13 @@ export default Command('run', 'Run a specific command in a CLI project')
       await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
     }
 
-    const dfs = ctx.Params.ConfigPath
-      ? await dfsCtx.GetDFS('CLI')
-      : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
 
     return {
       CLIDFS: dfs,
       Scaffolder: new TemplateScaffolder(
         await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
-        dfs
+        dfs,
       ),
     };
   })
