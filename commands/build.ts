@@ -14,16 +14,18 @@ import {
 
 export const BuildArgsSchema = z.tuple([]);
 
-export const BuildFlagsSchema = z.object({
-  config: z
-    .string()
-    .optional()
-    .describe('Path to .cli.json (default: ./.cli.json)'),
-  templates: z
-    .string()
-    .optional()
-    .describe('Path to templates/ folder (default: ./templates)'),
-});
+export const BuildFlagsSchema = z
+  .object({
+    config: z
+      .string()
+      .optional()
+      .describe('Path to .cli.json (default: ./.cli.json)'),
+    templates: z
+      .string()
+      .optional()
+      .describe('Path to templates/ folder (default: ./templates)'),
+  })
+  .passthrough();
 
 export class BuildParams extends CommandParams<
   z.infer<typeof BuildArgsSchema>,

@@ -4,17 +4,19 @@ import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 
 export const InstallArgsSchema = z.tuple([]);
 
-export const InstallFlagsSchema = z.object({
-  to: z.string().optional().describe('Target install dir (default: ~/.bin)'),
-  config: z
-    .string()
-    .optional()
-    .describe('Path to .cli.json (default: ./.cli.json)'),
-  useHome: z
-    .boolean()
-    .optional()
-    .describe('Use the user home directory as DFS root (default: false)'),
-});
+export const InstallFlagsSchema = z
+  .object({
+    to: z.string().optional().describe('Target install dir (default: ~/.bin)'),
+    config: z
+      .string()
+      .optional()
+      .describe('Path to .cli.json (default: ./.cli.json)'),
+    useHome: z
+      .boolean()
+      .optional()
+      .describe('Use the user home directory as DFS root (default: false)'),
+  })
+  .passthrough();
 
 export class InstallParams extends CommandParams<
   z.infer<typeof InstallArgsSchema>,

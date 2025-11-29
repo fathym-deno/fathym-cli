@@ -8,23 +8,25 @@ import {
 } from '@fathym/cli';
 
 // --- Schemas ---
-const InitArgsSchema = z.tuple([
+export const InitArgsSchema = z.tuple([
   z.string().meta({ argName: 'name' }).optional().describe('Project name'),
 ]);
 
-const InitFlagsSchema = z.object({
-  template: z.string().optional().describe('Template to use (e.g. init)'),
+export const InitFlagsSchema = z
+  .object({
+    template: z.string().optional().describe('Template to use (e.g. init)'),
 
-  baseTemplatesDir: z
-    .string()
-    .optional()
-    .describe('Root directory for templates (default injected by CLI)'),
+    baseTemplatesDir: z
+      .string()
+      .optional()
+      .describe('Root directory for templates (default injected by CLI)'),
 
-  targetDir: z
-    .string()
-    .optional()
-    .describe('Where to scaffold the project (relative to execution DFS)'),
-});
+    targetDir: z
+      .string()
+      .optional()
+      .describe('Where to scaffold the project (relative to execution DFS)'),
+  })
+  .passthrough();
 
 // --- Params Class ---
 class InitParams extends CommandParams<

@@ -10,21 +10,23 @@ import BuildCommand from './build.ts';
 
 export const CompileArgsSchema = z.tuple([]);
 
-export const CompileFlagsSchema = z.object({
-  entry: z
-    .string()
-    .optional()
-    .describe('Entry point file (default: ./.build/cli.ts)'),
-  config: z
-    .string()
-    .optional()
-    .describe('Path to .cli.json (default: alongside entry)'),
-  output: z.string().optional().describe('Output folder (default: ./.dist)'),
-  permissions: z
-    .string()
-    .optional()
-    .describe('Deno permissions (default: full access)'),
-});
+export const CompileFlagsSchema = z
+  .object({
+    entry: z
+      .string()
+      .optional()
+      .describe('Entry point file (default: ./.build/cli.ts)'),
+    config: z
+      .string()
+      .optional()
+      .describe('Path to .cli.json (default: alongside entry)'),
+    output: z.string().optional().describe('Output folder (default: ./.dist)'),
+    permissions: z
+      .string()
+      .optional()
+      .describe('Deno permissions (default: full access)'),
+  })
+  .passthrough();
 
 export class CompileParams extends CommandParams<
   z.infer<typeof CompileArgsSchema>,

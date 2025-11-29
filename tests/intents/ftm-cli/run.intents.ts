@@ -1,5 +1,25 @@
 import { CommandIntents } from '@fathym/cli';
 import RunCommand from '../../../commands/run.ts';
+import {
+  HelloArgsSchema,
+  HelloFlagsSchema,
+} from '../../.temp/my-cli/commands/hello.ts';
+import {
+  WaveArgsSchema,
+  WaveFlagsSchema,
+} from '../../.temp/my-cli/commands/wave.ts';
+import {
+  extractArgMeta,
+  extractFlagMeta,
+  formatArgHelpLine,
+  formatFlagHelpLine,
+} from './schemaHelpers.ts';
+
+// Extract schema metadata for validation
+const helloArgs = extractArgMeta(HelloArgsSchema);
+const helloFlags = extractFlagMeta(HelloFlagsSchema);
+const waveArgs = extractArgMeta(WaveArgsSchema);
+const waveFlags = extractFlagMeta(WaveFlagsSchema);
 
 CommandIntents(
   'Run Command Suite',
@@ -91,6 +111,30 @@ CommandIntents(
       .ExpectLogs(
         '🛑 Dry run: "👋 Waving at everyone!!!" would have been printed.',
         '🎉 CLI run completed',
+      )
+      .ExpectExit(0))
+  // === Schema-driven help validation ===
+  // These intents validate help output against actual Zod schemas
+  .Intent("Schema-validate 'hello' help args and flags", (int) =>
+    int
+      .Args(['hello', '--help'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .ExpectLogs(
+        'Args:',
+        ...helloArgs.map(formatArgHelpLine),
+        'Flags:',
+        ...helloFlags.map(formatFlagHelpLine),
+      )
+      .ExpectExit(0))
+  .Intent("Schema-validate 'wave' help args and flags", (int) =>
+    int
+      .Args(['wave', '--help'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .ExpectLogs(
+        'Args:',
+        ...waveArgs.map(formatArgHelpLine),
+        'Flags:',
+        ...waveFlags.map(formatFlagHelpLine),
       )
       .ExpectExit(0))
   .Run();
