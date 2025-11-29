@@ -1,0 +1,28 @@
+{
+  "deno.enable": true,
+  "deno.lint": true,
+  "editor.defaultFormatter": "denoland.vscode-deno",
+  "deno.config": "./deno.jsonc",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["**/.cli.json"],
+      "url": "https://jsr.io/@fathym/common/0.2.201/schemas/CLIConfig.schema.json"
+    },
+    {
+      "fileMatch": ["**/.metadata.json"],
+      "url": "https://jsr.io/@fathym/common/0.2.201/schemas/CommandModuleMetadata.schema.jsons"
+    }
+  ]
+}
