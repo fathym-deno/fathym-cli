@@ -6,10 +6,11 @@ import {
   TemplateLocator,
   TemplateScaffolder,
 } from '@fathym/cli';
+import { join } from '@std/path';
 
 // --- Schemas ---
 export const InitArgsSchema = z.tuple([
-  z.string().meta({ argName: 'name' }).optional().describe('Project name'),
+  z.string().optional().describe('Project name').meta({ argName: 'name' }),
 ]);
 
 export const InitFlagsSchema = z
@@ -60,7 +61,8 @@ export default Command('init', 'Initialize a new CLI project')
     const dfsCtxMgr = await ioc.Resolve(CLIDFSContextManager);
 
     if (ctx.Params.TargetDir) {
-      await dfsCtxMgr.RegisterProjectDFS(ctx.Params.TargetDir, 'Target');
+      const targetPath = join(Deno.cwd(), ctx.Params.TargetDir);
+      dfsCtxMgr.RegisterCustomDFS('Target', { FileRoot: targetPath });
     }
 
     const buildDFS = ctx.Params.TargetDir
