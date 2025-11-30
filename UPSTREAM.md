@@ -22,7 +22,7 @@ References:
 
 ## Provenance
 
-- **Source**: Migrated from `projects/ref-arch/command-line-interface/src/ftm-cli`
+- **Source**: Migrated from `projects/ref-arch/command-line-interface/src/ftm`
 - **Runtime**: `@fathym/cli@0.0.65-integration` (JSR, import-mapped in `deno.jsonc`)
 - **Related packages**: `@fathym/common`, `@fathym/dfs`, `zod`
 
@@ -30,7 +30,7 @@ References:
 
 | Component      | Version              | Source               |
 | -------------- | -------------------- | -------------------- |
-| ftm-cli        | `0.0.0`              | `.cli.json`          |
+| ftm        | `0.0.0`              | `.cli.json`          |
 | @fathym/cli    | `0.0.65-integration` | `deno.jsonc` imports |
 | @fathym/common | `0.2.299`            | `deno.jsonc` imports |
 | @fathym/dfs    | `0.0.43`             | `deno.jsonc` imports |
@@ -41,15 +41,15 @@ References:
 
 Options under consideration:
 
-1. **Deno task** - Run via `deno task ftm-cli:run`
-2. **JSR package** - Publish to `jsr:@fathym/ftm-cli`
+1. **Deno task** - Run via `deno task ftm:run`
+2. **JSR package** - Publish to `jsr:@fathym/ftm`
 3. **Compiled binary** - Native executable via `deno compile`
 
 Current support:
 
-- `deno task ftm-cli:build` - Prepare static build
-- `deno task ftm-cli:compile` - Generate native binary
-- `deno task ftm-cli:run` - Execute from source
+- `deno task ftm:build` - Prepare static build
+- `deno task ftm:compile` - Generate native binary
+- `deno task ftm:run` - Execute from source
 
 ## Build Artifacts
 

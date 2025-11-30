@@ -1,7 +1,7 @@
 import { CommandIntent } from '@fathym/cli';
-import WaveCommand from '../commands/wave.ts';
+import WaveCommand from '../../commands/secondary/wave.ts';
 
-const origin = import.meta.resolve('../.cli.json');
+const origin = import.meta.resolve('../../.cli.json');
 
 // ✅ Default wave (no args, no flags)
 CommandIntent('waves at default friend', WaveCommand, origin)

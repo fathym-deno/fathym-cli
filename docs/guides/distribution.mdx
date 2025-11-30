@@ -186,8 +186,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v1
-      - run: deno task ftm-cli:build
-      - run: deno task ftm-cli:compile
+      - run: deno task ftm:build
+      - run: deno task ftm:compile
       - uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.os }}

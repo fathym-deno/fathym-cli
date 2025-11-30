@@ -1,17 +1,17 @@
 {
-  "name": "@fathym/ftm-cli",
+  "name": "@fathym/ftm",
   "version": "0.0.0",
   "exports": {},
   "tasks": {
     "build": "deno fmt && deno lint && deno test -A ./tests",
     "fmt": "deno fmt",
     "lint": "deno lint",
-    "deploy": "npx rimraf cov && deno task publish:check && deno task build && ftm git",
+    "deploy": "npx rimraf cov && deno task publish:check && deno task build && fathym git",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
-    "ftm-cli:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json build",
-    "ftm-cli:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile",
-    "ftm-cli:run": "deno run -A ./scripts/cli-runtime.ts ./.cli.json run",
-    "ftm-cli:release": "deno test -A ./tests/intents/setup/prepare-in-path.intents.ts",
+    "ftm:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json build",
+    "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json compile",
+    "ftm:run": "deno run -A ./scripts/cli-runtime.ts ./.cli.json run",
+    "ftm:release": "deno test -A ./tests/intents/setup/prepare-in-path.intents.ts",
     "publish:check": "deno publish --dry-run --allow-dirty",
     "test": "deno test -A ./tests/.tests.ts"
   },

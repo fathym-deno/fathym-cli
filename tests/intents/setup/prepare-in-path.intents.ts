@@ -4,7 +4,7 @@ import CompileCommand from '../../../commands/compile.ts';
 import InstallCommand from '../../../commands/install.ts';
 
 CommandIntent(
-  'Prepare ftm-cli: build',
+  'Prepare ftm: build',
   BuildCommand.Build(),
   import.meta.resolve('../../../.cli.json'),
 )
@@ -22,7 +22,7 @@ CommandIntent(
   .Run();
 
 CommandIntent(
-  'Prepare ftm-cli: compile',
+  'Prepare ftm: compile',
   CompileCommand.Build(),
   import.meta.resolve('../../../.cli.json'),
 )
@@ -39,7 +39,7 @@ CommandIntent(
   .Run();
 
 CommandIntent(
-  'Prepare ftm-cli: install',
+  'Prepare ftm: install',
   InstallCommand.Build(),
   import.meta.resolve('../../../.cli.json'),
 )

@@ -8,7 +8,7 @@ CommandIntents(
   RunCommand.Build(),
   import.meta.resolve('../../../.cli.json'),
 )
-  // Root help
+  // Root help - verify groups appear
   .Intent('Show root help', (int) =>
     int
       .Args(['--help'])
@@ -18,7 +18,8 @@ CommandIntents(
         'Usage:',
         'Available Commands',
         'hello - hello - Prints a friendly greeting.',
-        'wave - Wave - Waves at a friend with optional excitement.',
+        'Available Groups',
+        'secondary - secondary - Secondary commands',
       )
       .ExpectExit(0))
   // hello command help
@@ -35,10 +36,22 @@ CommandIntents(
         '--dry-run - Show the message without printing',
       )
       .ExpectExit(0))
-  // wave command help
-  .Intent("Show 'wave' command help", (int) =>
+  // Group help - verify group metadata and child commands
+  .Intent("Show 'secondary' group help", (int) =>
     int
-      .Args(['wave', '--help'])
+      .Args(['secondary', '--help'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .ExpectLogs(
+        'Group: secondary',
+        'Secondary commands for additional functionality',
+        'Available Commands',
+        'wave - Wave - Waves at a friend',
+      )
+      .ExpectExit(0))
+  // Nested command help - wave is now under secondary group
+  .Intent("Show 'secondary/wave' command help", (int) =>
+    int
+      .Args(['secondary/wave', '--help'])
       .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Waves at a friend with optional excitement.',

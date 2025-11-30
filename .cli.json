@@ -1,6 +1,6 @@
 {
   "Name": "Fathym CLI",
-  "Tokens": ["ftm-cli"],
+  "Tokens": ["ftm"],
   "Version": "0.0.0",
   "Description": "Open-source Fathym CLI"
 }

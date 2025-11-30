@@ -37,28 +37,28 @@ CommandIntents(
         '🎉 CLI run completed',
       )
       .ExpectExit(0))
-  // === WAVE COMMAND TESTS ===
-  .Intent("Run 'wave' command with default args", (int) =>
+  // === WAVE COMMAND TESTS (now under secondary group) ===
+  .Intent("Run 'secondary/wave' command with default args", (int) =>
     int
-      .Args(['wave'])
+      .Args(['secondary/wave'])
       .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Waving at friend',
         '🎉 CLI run completed',
       )
       .ExpectExit(0))
-  .Intent("Run 'wave' command with a name", (int) =>
+  .Intent("Run 'secondary/wave' command with a name", (int) =>
     int
-      .Args(['wave', 'me'])
+      .Args(['secondary/wave', 'me'])
       .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         '👋 Waving at me',
         '🎉 CLI run completed',
       )
       .ExpectExit(0))
-  .Intent("Run 'wave' command with excitement", (int) =>
+  .Intent("Run 'secondary/wave' command with excitement", (int) =>
     int
-      .Args(['wave', 'you'])
+      .Args(['secondary/wave', 'you'])
       .Flags({
         config: './tests/.temp/my-cli/.cli.json',
         excited: true,
@@ -68,9 +68,9 @@ CommandIntents(
         '🎉 CLI run completed',
       )
       .ExpectExit(0))
-  .Intent("Run 'wave' dry run", (int) =>
+  .Intent("Run 'secondary/wave' dry run", (int) =>
     int
-      .Args(['wave', 'nobody'])
+      .Args(['secondary/wave', 'nobody'])
       .Flags({
         config: './tests/.temp/my-cli/.cli.json',
         'dry-run': true,
@@ -80,9 +80,9 @@ CommandIntents(
         '🎉 CLI run completed',
       )
       .ExpectExit(0))
-  .Intent("Run 'wave' dry run with excitement", (int) =>
+  .Intent("Run 'secondary/wave' dry run with excitement", (int) =>
     int
-      .Args(['wave', 'everyone'])
+      .Args(['secondary/wave', 'everyone'])
       .Flags({
         config: './tests/.temp/my-cli/.cli.json',
         'dry-run': true,

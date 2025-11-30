@@ -89,13 +89,13 @@ ftm test --filter=hello --config=./.cli.json
 
 ```bash
 # Build static artifacts to .build/
-deno task ftm-cli:build
+deno task ftm:build
 
 # Compile to native binary in .dist/
-deno task ftm-cli:compile
+deno task ftm:compile
 
 # Run from source
-deno task ftm-cli:run <command>
+deno task ftm:run <command>
 ```
 
 ### Running Intent Tests
@@ -105,7 +105,7 @@ deno task ftm-cli:run <command>
 deno task test
 
 # Release preparation (builds, compiles, installs, tests)
-deno task ftm-cli:release
+deno task ftm:release
 ```
 
 ## Verification Checklist
