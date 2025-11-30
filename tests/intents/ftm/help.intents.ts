@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import RunCommand from '../../../commands/run.ts';
+import RunCommand from '../../../commands/cli/run.ts';
 
 // Help intent suite validates root and command-level help output
 // for the scaffolded tests/.temp/my-cli project.

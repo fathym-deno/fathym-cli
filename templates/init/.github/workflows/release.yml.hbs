@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install Fathym CLI
+        run: |
+          curl -fsSL https://github.com/fathym-deno/fathym-cli/releases/latest/download/install.sh | bash
+          echo "$HOME/.bin" >> $GITHUB_PATH
+
+      - name: Build Release Artifacts
+        run: ftm cli release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            .dist/x86_64-pc-windows-msvc/{{name}}.exe
+            .dist/x86_64-apple-darwin/{{name}}
+            .dist/aarch64-apple-darwin/{{name}}
+            .dist/x86_64-unknown-linux-gnu/{{name}}
+            .dist/aarch64-unknown-linux-gnu/{{name}}
+            .dist/install.sh
+            .dist/install.ps1
+          generate_release_notes: true

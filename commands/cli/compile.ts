@@ -14,16 +14,33 @@
  * │  3. Read .cli.json to get binary name from Tokens[0]               │
  * │  4. Invoke Build sub-command to prepare static artifacts           │
  * │  5. Execute `deno compile` with permissions and output path        │
- * │  6. Output binary to .dist/<token-name>                            │
+ * │  6. Output binary to .dist/<target>/<token-name> or .dist/<token>  │
  * └─────────────────────────────────────────────────────────────────────┘
  * ```
  *
  * ## Output Structure
  *
+ * When `--target` is specified (cross-compilation):
  * ```
  * .dist/
- * └── <token-name>       # Native binary (e.g., 'my-cli' or 'my-cli.exe')
+ * └── x86_64-pc-windows-msvc/
+ *     └── my-cli.exe
  * ```
+ *
+ * When no target (current OS):
+ * ```
+ * .dist/
+ * └── my-cli           # or my-cli.exe on Windows
+ * ```
+ *
+ * ## Cross-Compilation Targets
+ *
+ * Supported targets (Deno compile targets):
+ * - `x86_64-pc-windows-msvc` - Windows x64
+ * - `x86_64-apple-darwin` - macOS x64 (Intel)
+ * - `aarch64-apple-darwin` - macOS ARM64 (Apple Silicon)
+ * - `x86_64-unknown-linux-gnu` - Linux x64
+ * - `aarch64-unknown-linux-gnu` - Linux ARM64
  *
  * ## Deno Permissions
  *
@@ -52,22 +69,32 @@
  *
  * @example Compile CLI in current directory
  * ```bash
- * ftm compile
+ * ftm cli compile
  * ```
  *
  * @example Compile with custom entry point
  * ```bash
- * ftm compile --entry=./my-cli/.build/cli.ts
+ * ftm cli compile --entry=./my-cli/.build/cli.ts
+ * ```
+ *
+ * @example Cross-compile for Windows
+ * ```bash
+ * ftm cli compile --target=x86_64-pc-windows-msvc
+ * ```
+ *
+ * @example Cross-compile for macOS ARM64
+ * ```bash
+ * ftm cli compile --target=aarch64-apple-darwin
  * ```
  *
  * @example Compile with restricted permissions
  * ```bash
- * ftm compile --permissions="--allow-read --allow-env"
+ * ftm cli compile --permissions="--allow-read --allow-env"
  * ```
  *
  * @example Compile to custom output directory
  * ```bash
- * ftm compile --output=./bin
+ * ftm cli compile --output=./bin
  * ```
  *
  * @module
@@ -77,6 +104,7 @@ import { join } from '@std/path/join';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, runCommandWithLogs } from '@fathym/cli';
 import BuildCommand from './build.ts';
+import { getBinaryExtension } from '../../src/FathymCLIConfig.ts';
 
 /**
  * Zod schema for compile command positional arguments.
@@ -91,6 +119,7 @@ export const CompileArgsSchema = z.tuple([]);
  * @property config - Path to .cli.json configuration
  * @property output - Output directory for compiled binary
  * @property permissions - Space-separated Deno permission flags
+ * @property target - Cross-compilation target (Deno compile target triple)
  */
 export const CompileFlagsSchema = z
   .object({
@@ -107,6 +136,10 @@ export const CompileFlagsSchema = z
       .string()
       .optional()
       .describe('Deno permissions (default: full access)'),
+    target: z
+      .string()
+      .optional()
+      .describe('Cross-compilation target (e.g., x86_64-pc-windows-msvc)'),
   })
   .passthrough();
 
@@ -114,13 +147,14 @@ export const CompileFlagsSchema = z
  * Typed parameter accessor for the compile command.
  *
  * Provides strongly-typed getters for entry point, output directory,
- * and Deno permissions. The Permissions getter parses the space-separated
- * string flag into an array of permission flags.
+ * Deno permissions, and cross-compilation target. The Permissions getter
+ * parses the space-separated string flag into an array of permission flags.
  *
  * @example
  * ```typescript
  * const entry = Params.Entry;           // './.build/cli.ts' or custom
  * const perms = Params.Permissions;     // ['--allow-read', '--allow-env', ...]
+ * const target = Params.Target;         // 'x86_64-pc-windows-msvc' or undefined
  * ```
  */
 export class CompileParams extends CommandParams<
@@ -168,6 +202,23 @@ export class CompileParams extends CommandParams<
       ]
     );
   }
+
+  /**
+   * Cross-compilation target for Deno compile.
+   *
+   * When specified, enables cross-compilation and outputs binary to
+   * a target-specific subdirectory (e.g., `.dist/x86_64-pc-windows-msvc/`).
+   *
+   * Supported targets:
+   * - `x86_64-pc-windows-msvc` - Windows x64
+   * - `x86_64-apple-darwin` - macOS x64 (Intel)
+   * - `aarch64-apple-darwin` - macOS ARM64 (Apple Silicon)
+   * - `x86_64-unknown-linux-gnu` - Linux x64
+   * - `aarch64-unknown-linux-gnu` - Linux ARM64
+   */
+  get Target(): string | undefined {
+    return this.Flag('target');
+  }
 }
 
 /**
@@ -175,6 +226,7 @@ export class CompileParams extends CommandParams<
  *
  * Invokes Build as a sub-command, then runs `deno compile` to generate
  * a standalone executable. Binary name is derived from .cli.json Tokens[0].
+ * Supports cross-compilation via the `--target` flag.
  */
 export default Command('compile', 'Compile the CLI into a native binary')
   .Args(CompileArgsSchema)
@@ -200,8 +252,9 @@ export default Command('compile', 'Compile the CLI into a native binary')
       '',
     ).replace(/^\.\/?/, '');
     const entryPath = await CLIDFS.ResolvePath(`./${relativeEntry}`);
-    const outputDir = await CLIDFS.ResolvePath(Params.OutputDir);
+    const baseOutputDir = await CLIDFS.ResolvePath(Params.OutputDir);
     const permissions = Params.Permissions;
+    const target = Params.Target;
 
     const configInfo = await CLIDFS.GetFileInfo('./.cli.json');
     if (!configInfo) {
@@ -219,24 +272,49 @@ export default Command('compile', 'Compile the CLI into a native binary')
     }
 
     const primaryToken = tokens[0];
+
+    // Determine binary extension based on target or current OS
+    const binaryExt = target
+      ? getBinaryExtension(target)
+      : (Deno.build.os === 'windows' ? '.exe' : '');
+    const binaryName = `${primaryToken}${binaryExt}`;
+
+    // Output to target subdirectory when cross-compiling
+    const outputDir = target ? join(baseOutputDir, target) : baseOutputDir;
     const outputBinaryPath = join(outputDir, primaryToken);
 
     Log.Info(`🔧 Compiling CLI for: ${primaryToken}`);
     Log.Info(`- Entry: ${entryPath}`);
-    Log.Info(`- Output dir: ${outputDir}`);
+    Log.Info(`- Output: ${outputBinaryPath}${binaryExt}`);
+    if (target) {
+      Log.Info(`- Target: ${target}`);
+    }
     Log.Info(`- Permissions: ${permissions.join(' ')}`);
 
     const { Build } = Commands!;
     await Build([], { config: join(Services.CLIRoot, configInfo.Path) });
 
-    await runCommandWithLogs(
-      ['compile', ...permissions, '--output', outputBinaryPath, entryPath],
-      Log,
-      { stdin: 'null', exitOnFail: true, cwd: Services.CLIDFS.Root },
-    );
+    // Build compile command with optional target
+    const compileArgs = [
+      'compile',
+      ...permissions,
+      '--output',
+      outputBinaryPath,
+      ...(target ? ['--target', target] : []),
+      entryPath,
+    ];
 
-    Log.Success(`✅ Compiled: ${outputBinaryPath}`);
+    await runCommandWithLogs(compileArgs, Log, {
+      stdin: 'null',
+      exitOnFail: true,
+      cwd: Services.CLIDFS.Root,
+    });
+
+    Log.Success(`✅ Compiled: ${outputBinaryPath}${binaryExt}`);
+    if (target) {
+      Log.Info(`📦 Cross-compiled for: ${target}`);
+    }
     Log.Info(
-      `👉 To install, run: \`your-cli install --from ${outputBinaryPath}\``,
+      `👉 To install, run: \`ftm cli install${target ? ` --target=${target}` : ''}\``,
     );
   });

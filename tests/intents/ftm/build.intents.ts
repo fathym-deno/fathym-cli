@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import BuildCommand from '../../../commands/build.ts';
+import BuildCommand from '../../../commands/cli/build.ts';
 
 CommandIntents(
   'Build Command Suite',

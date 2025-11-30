@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import CompileCommand from '../../../commands/compile.ts';
+import CompileCommand from '../../../commands/cli/compile.ts';
 
 CommandIntents(
   'Compile Command Suite',
@@ -15,9 +15,9 @@ CommandIntents(
       .ExpectLogs(
         '🔧 Compiling CLI for:',
         '- Entry:',
-        '- Output dir:',
+        '- Output:',
         '✅ Compiled:',
-        '👉 To install, run: `your-cli install --from',
+        '👉 To install, run: `ftm cli install',
       )
       .ExpectExit(0))
   .Run();

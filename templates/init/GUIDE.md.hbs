@@ -398,6 +398,62 @@ deno task release
 
 ---
 
+## Release Workflow
+
+### Local Release
+
+```bash
+# Build for all platforms and generate install scripts
+deno task release
+```
+
+This runs `ftm cli release` which:
+1. Builds static artifacts
+2. Cross-compiles for all 5 platforms (Windows, macOS Intel/ARM, Linux x64/ARM64)
+3. Generates `install.sh` and `install.ps1` scripts
+
+### GitHub Release (Automated)
+
+1. Tag your release:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+2. GitHub Actions automatically:
+   - Builds and compiles for all platforms
+   - Creates a GitHub release with all binaries
+   - Uploads install scripts
+
+3. Users can then install via:
+   ```bash
+   # macOS/Linux
+   curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | bash
+
+   # Windows PowerShell
+   iwr -useb https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex
+   ```
+
+### Release Directory Structure
+
+```
+.dist/
+├── install.sh                          # Bash install script
+├── install.ps1                         # PowerShell install script
+├── x86_64-pc-windows-msvc/
+│   └── {{name}}.exe
+├── x86_64-apple-darwin/
+│   └── {{name}}
+├── aarch64-apple-darwin/
+│   └── {{name}}
+├── x86_64-unknown-linux-gnu/
+│   └── {{name}}
+└── aarch64-unknown-linux-gnu/
+    └── {{name}}
+```
+
+---
+
 ## Verification Checklist
 
 Before committing changes:

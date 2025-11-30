@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import TestCommand from '../../../commands/test.ts';
+import TestCommand from '../../../commands/cli/test.ts';
 
 CommandIntents(
   'Test Command Suite',

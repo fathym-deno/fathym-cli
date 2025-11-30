@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import InitCommand from '../../../commands/init.ts';
+import InitCommand from '../../../commands/cli/init.ts';
 
 const TEMP_CLI_PATH = './tests/.temp/my-cli';
 

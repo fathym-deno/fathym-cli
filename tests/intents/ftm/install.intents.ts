@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import InstallCommand from '../../../commands/install.ts';
+import InstallCommand from '../../../commands/cli/install.ts';
 
 CommandIntents(
   'Install Command Suite',
@@ -13,6 +13,7 @@ CommandIntents(
         config: './tests/.temp/my-cli/.cli.json',
       })
       .ExpectLogs(
+        '📦 Found binary', // binary location detection
         '✅ Installed: ', // main binary copy success
         '🎉 CLI installed successfully', // final success message
       )

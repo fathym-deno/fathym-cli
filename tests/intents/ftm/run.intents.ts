@@ -1,5 +1,5 @@
 import { CommandIntents } from '@fathym/cli';
-import RunCommand from '../../../commands/run.ts';
+import RunCommand from '../../../commands/cli/run.ts';
 
 CommandIntents(
   'Run Command Suite',
