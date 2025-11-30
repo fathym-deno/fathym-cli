@@ -1,0 +1,201 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: {{name}} CLI Agents Guide
+Summary: Guardrails for humans and AI collaborating on this CLI project.
+Created: 2025-11-30
+Updated: 2025-11-30
+Owners:
+  - developer
+References:
+  - Label: Project README
+    Path: ./README.md
+  - Label: Project Guide
+    Path: ./GUIDE.md
+  - Label: Fathym CLI Documentation
+    Path: https://jsr.io/@fathym/cli
+---
+
+# AGENTS: {{name}} CLI
+
+Guardrails for humans and AI collaborating on this CLI project.
+
+## Scope
+
+### In Scope
+
+- Command implementations in `commands/`
+- Intent tests in `intents/`
+- IoC services in `.cli.init.ts`
+- CLI configuration in `.cli.json`
+
+### Out of Scope
+
+- External dependencies (managed via `deno.jsonc`)
+- Build artifacts (`.build/`, `.dist/`)
+
+---
+
+## Core Guardrails
+
+1. **Test before commit.** Run `deno task test` before any commit.
+2. **Commands need tests.** Every command must have corresponding intent tests.
+3. **Use the Params class pattern.** Access args/flags through getters only.
+4. **Services via IoC.** Register in `.cli.init.ts`, resolve in commands.
+5. **Support `--dry-run`.** Mutation commands must support preview mode.
+6. **Use Log methods.** Use `Log.Info()`, `Log.Success()`, etc. - never `console.log`.
+
+---
+
+## File Conventions
+
+| File | Purpose |
+|------|---------|
+| `.cli.json` | CLI identity (Name, Tokens, Version) |
+| `.cli.init.ts` | IoC service registration |
+| `deno.jsonc` | Deno tasks and imports |
+| `commands/*.ts` | Command implementations |
+| `intents/*.intents.ts` | Intent tests |
+| `intents/.intents.ts` | Test entry point (imports all tests) |
+
+---
+
+## Command Pattern (Required Structure)
+
+```typescript
+import { z } from 'zod';
+import { Command, CommandParams } from '@fathym/cli';
+
+// 1. Zod schemas with descriptions
+const FlagsSchema = z.object({
+  flag: z.boolean().optional().describe('What this flag does'),
+  'dry-run': z.boolean().optional().describe('Preview without executing'),
+});
+
+const ArgsSchema = z.tuple([
+  z.string().optional().describe('Description').meta({ argName: 'name' }),
+]);
+
+// 2. Params class with typed getters
+class MyParams extends CommandParams<
+  z.infer<typeof ArgsSchema>,
+  z.infer<typeof FlagsSchema>
+> {
+  get Name(): string {
+    return this.Arg(0) ?? 'default';
+  }
+
+  get Flag(): boolean {
+    return this.Flag('flag') ?? false;
+  }
+}
+
+// 3. Command with fluent API
+export default Command('my-command', 'Description.')
+  .Args(ArgsSchema)
+  .Flags(FlagsSchema)
+  .Params(MyParams)
+  .Run(async ({ Params, Log }) => {
+    if (Params.DryRun) {
+      Log.Info('Dry run: would execute...');
+    } else {
+      Log.Info('Executing...');
+    }
+  });
+```
+
+---
+
+## Params Class Rules
+
+### DO
+
+```typescript
+// Access via getters with defaults
+get Name(): string {
+  return this.Arg(0) ?? 'default';
+}
+
+get Verbose(): boolean {
+  return this.Flag('verbose') ?? false;
+}
+```
+
+### DO NOT
+
+```typescript
+// Never access Arg/Flag directly in Run handler
+.Run(({ Params }) => {
+  const name = Params.Arg(0);  // WRONG - Arg is protected
+});
+
+// Never skip the Params class
+.Run(({ Args, Flags }) => {
+  const name = Args[0];  // WRONG - use Params getters
+});
+```
+
+---
+
+## Testing Standards
+
+### Every Command Needs Tests
+
+```typescript
+CommandIntents('Command Suite', cmd.Build(), origin)
+  .WithInit(initFn)
+  .Intent('default behavior', (int) =>
+    int.Args([undefined]).Flags({}).ExpectLogs('...').ExpectExit(0))
+  .Intent('with argument', (int) =>
+    int.Args(['value']).Flags({}).ExpectLogs('...').ExpectExit(0))
+  .Intent('with flag', (int) =>
+    int.Args([]).Flags({ flag: true }).ExpectLogs('...').ExpectExit(0))
+  .Intent('dry run mode', (int) =>
+    int.Args([]).Flags({ 'dry-run': true }).ExpectLogs('Dry run').ExpectExit(0))
+  .Run();
+```
+
+### Coverage Requirements
+
+- Test default behavior (no args/flags)
+- Test each argument variation
+- Test each flag behavior
+- Test `--dry-run` for mutation commands
+- Test error cases with `ExpectExit(1)`
+
+---
+
+## Anti-Patterns
+
+| Anti-Pattern | Why | Do Instead |
+|--------------|-----|------------|
+| Access `this.Arg()` outside Params | Breaks encapsulation | Use Params getter methods |
+| Skip intent tests | Breaks validation | Always add intent tests |
+| Use `console.log` | Bypasses Log system | Use `Log.Info()`, `Log.Success()` |
+| Hardcode paths | Breaks portability | Use `import.meta.resolve()` |
+| Skip `--dry-run` support | Poor UX | Add dry-run to mutation commands |
+| Mutate global state | Side effects | Use IoC services |
+
+---
+
+## Validation Requirements
+
+Before considering any change complete:
+
+1. **Format**: `deno fmt` passes
+2. **Lint**: `deno lint` passes
+3. **Type Check**: `deno check **/*.ts` passes
+4. **Tests**: `deno task test` passes
+5. **Coverage**: New code has intent tests
+
+---
+
+## Common Tasks Quick Reference
+
+| Task | See |
+|------|-----|
+| Add a new command | [GUIDE.md - Task: Add a New Command](./GUIDE.md#task-add-a-new-command) |
+| Add a flag to existing command | [GUIDE.md - Task: Add a Flag](./GUIDE.md#task-add-a-flag-to-existing-command) |
+| Add a service | [GUIDE.md - Task: Add a Service](./GUIDE.md#task-add-a-service) |
+| Write intent tests | [GUIDE.md - Intent Testing Reference](./GUIDE.md#intent-testing-reference) |
+| Build and compile | [GUIDE.md - Build Pipeline](./GUIDE.md#build-pipeline) |

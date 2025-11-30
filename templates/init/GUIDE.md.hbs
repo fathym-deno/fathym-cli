@@ -1,0 +1,402 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: {{name}} CLI Guide
+Summary: Operating playbook for developing and maintaining this CLI.
+Created: 2025-11-30
+Updated: 2025-11-30
+Owners:
+  - developer
+References:
+  - Label: Project README
+    Path: ./README.md
+  - Label: Project Agents Guide
+    Path: ./AGENTS.md
+  - Label: Fathym CLI Documentation
+    Path: https://jsr.io/@fathym/cli
+---
+
+# {{name}} CLI Guide
+
+Operating playbook for developing and maintaining this CLI.
+
+## Development Workflow
+
+```bash
+# 1. Run commands during development
+deno task cli <command> [args] [--flags]
+
+# 2. Run intent tests
+deno task test
+
+# 3. Type check
+deno check **/*.ts
+
+# 4. Build and compile
+deno task build && deno task compile
+```
+
+---
+
+## Task: Add a New Command
+
+### Step 1: Create the command file
+
+Create `commands/greet.ts`:
+
+```typescript
+import { z } from 'zod';
+import { Command, CommandParams } from '@fathym/cli';
+
+// 1. Define schemas
+const GreetFlagsSchema = z.object({
+  loud: z.boolean().optional().describe('Shout the greeting'),
+  'dry-run': z.boolean().optional().describe('Preview without executing'),
+});
+
+const GreetArgsSchema = z.tuple([
+  z.string().optional().describe('Name to greet').meta({ argName: 'name' }),
+]);
+
+// 2. Create Params class with getters
+class GreetParams extends CommandParams<
+  z.infer<typeof GreetArgsSchema>,
+  z.infer<typeof GreetFlagsSchema>
+> {
+  get Name(): string {
+    return this.Arg(0) ?? 'World';
+  }
+
+  get Loud(): boolean {
+    return this.Flag('loud') ?? false;
+  }
+}
+
+// 3. Build command with fluent API
+export default Command('greet', 'Prints a greeting.')
+  .Args(GreetArgsSchema)
+  .Flags(GreetFlagsSchema)
+  .Params(GreetParams)
+  .Run(async ({ Params, Log }) => {
+    let message = `Hello, ${Params.Name}!`;
+
+    if (Params.Loud) {
+      message = message.toUpperCase();
+    }
+
+    if (Params.DryRun) {
+      Log.Info(`Dry run: "${message}" would have been printed.`);
+    } else {
+      Log.Info(message);
+    }
+  });
+```
+
+### Step 2: Create intent tests
+
+Create `intents/greet.intents.ts`:
+
+```typescript
+import { CommandIntents } from '@fathym/cli';
+import GreetCommand from '../commands/greet.ts';
+import initFn from '../.cli.init.ts';
+
+const cmd = GreetCommand.Build();
+const origin = import.meta.resolve('../.cli.json');
+
+CommandIntents('Greet Command Suite', cmd, origin)
+  .WithInit(initFn)
+  .Intent('Greet default world', (int) =>
+    int
+      .Args([undefined])
+      .Flags({})
+      .ExpectLogs('Hello, World!')
+      .ExpectExit(0),
+  )
+  .Intent('Greet a specific name', (int) =>
+    int
+      .Args(['Alice'])
+      .Flags({})
+      .ExpectLogs('Hello, Alice!')
+      .ExpectExit(0),
+  )
+  .Intent('Greet loudly', (int) =>
+    int
+      .Args(['Team'])
+      .Flags({ loud: true })
+      .ExpectLogs('HELLO, TEAM!')
+      .ExpectExit(0),
+  )
+  .Intent('Dry run greeting', (int) =>
+    int
+      .Args(['Test'])
+      .Flags({ 'dry-run': true })
+      .ExpectLogs('Dry run:')
+      .ExpectExit(0),
+  )
+  .Run();
+```
+
+### Step 3: Register in intent index
+
+Add to `intents/.intents.ts`:
+
+```typescript
+import './greet.intents.ts';
+```
+
+### Step 4: Verify
+
+```bash
+deno task test
+```
+
+---
+
+## Task: Add a Flag to Existing Command
+
+### Step 1: Update FlagsSchema
+
+```typescript
+const FlagsSchema = z.object({
+  // Existing flags...
+  count: z.coerce.number().optional().describe('Repeat count'),
+});
+```
+
+### Step 2: Add Params getter
+
+```typescript
+class MyParams extends CommandParams<...> {
+  // Existing getters...
+
+  get Count(): number {
+    return this.Flag('count') ?? 1;
+  }
+}
+```
+
+### Step 3: Use in Run handler
+
+```typescript
+.Run(async ({ Params, Log }) => {
+  for (let i = 0; i < Params.Count; i++) {
+    Log.Info(`Iteration ${i + 1}`);
+  }
+});
+```
+
+### Step 4: Add intent tests
+
+```typescript
+.Intent('Repeats based on count', (int) =>
+  int
+    .Args([])
+    .Flags({ count: 3 })
+    .ExpectLogs('Iteration 1', 'Iteration 2', 'Iteration 3')
+    .ExpectExit(0),
+)
+```
+
+---
+
+## Task: Add a Service
+
+### Step 1: Define interface and implementation
+
+In `.cli.init.ts`:
+
+```typescript
+export interface MyService {
+  DoWork(input: string): string;
+}
+
+export class DefaultMyService implements MyService {
+  DoWork(input: string): string {
+    return `Processed: ${input}`;
+  }
+}
+```
+
+### Step 2: Register in IoC
+
+```typescript
+export default (async (ioc, _config) => {
+  // Existing registrations...
+
+  ioc.Register(() => new DefaultMyService(), {
+    Type: ioc.Symbol('MyService'),
+  });
+}) as CLIInitFn;
+```
+
+### Step 3: Use in command
+
+```typescript
+import type { MyService } from '../.cli.init.ts';
+
+export default Command('process', 'Process input')
+  .Args(ArgsSchema)
+  .Flags(FlagsSchema)
+  .Params(ProcessParams)
+  .Services(async (_, ioc) => ({
+    MyService: await ioc.Resolve<MyService>(ioc.Symbol('MyService')),
+  }))
+  .Run(async ({ Params, Services, Log }) => {
+    const svc = await Services.MyService;
+    const result = svc.DoWork(Params.Input);
+    Log.Info(result);
+  });
+```
+
+---
+
+## Command Patterns Reference
+
+### Fluent API (Recommended)
+
+```typescript
+export default Command('name', 'Description.')
+  .Args(ArgsSchema)
+  .Flags(FlagsSchema)
+  .Params(MyParams)
+  .Services(async (ctx, ioc) => ({...}))
+  .Init(async (ctx) => {...})      // Optional: setup
+  .Run(async (ctx) => {...})       // Required: main logic
+  .DryRun(async (ctx) => {...})    // Optional: preview mode
+  .Cleanup(async (ctx) => {...});  // Optional: cleanup
+```
+
+### Class-Based (For Complex Commands)
+
+```typescript
+export class MyCommand extends CommandRuntime<MyParams> {
+  public Run(ctx: CommandContext<MyParams>): Promise<void> {
+    const { Params, Log } = ctx;
+    // Implementation
+    return Promise.resolve();
+  }
+
+  public BuildMetadata() {
+    return this.buildMetadataFromSchemas(
+      'Name',
+      'Description.',
+      ArgsSchema,
+      FlagsSchema
+    );
+  }
+}
+
+export default defineCommandModule({
+  FlagsSchema,
+  ArgsSchema,
+  Params: MyParams,
+  Command: MyCommand,
+});
+```
+
+### Lifecycle Hooks
+
+| Hook | When Called | Use Case |
+|------|-------------|----------|
+| `Init()` | Before Run | Validation, setup |
+| `Run()` | Main execution | Core logic |
+| `DryRun()` | When `--dry-run` passed | Preview mode |
+| `Cleanup()` | After Run (always) | Resource cleanup |
+
+---
+
+## Intent Testing Reference
+
+### Suite Pattern (Recommended)
+
+```typescript
+CommandIntents('Suite Name', command.Build(), configPath)
+  .WithInit(initFn)
+  .BeforeAll(async () => { /* Setup */ })
+  .Intent('test description', (int) =>
+    int
+      .Args(['value'])
+      .Flags({ flag: true })
+      .ExpectLogs('expected output')
+      .ExpectExit(0),
+  )
+  .Run();
+```
+
+### Assertions
+
+| Method | Description |
+|--------|-------------|
+| `ExpectExit(code)` | Assert exit code (0 = success) |
+| `ExpectLogs(...messages)` | Assert log output contains messages in order |
+
+### Service Mocking
+
+```typescript
+CommandIntents('With Mocks', cmd, configPath)
+  .WithServices({
+    MyService: {
+      DoWork: async () => 'mocked result',
+    },
+  })
+  .Intent('uses mock', (int) =>
+    int
+      .Args([])
+      .ExpectLogs('mocked result')
+      .ExpectExit(0),
+  )
+  .Run();
+```
+
+---
+
+## Logging Reference
+
+```typescript
+.Run(({ Log }) => {
+  Log.Info('General information');    // Blue
+  Log.Warn('Warning message');        // Yellow
+  Log.Error('Error message');         // Red
+  Log.Success('Success message');     // Green
+});
+```
+
+**Note**: There is no `Log.Debug()`. For debug output, use a `--verbose` flag with conditional logging.
+
+---
+
+## Build Pipeline
+
+```bash
+# 1. Build static artifacts to .build/
+deno task build
+
+# 2. Compile to native binary in .dist/
+deno task compile
+
+# 3. Run compiled binary
+./.dist/<token> hello Alice
+
+# 4. Install to PATH (optional)
+deno task install --useHome
+```
+
+| Directory | Purpose | Created By |
+|-----------|---------|------------|
+| `.build/` | Embedded modules, templates | `deno task build` |
+| `.dist/` | Native binary | `deno task compile` |
+
+---
+
+## Verification Checklist
+
+Before committing changes:
+
+- [ ] `deno fmt` passes
+- [ ] `deno lint` passes
+- [ ] `deno check **/*.ts` passes
+- [ ] `deno task test` passes
+- [ ] New commands have intent tests
+- [ ] New flags have intent tests
+- [ ] Mutation commands support `--dry-run`

@@ -1,0 +1,71 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: {{name}} CLI
+Summary: CLI project scaffolded with the Fathym CLI framework.
+Created: 2025-11-30
+Updated: 2025-11-30
+Owners:
+  - developer
+References:
+  - Label: Project Agents Guide
+    Path: ./AGENTS.md
+  - Label: Project Guide
+    Path: ./GUIDE.md
+  - Label: Fathym CLI Documentation
+    Path: https://jsr.io/@fathym/cli
+---
+
+# {{name}} CLI
+
+A command-line interface built with the [Fathym CLI](https://jsr.io/@fathym/cli) framework.
+
+## Quick Start
+
+```bash
+# Run a command in development mode
+deno task cli hello
+
+# Run with arguments and flags
+deno task cli hello Alice --loud
+
+# Run intent tests
+deno task test
+
+# Build and compile to native binary
+deno task build && deno task compile
+```
+
+## Project Structure
+
+```
+./
+├── .cli.json           # CLI identity (Name, Tokens, Version)
+├── .cli.init.ts        # IoC service registration
+├── deno.jsonc          # Deno configuration and tasks
+├── commands/           # Command implementations
+│   ├── hello.ts        # Fluent API example
+│   └── wave.ts         # Class-based example
+└── intents/            # Intent test files
+    ├── .intents.ts     # Test entry point
+    ├── hello.intents.ts
+    └── wave.intents.ts
+```
+
+## Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `hello [name]` | Prints a friendly greeting |
+| `wave [target]` | Waves at a friend with optional excitement |
+
+## How to Work Here
+
+1. Review collaboration guardrails in [AGENTS.md](./AGENTS.md)
+2. Follow the operating playbook in [GUIDE.md](./GUIDE.md)
+3. Run `deno task test` before committing changes
+
+## Learn More
+
+- [Fathym CLI on JSR](https://jsr.io/@fathym/cli) - Package documentation
+- [GitHub Repository](https://github.com/fathym-deno/command-line-interface) - Source and examples
