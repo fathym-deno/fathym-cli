@@ -24,22 +24,22 @@ Operating playbook for developing and maintaining this CLI.
 
 ```bash
 # 1. Run commands during development
-ftm run <command> [args] [--flags]
+deno task run <command> [args] [--flags]
 
 # 2. Run intent tests
-ftm test
+deno task test
 
-# 3. Build (format, lint, test)
+# 3. Build (format, lint, build, test)
 deno task build
 
-# 4. Quick validation (no tests)
-deno task check
+# 4. Compile to native binary
+deno task compile
 
-# 5. Build and compile to binary
-ftm build && ftm compile
+# 5. Install to PATH
+deno task install
 
-# 6. Install to PATH (optional)
-ftm install --useHome
+# 6. Full release (build + compile + install)
+deno task release
 ```
 
 ---
@@ -376,22 +376,25 @@ CommandIntents('With Mocks', cmd, configPath)
 
 ```bash
 # 1. Build static artifacts to .build/
-ftm build
+deno task build:cli
 
 # 2. Compile to native binary in .dist/
-ftm compile
+deno task compile
 
 # 3. Run compiled binary
 ./.dist/<token> hello Alice
 
 # 4. Install to PATH
-ftm install --useHome
+deno task install
+
+# Or run all at once:
+deno task release
 ```
 
 | Directory | Purpose | Created By |
 |-----------|---------|------------|
-| `.build/` | Embedded modules, templates | `ftm build` |
-| `.dist/` | Native binary | `ftm compile` |
+| `.build/` | Embedded modules, templates | `deno task build:cli` |
+| `.dist/` | Native binary | `deno task compile` |
 
 ---
 
@@ -399,8 +402,7 @@ ftm install --useHome
 
 Before committing changes:
 
-- [ ] `deno task build` passes (format + lint + tests)
-- [ ] `deno task check` passes (format + lint + type check)
+- [ ] `deno task build` passes (format + lint + build + tests)
 - [ ] New commands have intent tests
 - [ ] New flags have intent tests
 - [ ] Mutation commands support `--dry-run`

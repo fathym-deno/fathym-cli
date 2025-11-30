@@ -53,7 +53,7 @@ Guardrails for humans and AI collaborating on this CLI project.
 |------|---------|
 | `.cli.json` | CLI identity (Name, Tokens, Version) |
 | `.cli.init.ts` | IoC service registration |
-| `deno.jsonc` | Deno tasks (`build`, `build:fmt`, `build:lint`, `check`) and imports |
+| `deno.jsonc` | Deno tasks (`run`, `build`, `test`, `compile`, `install`, `release`, `deploy`) and imports |
 | `commands/*.ts` | Command implementations |
 | `intents/*.intents.ts` | Intent tests |
 | `intents/.intents.ts` | Test entry point (imports all tests) |
@@ -182,10 +182,9 @@ CommandIntents('Command Suite', cmd.Build(), origin)
 
 Before considering any change complete:
 
-1. **Build**: `deno task build` passes (format + lint + tests)
-2. **Check**: `deno task check` passes (format + lint + types)
-3. **Tests**: `ftm test` passes
-4. **Coverage**: New code has intent tests
+1. **Build**: `deno task build` passes (format + lint + build + tests)
+2. **Tests**: `deno task test` passes
+3. **Coverage**: New code has intent tests
 
 ---
 
