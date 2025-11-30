@@ -24,16 +24,19 @@ A command-line interface built with the [Fathym CLI](https://jsr.io/@fathym/cli)
 
 ```bash
 # Run a command in development mode
-deno task cli hello
+ftm run hello
 
 # Run with arguments and flags
-deno task cli hello Alice --loud
+ftm run hello Alice --loud
 
 # Run intent tests
-deno task test
+ftm test
 
 # Build and compile to native binary
-deno task build && deno task compile
+ftm build && ftm compile
+
+# Install to PATH
+ftm install --useHome
 ```
 
 ## Project Structure
