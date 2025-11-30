@@ -42,6 +42,7 @@ deno fmt && deno lint
 ```
 
 Key files to understand:
+
 - `commands/*.ts` - Command implementations with JSDoc
 - `.cli.json` - CLI identity configuration
 - `templates/` - Scaffolding templates
@@ -49,6 +50,7 @@ Key files to understand:
 ### 2. Make Changes
 
 Follow these patterns:
+
 - Commands use fluent `Command()` API or class-based `CommandRuntime`
 - Params classes extend `CommandParams<ArgsType, FlagsType>`
 - Use `this.Arg(n)` and `this.Flag('name')` only in Params getters

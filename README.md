@@ -60,14 +60,14 @@ ftm install --useHome
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `ftm init [name]` | Scaffold a new CLI project |
-| `ftm build` | Prepare static build artifacts |
-| `ftm compile` | Compile to native binary |
+| Command             | Description                         |
+| ------------------- | ----------------------------------- |
+| `ftm init [name]`   | Scaffold a new CLI project          |
+| `ftm build`         | Prepare static build artifacts      |
+| `ftm compile`       | Compile to native binary            |
 | `ftm run <command>` | Execute command in development mode |
-| `ftm test [file]` | Run intent tests |
-| `ftm install` | Install compiled binary to PATH |
+| `ftm test [file]`   | Run intent tests                    |
+| `ftm install`       | Install compiled binary to PATH     |
 
 ## Project Structure
 

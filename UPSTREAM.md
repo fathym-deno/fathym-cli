@@ -28,34 +28,36 @@ References:
 
 ## Versioning
 
-| Component | Version | Source |
-|-----------|---------|--------|
-| ftm-cli | `0.0.0` | `.cli.json` |
-| @fathym/cli | `0.0.65-integration` | `deno.jsonc` imports |
-| @fathym/common | `0.2.299` | `deno.jsonc` imports |
-| @fathym/dfs | `0.0.43` | `deno.jsonc` imports |
+| Component      | Version              | Source               |
+| -------------- | -------------------- | -------------------- |
+| ftm-cli        | `0.0.0`              | `.cli.json`          |
+| @fathym/cli    | `0.0.65-integration` | `deno.jsonc` imports |
+| @fathym/common | `0.2.299`            | `deno.jsonc` imports |
+| @fathym/dfs    | `0.0.43`             | `deno.jsonc` imports |
 
 ## Distribution Strategy
 
 **Status**: Pending decision
 
 Options under consideration:
+
 1. **Deno task** - Run via `deno task ftm-cli:run`
 2. **JSR package** - Publish to `jsr:@fathym/ftm-cli`
 3. **Compiled binary** - Native executable via `deno compile`
 
 Current support:
+
 - `deno task ftm-cli:build` - Prepare static build
 - `deno task ftm-cli:compile` - Generate native binary
 - `deno task ftm-cli:run` - Execute from source
 
 ## Build Artifacts
 
-| Directory | Contents | Committed |
-|-----------|----------|-----------|
-| `.build/` | Static CLI entry point, embedded templates/commands | No |
-| `.dist/` | Compiled native binary | No |
-| `.temp/` | Ephemeral runtime scaffolds | No |
+| Directory | Contents                                            | Committed |
+| --------- | --------------------------------------------------- | --------- |
+| `.build/` | Static CLI entry point, embedded templates/commands | No        |
+| `.dist/`  | Compiled native binary                              | No        |
+| `.temp/`  | Ephemeral runtime scaffolds                         | No        |
 
 ## Breaking Changes
 
