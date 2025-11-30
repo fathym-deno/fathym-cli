@@ -277,7 +277,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
     const binaryExt = target
       ? getBinaryExtension(target)
       : (Deno.build.os === 'windows' ? '.exe' : '');
-    const binaryName = `${primaryToken}${binaryExt}`;
+    const _binaryName = `${primaryToken}${binaryExt}`;
 
     // Output to target subdirectory when cross-compiling
     const outputDir = target ? join(baseOutputDir, target) : baseOutputDir;

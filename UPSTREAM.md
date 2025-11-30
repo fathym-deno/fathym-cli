@@ -30,7 +30,7 @@ References:
 
 | Component      | Version              | Source               |
 | -------------- | -------------------- | -------------------- |
-| ftm        | `0.0.0`              | `.cli.json`          |
+| ftm            | `0.0.0`              | `.cli.json`          |
 | @fathym/cli    | `0.0.65-integration` | `deno.jsonc` imports |
 | @fathym/common | `0.2.299`            | `deno.jsonc` imports |
 | @fathym/dfs    | `0.0.43`             | `deno.jsonc` imports |

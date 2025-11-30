@@ -70,7 +70,6 @@
  * @module
  */
 
-import { join } from '@std/path';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, loadCLIConfig } from '@fathym/cli';
 import { DEFAULT_TARGETS, type FathymCLIConfig } from '../../src/config/FathymCLIConfig.ts';
@@ -156,9 +155,7 @@ export default Command('release', 'Build and compile CLI for all target platform
       await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
     }
 
-    const dfs = ctx.Params.ConfigPath
-      ? await dfsCtx.GetDFS('CLI')
-      : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
 
     return { DFS: dfs };
   })
@@ -243,8 +240,12 @@ export default Command('release', 'Build and compile CLI for all target platform
     Log.Info('   3. Users can then install via:');
     Log.Info('');
     Log.Info('      # macOS/Linux');
-    Log.Info('      curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | bash');
+    Log.Info(
+      '      curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | bash',
+    );
     Log.Info('');
     Log.Info('      # Windows PowerShell');
-    Log.Info('      iwr -useb https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex');
+    Log.Info(
+      '      iwr -useb https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex',
+    );
   });

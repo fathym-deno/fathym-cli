@@ -56,10 +56,7 @@
 import { join } from '@std/path';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, loadCLIConfig } from '@fathym/cli';
-import {
-  DEFAULT_INSTALL_DIR,
-  type FathymCLIConfig,
-} from '../../../src/config/FathymCLIConfig.ts';
+import { DEFAULT_INSTALL_DIR, type FathymCLIConfig } from '../../../src/config/FathymCLIConfig.ts';
 
 /**
  * Zod schema for scripts command positional arguments.
@@ -219,10 +216,14 @@ main() {
   echo "✅ Installed: $BINARY_PATH"
 
   # Create aliases
-${aliases.map((alias) => `  echo '#!/bin/sh
+${
+    aliases.map((alias) =>
+      `  echo '#!/bin/sh
 exec "$BINARY_NAME" "$@"' > "$INSTALL_DIR/${alias}"
   chmod +x "$INSTALL_DIR/${alias}"
-  echo "🔗 Alias created: $INSTALL_DIR/${alias}"`).join('\n')}
+  echo "🔗 Alias created: $INSTALL_DIR/${alias}"`
+    ).join('\n')
+  }
 
   # Check if in PATH
   if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
@@ -286,9 +287,13 @@ function Main {
     Write-Host "✅ Installed: $BinaryPath" -ForegroundColor Green
 
     # Create aliases
-${aliases.map((alias) => `    $AliasPath = Join-Path $InstallDir "${alias}.cmd"
+${
+    aliases.map((alias) =>
+      `    $AliasPath = Join-Path $InstallDir "${alias}.cmd"
     "@echo off\`r\`n$BinaryName.exe %*" | Out-File -FilePath $AliasPath -Encoding ASCII
-    Write-Host "🔗 Alias created: $AliasPath" -ForegroundColor Cyan`).join('\n')}
+    Write-Host "🔗 Alias created: $AliasPath" -ForegroundColor Cyan`
+    ).join('\n')
+  }
 
     # Check if in PATH
     $PathDirs = $env:PATH -split ";"
@@ -475,9 +480,7 @@ export default Command(
       await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
     }
 
-    const dfs = ctx.Params.ConfigPath
-      ? await dfsCtx.GetDFS('CLI')
-      : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
 
     return { DFS: dfs };
   })

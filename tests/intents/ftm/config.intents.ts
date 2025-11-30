@@ -11,21 +11,23 @@ const mockConfigStore: Record<string, Record<string, unknown>> = {};
 
 function createMockConfigService(): ConfigFileService {
   return {
-    async get<T = unknown>(filePath: string, key: string): Promise<T | undefined> {
+    get<T = unknown>(filePath: string, key: string): Promise<T | undefined> {
       const config = mockConfigStore[filePath] ?? {};
-      return getNestedValue(config, key) as T | undefined;
+      return Promise.resolve(getNestedValue(config, key) as T | undefined);
     },
-    async set(filePath: string, key: string, value: unknown): Promise<void> {
+    set(filePath: string, key: string, value: unknown): Promise<void> {
       if (!mockConfigStore[filePath]) {
         mockConfigStore[filePath] = {};
       }
       setNestedValue(mockConfigStore[filePath], key, value);
+      return Promise.resolve();
     },
-    async load(filePath: string): Promise<Record<string, unknown>> {
-      return mockConfigStore[filePath] ?? {};
+    load(filePath: string): Promise<Record<string, unknown>> {
+      return Promise.resolve(mockConfigStore[filePath] ?? {});
     },
-    async save(filePath: string, config: Record<string, unknown>): Promise<void> {
+    save(filePath: string, config: Record<string, unknown>): Promise<void> {
       mockConfigStore[filePath] = config;
+      return Promise.resolve();
     },
   } as ConfigFileService;
 }
