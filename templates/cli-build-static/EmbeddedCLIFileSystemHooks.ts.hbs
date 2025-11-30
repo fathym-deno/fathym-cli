@@ -63,7 +63,9 @@ export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
 
   async LoadCommandModule(path: string): Promise<CommandModule> {
     const key = Object.entries(embeddedCommandEntries).find(
-      ([_, entry]) => (entry as any).CommandPath && (entry as any).CommandPath === path,
+      ([_, entry]) =>
+        ((entry as any).CommandPath && (entry as any).CommandPath === path) ||
+        ((entry as any).GroupPath && (entry as any).GroupPath === path),
     )?.[0];
 
     if (!key) {

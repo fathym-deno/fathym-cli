@@ -345,6 +345,8 @@ async function collectCommandMetadata(
 
     if (isMeta) {
       entryData.GroupPath = await dfs.ResolvePath(path);
+      imports.push({ alias, path: `../commands/${rel}` });
+      modules.push({ key, alias });
     } else {
       entryData.CommandPath = await dfs.ResolvePath(path);
       imports.push({ alias, path: `../commands/${rel}` });

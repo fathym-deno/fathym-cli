@@ -16,7 +16,7 @@
     "test": "deno test -A ./tests/.tests.ts"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.79",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.81",
     "@fathym/common": "jsr:@fathym/common@0.2.299",
     "@fathym/dfs": "jsr:@fathym/dfs@0.0.44",
     "@luca/cases": "jsr:@luca/cases@1.0.0",
