@@ -38,7 +38,7 @@ Guardrails for humans and AI collaborating on this CLI project.
 
 ## Core Guardrails
 
-1. **Test before commit.** Run `deno task test` before any commit.
+1. **Test before commit.** Run `ftm test` before any commit.
 2. **Commands need tests.** Every command must have corresponding intent tests.
 3. **Use the Params class pattern.** Access args/flags through getters only.
 4. **Services via IoC.** Register in `.cli.init.ts`, resolve in commands.
@@ -185,7 +185,7 @@ Before considering any change complete:
 1. **Format**: `deno fmt` passes
 2. **Lint**: `deno lint` passes
 3. **Type Check**: `deno check **/*.ts` passes
-4. **Tests**: `deno task test` passes
+4. **Tests**: `ftm test` passes
 5. **Coverage**: New code has intent tests
 
 ---
