@@ -1,22 +1,27 @@
 {
   "name": "@fathym/ftm",
   "version": "0.0.0",
-  "exports": {},
+  "exports": {
+    "./config": "./src/config/.exports.ts",
+    "./projects": "./src/projects/.exports.ts",
+    "./utils": "./src/utils/.exports.ts"
+  },
   "tasks": {
     "build": "deno fmt && deno lint && deno test -A ./tests",
     "fmt": "deno fmt",
     "lint": "deno lint",
     "deploy": "npx rimraf cov && deno task publish:check && deno task build && fathym git",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
-    "ftm:build": "deno run -A ./scripts/cli-runtime.ts ./.cli.json cli build",
-    "ftm:compile": "deno run -A ./scripts/cli-runtime.ts ./.cli.json cli compile",
-    "ftm:run": "deno run -A ./scripts/cli-runtime.ts ./.cli.json cli run",
-    "ftm:release": "deno test -A ./tests/intents/setup/prepare-in-path.intents.ts",
+    "ftm:run": "deno task cli:run cli run",
+    "ftm:build": "deno task cli:run cli build",
+    "ftm:compile": "deno task cli:run cli compile",
+    "ftm:install": "deno task cli:run cli install --useHome --to=.bin",
+    "ftm:release": "deno task ftm:build && deno task ftm:compile && deno task ftm:install",
     "publish:check": "deno publish --dry-run --allow-dirty",
     "test": "deno test -A ./tests/.tests.ts"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.83",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.85",
     "@fathym/common": "jsr:@fathym/common@0.2.299",
     "@fathym/dfs": "jsr:@fathym/dfs@0.0.48",
     "@luca/cases": "jsr:@luca/cases@1.0.0",

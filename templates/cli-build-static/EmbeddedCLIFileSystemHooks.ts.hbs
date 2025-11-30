@@ -62,20 +62,26 @@ export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
   }
 
   async LoadCommandModule(path: string): Promise<CommandModule> {
-    const key = Object.entries(embeddedCommandEntries).find(
+    // Find the entry and determine if we're loading a command or group
+    const found = Object.entries(embeddedCommandEntries).find(
       ([_, entry]) =>
         ((entry as any).CommandPath && (entry as any).CommandPath === path) ||
         ((entry as any).GroupPath && (entry as any).GroupPath === path),
-    )?.[0];
+    );
 
-    if (!key) {
+    if (!found) {
       throw new Error(`❌ No embedded command key found for path: ${path}`);
     }
 
-    let mod = (EmbeddedCommandModules as any)[key];
+    const [key, entry] = found;
+    // Determine if path matches GroupPath - if so, use the :group suffixed key
+    const isGroup = (entry as any).GroupPath === path;
+    const moduleKey = isGroup ? `${key}:group` : key;
+
+    let mod = (EmbeddedCommandModules as any)[moduleKey];
 
     if (!mod) {
-      throw new Error(`❌ No embedded command module found for key: ${key}`);
+      throw new Error(`❌ No embedded command module found for key: ${moduleKey}`);
     }
 
     if (mod instanceof CommandModuleBuilder) mod = mod.Build();

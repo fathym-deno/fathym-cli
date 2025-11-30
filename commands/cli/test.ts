@@ -196,9 +196,6 @@ export default Command('test', 'Run CLI tests using Deno')
 
     const cliDFS = await dfsCtx.GetDFS('CLI');
 
-    console.log('-------------------------------------');
-    console.log(cliDFS.Root);
-
     return {
       CLIDFS: cliDFS,
     };

@@ -1,0 +1,28 @@
+import { CommandIntent } from '@fathym/cli';
+import UsersCommand from '../../commands/manage/users.ts';
+
+const origin = import.meta.resolve('../../.cli.json');
+
+// ✅ Default users list (no flags)
+CommandIntent('lists users by default', UsersCommand, origin)
+  .Args([])
+  .Flags({})
+  .ExpectLogs('👥 Listing users...')
+  .ExpectExit(0)
+  .Run();
+
+// ✅ List all users including inactive
+CommandIntent('lists all users including inactive', UsersCommand, origin)
+  .Args([])
+  .Flags({ all: true })
+  .ExpectLogs('👥 Listing users...', 'Including inactive users')
+  .ExpectExit(0)
+  .Run();
+
+// ✅ Dry run suppresses listing
+CommandIntent('dry run prevents listing', UsersCommand, origin)
+  .Args([])
+  .Flags({ 'dry-run': true })
+  .ExpectLogs('🛑 Dry run: Would list users')
+  .ExpectExit(0)
+  .Run();

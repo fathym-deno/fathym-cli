@@ -1,0 +1,31 @@
+import { CommandIntents } from '@fathym/cli';
+import ManageCommand from '../commands/manage.ts';
+import initFn from '../.cli.init.ts';
+
+const cmd = ManageCommand.Build();
+const origin = import.meta.resolve('../.cli.json');
+
+CommandIntents('Manage Command Suite', cmd, origin)
+  .WithInit(initFn)
+  .Intent('Show management status', (int) =>
+    int
+      .Args([])
+      .Flags({})
+      .ExpectLogs('📊 Showing management status...')
+      .ExpectExit(0),
+  )
+  .Intent('Show verbose management status', (int) =>
+    int
+      .Args([])
+      .Flags({ verbose: true })
+      .ExpectLogs('📊 Showing management status...', 'Detailed view enabled')
+      .ExpectExit(0),
+  )
+  .Intent('Dry run management status', (int) =>
+    int
+      .Args([])
+      .Flags({ 'dry-run': true })
+      .ExpectLogs('🛑 Dry run: Would show management status')
+      .ExpectExit(0),
+  )
+  .Run();

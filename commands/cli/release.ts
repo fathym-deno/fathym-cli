@@ -12,7 +12,7 @@
  * │  1. Load .cli.json and determine targets                           │
  * │  2. Run `ftm cli build` to prepare static artifacts                │
  * │  3. For each target, run `ftm cli compile --target=<target>`       │
- * │  4. Run `ftm cli install-scripts` to generate install scripts      │
+ * │  4. Run `ftm cli install scripts` to generate install scripts      │
  * │  5. Output summary of generated files                              │
  * └─────────────────────────────────────────────────────────────────────┘
  * ```
@@ -73,10 +73,10 @@
 import { join } from '@std/path';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, loadCLIConfig } from '@fathym/cli';
-import { DEFAULT_TARGETS, type FathymCLIConfig } from '../../src/FathymCLIConfig.ts';
+import { DEFAULT_TARGETS, type FathymCLIConfig } from '../../src/config/FathymCLIConfig.ts';
 import BuildCommand from './build.ts';
 import CompileCommand from './compile.ts';
-import InstallScriptsCommand from './install-scripts.ts';
+import ScriptsCommand from './install/scripts.ts';
 
 /**
  * Zod schema for release command positional arguments.
@@ -147,7 +147,7 @@ export default Command('release', 'Build and compile CLI for all target platform
   .Commands({
     Build: BuildCommand.Build(),
     Compile: CompileCommand.Build(),
-    InstallScripts: InstallScriptsCommand.Build(),
+    Scripts: ScriptsCommand.Build(),
   })
   .Services(async (ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
@@ -164,7 +164,7 @@ export default Command('release', 'Build and compile CLI for all target platform
   })
   .Run(async ({ Params, Log, Commands, Services }) => {
     const { DFS } = Services;
-    const { Build, Compile, InstallScripts } = Commands!;
+    const { Build, Compile, Scripts } = Commands!;
 
     // Load config
     const configPath = await DFS.ResolvePath('.cli.json');
@@ -204,7 +204,7 @@ export default Command('release', 'Build and compile CLI for all target platform
       Log.Info('━'.repeat(50));
       Log.Info('Step 3/3: Generating install scripts');
       Log.Info('━'.repeat(50));
-      await InstallScripts([], {
+      await Scripts([], {
         config: configPath,
         ...(Params.Repo ? { repo: Params.Repo } : {}),
       });

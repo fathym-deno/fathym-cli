@@ -18,7 +18,9 @@ CommandIntents(
         'Usage:',
         'Available Commands',
         'hello - hello - Prints a friendly greeting.',
+        'manage - manage - Show management status and options.',
         'Available Groups',
+        'manage - manage - Management utilities and operations',
         'secondary - secondary - Secondary commands',
       )
       .ExpectExit(0))
@@ -60,6 +62,35 @@ CommandIntents(
         'Flags:',
         '--excited - Add extra enthusiasm to the wave',
         '--dry-run - Show the wave without printing it',
+      )
+      .ExpectExit(0))
+  // === Same-named command and group tests ===
+  // Validates that a key can be both a command AND a group
+  .Intent("Show 'manage' command+group help (same-named)", (int) =>
+    int
+      .Args(['manage', '--help'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .ExpectLogs(
+        // Command section
+        'Show management status and options.',
+        'Flags:',
+        '--verbose - Show detailed output',
+        '--dry-run - Show what would be done without doing it',
+        // Group section - should also show subcommands
+        'Available Commands',
+        'users - users - List and manage users.',
+      )
+      .ExpectExit(0))
+  // Subcommand within same-named group
+  .Intent("Show 'manage/users' command help", (int) =>
+    int
+      .Args(['manage/users', '--help'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .ExpectLogs(
+        'List and manage users.',
+        'Flags:',
+        '--all - Show all users including inactive',
+        '--dry-run - Show what would be done without doing it',
       )
       .ExpectExit(0))
   // // === Schema-driven help validation ===

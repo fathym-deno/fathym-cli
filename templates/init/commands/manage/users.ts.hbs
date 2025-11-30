@@ -1,0 +1,63 @@
+import { z } from 'zod';
+import {
+  type CommandContext,
+  CommandParams,
+  CommandRuntime,
+  defineCommandModule,
+} from '@fathym/cli';
+
+// 🧩 Define schemas
+const UsersFlagsSchema = z.object({
+  all: z.boolean().optional().describe('Show all users including inactive'),
+  'dry-run': z
+    .boolean()
+    .optional()
+    .describe('Show what would be done without doing it'),
+});
+
+const UsersArgsSchema = z.tuple([]);
+
+// 🧩 Parameter class
+class UsersCommandParams extends CommandParams<
+  z.infer<typeof UsersArgsSchema>,
+  z.infer<typeof UsersFlagsSchema>
+> {
+  get All(): boolean {
+    return this.Flag('all') ?? false;
+  }
+}
+
+// 🚀 Command logic
+export class UsersCommand extends CommandRuntime<UsersCommandParams> {
+  public Run(ctx: CommandContext<UsersCommandParams>): Promise<void> {
+    const { All, DryRun } = ctx.Params;
+    const { Log } = ctx;
+
+    if (DryRun) {
+      Log.Info('🛑 Dry run: Would list users');
+    } else {
+      Log.Info('👥 Listing users...');
+      if (All) {
+        Log.Info('   Including inactive users');
+      }
+    }
+
+    return Promise.resolve();
+  }
+
+  public BuildMetadata() {
+    return this.buildMetadataFromSchemas(
+      'users',
+      'List and manage users.',
+      UsersArgsSchema,
+      UsersFlagsSchema
+    );
+  }
+}
+
+export default defineCommandModule({
+  FlagsSchema: UsersFlagsSchema,
+  ArgsSchema: UsersArgsSchema,
+  Params: UsersCommandParams,
+  Command: UsersCommand,
+});

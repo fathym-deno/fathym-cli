@@ -330,12 +330,22 @@ async function collectCommandMetadata(
   const modules = [];
   const commandEntries: Record<string, CLICommandEntry> = {};
 
+  // Track seen keys to handle same-named command and group
+  const seenKeys = new Set<string>();
+
   for (const path of entries) {
     const rel = path.replace(`${commandsDir}/`, '').replace(/\\/g, '/');
     const isMeta = rel.endsWith('.metadata.ts');
     const key = isMeta ? rel.replace(/\/\.metadata\.ts$/, '') : rel.replace(/\.ts$/, '');
     const group = key.split('/')[0];
-    const alias = `${pascalCase(key.split('/').pop()!)}Command`;
+
+    // Use different suffixes for commands vs groups to avoid duplicate identifiers
+    // when a key has both a command file and a group metadata file
+    const baseName = pascalCase(key.split('/').pop()!);
+    const alias = isMeta ? `${baseName}Group` : `${baseName}Command`;
+
+    // Use different module keys for command vs group when both exist
+    const moduleKey = isMeta ? `${key}:group` : key;
 
     const entryData = commandEntries[key] ?? {
       CommandPath: undefined,
@@ -346,14 +356,15 @@ async function collectCommandMetadata(
     if (isMeta) {
       entryData.GroupPath = await dfs.ResolvePath(path);
       imports.push({ alias, path: `../commands/${rel}` });
-      modules.push({ key, alias });
+      modules.push({ key: moduleKey, alias });
     } else {
       entryData.CommandPath = await dfs.ResolvePath(path);
       imports.push({ alias, path: `../commands/${rel}` });
-      modules.push({ key, alias });
+      modules.push({ key: moduleKey, alias });
     }
 
     commandEntries[key] = entryData;
+    seenKeys.add(key);
   }
 
   return { imports, modules, commandEntries };

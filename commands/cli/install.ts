@@ -90,7 +90,7 @@ import { dirname, join } from '@std/path';
 import { exists } from '@fathym/common/path';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
-import { detectTarget, getBinaryExtension } from '../../src/FathymCLIConfig.ts';
+import { detectTarget, getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
 
 /**
  * Zod schema for install command positional arguments.

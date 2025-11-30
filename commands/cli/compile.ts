@@ -104,7 +104,7 @@ import { join } from '@std/path/join';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, runCommandWithLogs } from '@fathym/cli';
 import BuildCommand from './build.ts';
-import { getBinaryExtension } from '../../src/FathymCLIConfig.ts';
+import { getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
 
 /**
  * Zod schema for compile command positional arguments.
