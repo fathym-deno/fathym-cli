@@ -1,4 +1,17 @@
 {
+  "tasks": {
+    "run": "ftm-cli run",
+    "build": "deno task build:fmt && deno task build:lint && deno task build:cli && deno task test",
+    "compile": "ftm-cli compile",
+    "install": "ftm-cli install --useHome --to=.bin",
+    "release": "deno task build && deno task compile && deno task install",
+    "test": "ftm-cli test",
+    "deploy": "npx rimraf cov && deno task build && deno task publish:check && ftm git",
+    "build:cli": "ftm-cli build",
+    "build:fmt": "deno fmt",
+    "build:lint": "deno lint",
+    "publish:check": "deno publish --dry-run --allow-dirty"
+  },
   "imports": {
     "@fathym/common": "jsr:@fathym/common@0.2.299",
     "@fathym/cli": "jsr:@fathym/cli@0.0.79",

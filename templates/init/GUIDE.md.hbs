@@ -29,13 +29,16 @@ ftm run <command> [args] [--flags]
 # 2. Run intent tests
 ftm test
 
-# 3. Type check
-deno check **/*.ts
+# 3. Build (format, lint, test)
+deno task build
 
-# 4. Build and compile
+# 4. Quick validation (no tests)
+deno task check
+
+# 5. Build and compile to binary
 ftm build && ftm compile
 
-# 5. Install to PATH (optional)
+# 6. Install to PATH (optional)
 ftm install --useHome
 ```
 
@@ -396,10 +399,8 @@ ftm install --useHome
 
 Before committing changes:
 
-- [ ] `deno fmt` passes
-- [ ] `deno lint` passes
-- [ ] `deno check **/*.ts` passes
-- [ ] `ftm test` passes
+- [ ] `deno task build` passes (format + lint + tests)
+- [ ] `deno task check` passes (format + lint + type check)
 - [ ] New commands have intent tests
 - [ ] New flags have intent tests
 - [ ] Mutation commands support `--dry-run`

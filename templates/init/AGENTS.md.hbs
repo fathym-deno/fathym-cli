@@ -38,7 +38,7 @@ Guardrails for humans and AI collaborating on this CLI project.
 
 ## Core Guardrails
 
-1. **Test before commit.** Run `ftm test` before any commit.
+1. **Build before commit.** Run `deno task build` before any commit.
 2. **Commands need tests.** Every command must have corresponding intent tests.
 3. **Use the Params class pattern.** Access args/flags through getters only.
 4. **Services via IoC.** Register in `.cli.init.ts`, resolve in commands.
@@ -53,7 +53,7 @@ Guardrails for humans and AI collaborating on this CLI project.
 |------|---------|
 | `.cli.json` | CLI identity (Name, Tokens, Version) |
 | `.cli.init.ts` | IoC service registration |
-| `deno.jsonc` | Deno tasks and imports |
+| `deno.jsonc` | Deno tasks (`build`, `build:fmt`, `build:lint`, `check`) and imports |
 | `commands/*.ts` | Command implementations |
 | `intents/*.intents.ts` | Intent tests |
 | `intents/.intents.ts` | Test entry point (imports all tests) |
@@ -182,11 +182,10 @@ CommandIntents('Command Suite', cmd.Build(), origin)
 
 Before considering any change complete:
 
-1. **Format**: `deno fmt` passes
-2. **Lint**: `deno lint` passes
-3. **Type Check**: `deno check **/*.ts` passes
-4. **Tests**: `ftm test` passes
-5. **Coverage**: New code has intent tests
+1. **Build**: `deno task build` passes (format + lint + tests)
+2. **Check**: `deno task check` passes (format + lint + types)
+3. **Tests**: `ftm test` passes
+4. **Coverage**: New code has intent tests
 
 ---
 
