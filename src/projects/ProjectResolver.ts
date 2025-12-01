@@ -253,10 +253,18 @@ export class DFSProjectResolver implements ProjectResolver {
       const absoluteConfigPath = this.DFS.ResolvePath(configPath);
       const dir = dirname(absoluteConfigPath);
       const name = typeof config.name === 'string' ? config.name : undefined;
-      const tasks = config.tasks ?? {};
-      const hasDev = Boolean(tasks && Object.hasOwn(tasks, 'dev'));
+      const rawTasks = config.tasks ?? {};
+      const hasDev = Boolean(rawTasks && Object.hasOwn(rawTasks, 'dev'));
 
-      return { name, dir, configPath: absoluteConfigPath, hasDev };
+      // Convert tasks to Record<string, string>, filtering non-string values
+      const tasks: Record<string, string> = {};
+      for (const [key, value] of Object.entries(rawTasks)) {
+        if (typeof value === 'string') {
+          tasks[key] = value;
+        }
+      }
+
+      return { name, dir, configPath: absoluteConfigPath, hasDev, tasks };
     } catch {
       return undefined;
     }

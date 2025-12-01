@@ -1,0 +1,83 @@
+{
+  "scriptId": "704",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/locales/lt.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 8471,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "parsedType",
+      "ranges": [
+        {
+          "startOffset": 67,
+          "endOffset": 147,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "parsedTypeFromType",
+      "ranges": [
+        {
+          "startOffset": 176,
+          "endOffset": 1318,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "capitalizeFirstCharacter",
+      "ranges": [
+        {
+          "startOffset": 1353,
+          "endOffset": 1423,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "getUnitTypeFromNumber",
+      "ranges": [
+        {
+          "startOffset": 1425,
+          "endOffset": 1692,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "error",
+      "ranges": [
+        {
+          "startOffset": 1707,
+          "endOffset": 8388,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "default",
+      "ranges": [
+        {
+          "startOffset": 8405,
+          "endOffset": 8470,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

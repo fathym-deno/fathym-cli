@@ -1,0 +1,132 @@
+{
+  "scriptId": "628",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/locales/en.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 4501,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "parsedType",
+      "ranges": [
+        {
+          "startOffset": 67,
+          "endOffset": 583,
+          "count": 4
+        },
+        {
+          "startOffset": 131,
+          "endOffset": 215,
+          "count": 0
+        },
+        {
+          "startOffset": 224,
+          "endOffset": 561,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "error",
+      "ranges": [
+        {
+          "startOffset": 599,
+          "endOffset": 4418,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "getSizing",
+      "ranges": [
+        {
+          "startOffset": 847,
+          "endOffset": 921,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1771,
+          "endOffset": 4415,
+          "count": 4
+        },
+        {
+          "startOffset": 1964,
+          "endOffset": 2226,
+          "count": 0
+        },
+        {
+          "startOffset": 2239,
+          "endOffset": 2669,
+          "count": 0
+        },
+        {
+          "startOffset": 2682,
+          "endOffset": 3102,
+          "count": 0
+        },
+        {
+          "startOffset": 3115,
+          "endOffset": 3809,
+          "count": 0
+        },
+        {
+          "startOffset": 3822,
+          "endOffset": 3926,
+          "count": 0
+        },
+        {
+          "startOffset": 3939,
+          "endOffset": 4080,
+          "count": 0
+        },
+        {
+          "startOffset": 4093,
+          "endOffset": 4169,
+          "count": 0
+        },
+        {
+          "startOffset": 4182,
+          "endOffset": 4243,
+          "count": 0
+        },
+        {
+          "startOffset": 4256,
+          "endOffset": 4338,
+          "count": 0
+        },
+        {
+          "startOffset": 4351,
+          "endOffset": 4399,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "default",
+      "ranges": [
+        {
+          "startOffset": 4435,
+          "endOffset": 4500,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}

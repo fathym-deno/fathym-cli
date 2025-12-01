@@ -1,0 +1,39 @@
+{
+  "scriptId": "725",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/locales/yo.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 4384,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "error",
+      "ranges": [
+        {
+          "startOffset": 55,
+          "endOffset": 4301,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "default",
+      "ranges": [
+        {
+          "startOffset": 4318,
+          "endOffset": 4383,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

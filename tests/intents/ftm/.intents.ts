@@ -4,6 +4,7 @@ import './compile.intents.ts';
 import './config.intents.ts';
 import './install.intents.ts';
 import './run.intents.ts';
+import './task.intents.ts';
 import './test.intents.ts';
 import './help.intents.ts';
 import './projects/.intents.ts';

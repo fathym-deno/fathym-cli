@@ -199,3 +199,45 @@ Deno.test('DFSProjectResolver - Resolve handles deno.json (not just jsonc)', asy
   assertEquals(projects.length, 1);
   assertEquals(projects[0].name, '@test/json-app');
 });
+
+Deno.test('DFSProjectResolver - Resolve populates tasks field', async () => {
+  const dfs = createTestDFS({
+    '/projects/with-tasks/deno.jsonc': JSON.stringify({
+      name: '@test/with-tasks',
+      exports: { '.': './mod.ts' },
+      tasks: {
+        build: 'deno task compile',
+        test: 'deno test -A',
+        dev: 'deno run -A --watch src/main.ts',
+        lint: 'deno lint',
+      },
+    }),
+  });
+
+  const resolver = new DFSProjectResolver(dfs);
+  const projects = await resolver.Resolve('/projects/with-tasks');
+
+  assertEquals(projects.length, 1);
+  assertExists(projects[0].tasks);
+  assertEquals(Object.keys(projects[0].tasks!).length, 4);
+  assertEquals(projects[0].tasks!['build'], 'deno task compile');
+  assertEquals(projects[0].tasks!['test'], 'deno test -A');
+  assertEquals(projects[0].tasks!['dev'], 'deno run -A --watch src/main.ts');
+  assertEquals(projects[0].tasks!['lint'], 'deno lint');
+});
+
+Deno.test('DFSProjectResolver - Resolve returns empty tasks for project without tasks', async () => {
+  const dfs = createTestDFS({
+    '/projects/no-tasks/deno.jsonc': JSON.stringify({
+      name: '@test/no-tasks',
+      exports: { '.': './mod.ts' },
+    }),
+  });
+
+  const resolver = new DFSProjectResolver(dfs);
+  const projects = await resolver.Resolve('/projects/no-tasks');
+
+  assertEquals(projects.length, 1);
+  assertExists(projects[0].tasks);
+  assertEquals(Object.keys(projects[0].tasks!).length, 0);
+});

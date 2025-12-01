@@ -1,0 +1,317 @@
+{
+  "scriptId": "668",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/core/parse.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 4528,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "_parse",
+      "ranges": [
+        {
+          "startOffset": 131,
+          "endOffset": 658,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 141,
+          "endOffset": 658,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_parseAsync",
+      "ranges": [
+        {
+          "startOffset": 753,
+          "endOffset": 1261,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 763,
+          "endOffset": 1261,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_safeParse",
+      "ranges": [
+        {
+          "startOffset": 1365,
+          "endOffset": 1875,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1375,
+          "endOffset": 1875,
+          "count": 9
+        },
+        {
+          "startOffset": 1423,
+          "endOffset": 1450,
+          "count": 0
+        },
+        {
+          "startOffset": 1570,
+          "endOffset": 1618,
+          "count": 0
+        },
+        {
+          "startOffset": 1659,
+          "endOffset": 1824,
+          "count": 4
+        },
+        {
+          "startOffset": 1720,
+          "endOffset": 1739,
+          "count": 0
+        },
+        {
+          "startOffset": 1833,
+          "endOffset": 1872,
+          "count": 5
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1759,
+          "endOffset": 1811,
+          "count": 4
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "_safeParseAsync",
+      "ranges": [
+        {
+          "startOffset": 1982,
+          "endOffset": 2466,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 1992,
+          "endOffset": 2466,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_encode",
+      "ranges": [
+        {
+          "startOffset": 2575,
+          "endOffset": 2757,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 2585,
+          "endOffset": 2757,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_decode",
+      "ranges": [
+        {
+          "startOffset": 2850,
+          "endOffset": 2934,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 2860,
+          "endOffset": 2934,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_encodeAsync",
+      "ranges": [
+        {
+          "startOffset": 3032,
+          "endOffset": 3225,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3042,
+          "endOffset": 3225,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_decodeAsync",
+      "ranges": [
+        {
+          "startOffset": 3333,
+          "endOffset": 3428,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3343,
+          "endOffset": 3428,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_safeEncode",
+      "ranges": [
+        {
+          "startOffset": 3535,
+          "endOffset": 3721,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3545,
+          "endOffset": 3721,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_safeDecode",
+      "ranges": [
+        {
+          "startOffset": 3826,
+          "endOffset": 3914,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3836,
+          "endOffset": 3914,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_safeEncodeAsync",
+      "ranges": [
+        {
+          "startOffset": 4024,
+          "endOffset": 4221,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 4034,
+          "endOffset": 4221,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "_safeDecodeAsync",
+      "ranges": [
+        {
+          "startOffset": 4341,
+          "endOffset": 4440,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 4351,
+          "endOffset": 4440,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "scriptId": "876",
+  "url": "file:///C:/Fathym/source/github/fathym-deno/fathym-dev-space/projects/open-source/fathym-cli/commands/projects/.metadata.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 276,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}

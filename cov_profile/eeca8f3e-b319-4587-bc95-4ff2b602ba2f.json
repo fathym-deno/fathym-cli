@@ -1,0 +1,72 @@
+{
+  "scriptId": "678",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/core/to-json-schema.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 38433,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "JSONSchemaGenerator",
+      "ranges": [
+        {
+          "startOffset": 146,
+          "endOffset": 521,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "process",
+      "ranges": [
+        {
+          "startOffset": 526,
+          "endOffset": 27328,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "emit",
+      "ranges": [
+        {
+          "startOffset": 27333,
+          "endOffset": 35543,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "toJSONSchema",
+      "ranges": [
+        {
+          "startOffset": 35553,
+          "endOffset": 36589,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "isTransforming",
+      "ranges": [
+        {
+          "startOffset": 36590,
+          "endOffset": 38432,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

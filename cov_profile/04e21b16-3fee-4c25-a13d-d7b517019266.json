@@ -1,0 +1,72 @@
+{
+  "scriptId": "871",
+  "url": "file:///C:/Fathym/source/github/fathym-deno/fathym-dev-space/projects/open-source/fathym-cli/commands/task.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 5024,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "get ProjectRef",
+      "ranges": [
+        {
+          "startOffset": 2537,
+          "endOffset": 2583,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "get TaskName",
+      "ranges": [
+        {
+          "startOffset": 2635,
+          "endOffset": 2679,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "get DryRun",
+      "ranges": [
+        {
+          "startOffset": 2726,
+          "endOffset": 2786,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 2943,
+          "endOffset": 3297,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3303,
+          "endOffset": 5021,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

@@ -1,0 +1,407 @@
+{
+  "scriptId": "336",
+  "url": "file:///C:/Fathym/source/github/fathym-deno/fathym-dev-space/projects/open-source/fathym-cli/src/projects/ProjectResolver.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 7473,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [
+        {
+          "startOffset": 2099,
+          "endOffset": 2102,
+          "count": 12
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "DFSProjectResolver",
+      "ranges": [
+        {
+          "startOffset": 2219,
+          "endOffset": 2260,
+          "count": 12
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "Resolve",
+      "ranges": [
+        {
+          "startOffset": 2263,
+          "endOffset": 3802,
+          "count": 13
+        },
+        {
+          "startOffset": 2328,
+          "endOffset": 2345,
+          "count": 1
+        },
+        {
+          "startOffset": 2346,
+          "endOffset": 2353,
+          "count": 12
+        },
+        {
+          "startOffset": 2416,
+          "endOffset": 2482,
+          "count": 5
+        },
+        {
+          "startOffset": 2482,
+          "endOffset": 2575,
+          "count": 8
+        },
+        {
+          "startOffset": 2575,
+          "endOffset": 2774,
+          "count": 1
+        },
+        {
+          "startOffset": 2683,
+          "endOffset": 2702,
+          "count": 0
+        },
+        {
+          "startOffset": 2704,
+          "endOffset": 2714,
+          "count": 0
+        },
+        {
+          "startOffset": 2774,
+          "endOffset": 2890,
+          "count": 7
+        },
+        {
+          "startOffset": 2890,
+          "endOffset": 2910,
+          "count": 0
+        },
+        {
+          "startOffset": 2911,
+          "endOffset": 2932,
+          "count": 7
+        },
+        {
+          "startOffset": 2973,
+          "endOffset": 2992,
+          "count": 0
+        },
+        {
+          "startOffset": 2993,
+          "endOffset": 3013,
+          "count": 7
+        },
+        {
+          "startOffset": 3125,
+          "endOffset": 3148,
+          "count": 7
+        },
+        {
+          "startOffset": 3148,
+          "endOffset": 3261,
+          "count": 3
+        },
+        {
+          "startOffset": 3179,
+          "endOffset": 3198,
+          "count": 0
+        },
+        {
+          "startOffset": 3200,
+          "endOffset": 3210,
+          "count": 0
+        },
+        {
+          "startOffset": 3261,
+          "endOffset": 3349,
+          "count": 4
+        },
+        {
+          "startOffset": 3349,
+          "endOffset": 3460,
+          "count": 1
+        },
+        {
+          "startOffset": 3379,
+          "endOffset": 3398,
+          "count": 0
+        },
+        {
+          "startOffset": 3400,
+          "endOffset": 3410,
+          "count": 0
+        },
+        {
+          "startOffset": 3460,
+          "endOffset": 3600,
+          "count": 3
+        },
+        {
+          "startOffset": 3600,
+          "endOffset": 3668,
+          "count": 1
+        },
+        {
+          "startOffset": 3668,
+          "endOffset": 3801,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "discoverProjects",
+      "ranges": [
+        {
+          "startOffset": 3805,
+          "endOffset": 4298,
+          "count": 7
+        },
+        {
+          "startOffset": 4050,
+          "endOffset": 4273,
+          "count": 13
+        },
+        {
+          "startOffset": 4077,
+          "endOffset": 4086,
+          "count": 0
+        },
+        {
+          "startOffset": 4173,
+          "endOffset": 4182,
+          "count": 0
+        },
+        {
+          "startOffset": 4207,
+          "endOffset": 4226,
+          "count": 2
+        },
+        {
+          "startOffset": 4228,
+          "endOffset": 4237,
+          "count": 1
+        },
+        {
+          "startOffset": 4237,
+          "endOffset": 4273,
+          "count": 12
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "walkDirectory",
+      "ranges": [
+        {
+          "startOffset": 4301,
+          "endOffset": 5186,
+          "count": 1
+        },
+        {
+          "startOffset": 4693,
+          "endOffset": 5161,
+          "count": 3
+        },
+        {
+          "startOffset": 4720,
+          "endOffset": 4729,
+          "count": 0
+        },
+        {
+          "startOffset": 4947,
+          "endOffset": 4974,
+          "count": 1
+        },
+        {
+          "startOffset": 4974,
+          "endOffset": 5061,
+          "count": 2
+        },
+        {
+          "startOffset": 5061,
+          "endOffset": 5070,
+          "count": 0
+        },
+        {
+          "startOffset": 5070,
+          "endOffset": 5095,
+          "count": 2
+        },
+        {
+          "startOffset": 5095,
+          "endOffset": 5114,
+          "count": 0
+        },
+        {
+          "startOffset": 5116,
+          "endOffset": 5125,
+          "count": 0
+        },
+        {
+          "startOffset": 5125,
+          "endOffset": 5161,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "resolveByName",
+      "ranges": [
+        {
+          "startOffset": 5189,
+          "endOffset": 5509,
+          "count": 2
+        },
+        {
+          "startOffset": 5348,
+          "endOffset": 5485,
+          "count": 3
+        },
+        {
+          "startOffset": 5382,
+          "endOffset": 5479,
+          "count": 1
+        },
+        {
+          "startOffset": 5410,
+          "endOffset": 5429,
+          "count": 0
+        },
+        {
+          "startOffset": 5431,
+          "endOffset": 5440,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "loadProjectFromPath",
+      "ranges": [
+        {
+          "startOffset": 5512,
+          "endOffset": 6503,
+          "count": 27
+        },
+        {
+          "startOffset": 5646,
+          "endOffset": 5663,
+          "count": 7
+        },
+        {
+          "startOffset": 5663,
+          "endOffset": 5939,
+          "count": 20
+        },
+        {
+          "startOffset": 5939,
+          "endOffset": 5952,
+          "count": 18
+        },
+        {
+          "startOffset": 5953,
+          "endOffset": 5964,
+          "count": 2
+        },
+        {
+          "startOffset": 6002,
+          "endOffset": 6007,
+          "count": 16
+        },
+        {
+          "startOffset": 6047,
+          "endOffset": 6080,
+          "count": 20
+        },
+        {
+          "startOffset": 6243,
+          "endOffset": 6333,
+          "count": 8
+        },
+        {
+          "startOffset": 6333,
+          "endOffset": 6461,
+          "count": 20
+        },
+        {
+          "startOffset": 6461,
+          "endOffset": 6499,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "isDirectory",
+      "ranges": [
+        {
+          "startOffset": 6506,
+          "endOffset": 6865,
+          "count": 3
+        },
+        {
+          "startOffset": 6702,
+          "endOffset": 6843,
+          "count": 4
+        },
+        {
+          "startOffset": 6807,
+          "endOffset": 6837,
+          "count": 1
+        },
+        {
+          "startOffset": 6843,
+          "endOffset": 6864,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "isDenoConfig",
+      "ranges": [
+        {
+          "startOffset": 6868,
+          "endOffset": 7023,
+          "count": 8
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "normalizePath",
+      "ranges": [
+        {
+          "startOffset": 7157,
+          "endOffset": 7470,
+          "count": 11
+        },
+        {
+          "startOffset": 7288,
+          "endOffset": 7335,
+          "count": 7
+        },
+        {
+          "startOffset": 7396,
+          "endOffset": 7443,
+          "count": 2
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}

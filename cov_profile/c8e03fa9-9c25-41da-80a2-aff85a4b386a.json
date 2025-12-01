@@ -1,0 +1,72 @@
+{
+  "scriptId": "631",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/classic/coerce.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 550,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "string",
+      "ranges": [
+        {
+          "startOffset": 90,
+          "endOffset": 176,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "number",
+      "ranges": [
+        {
+          "startOffset": 184,
+          "endOffset": 270,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "boolean",
+      "ranges": [
+        {
+          "startOffset": 278,
+          "endOffset": 367,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "bigint",
+      "ranges": [
+        {
+          "startOffset": 375,
+          "endOffset": 461,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "date",
+      "ranges": [
+        {
+          "startOffset": 469,
+          "endOffset": 549,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

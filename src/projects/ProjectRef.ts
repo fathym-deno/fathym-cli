@@ -15,4 +15,7 @@ export type ProjectRef = {
 
   /** Whether the project has a 'dev' task defined */
   hasDev?: boolean;
+
+  /** All tasks defined in deno.json(c) */
+  tasks?: Record<string, string>;
 };

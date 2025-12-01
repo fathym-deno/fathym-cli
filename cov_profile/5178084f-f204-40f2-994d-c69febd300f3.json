@@ -1,0 +1,94 @@
+{
+  "scriptId": "669",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/core/errors.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 6115,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "initializer",
+      "ranges": [
+        {
+          "startOffset": 97,
+          "endOffset": 533,
+          "count": 4
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "value",
+      "ranges": [
+        {
+          "startOffset": 477,
+          "endOffset": 495,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "flattenError",
+      "ranges": [
+        {
+          "startOffset": 695,
+          "endOffset": 1140,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "formatError",
+      "ranges": [
+        {
+          "startOffset": 1148,
+          "endOffset": 2569,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "treeifyError",
+      "ranges": [
+        {
+          "startOffset": 2577,
+          "endOffset": 4452,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "toDotPath",
+      "ranges": [
+        {
+          "startOffset": 5090,
+          "endOffset": 5657,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "prettifyError",
+      "ranges": [
+        {
+          "startOffset": 5665,
+          "endOffset": 6114,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    }
+  ]
+}

@@ -378,6 +378,121 @@ export default defineCommandModule({
 
 ---
 
+## Task: Organize Commands into Groups
+
+For larger CLIs, organize related commands into groups using directories.
+
+### Directory Structure
+
+```
+commands/
+├── hello.ts                   # Root command: hello
+├── deploy/                    # Group: deploy
+│   ├── .metadata.ts          # Group metadata (optional)
+│   ├── staging.ts            # Command: deploy staging
+│   └── production.ts         # Command: deploy production
+└── db/
+    ├── .metadata.ts
+    └── migrate/               # Nested group: db migrate
+        ├── .metadata.ts
+        ├── up.ts             # Command: db migrate up
+        └── down.ts           # Command: db migrate down
+```
+
+### Group Metadata
+
+Create `.metadata.ts` to describe the group:
+
+```typescript
+// commands/deploy/.metadata.ts
+export default {
+  Name: 'deploy',
+  Description: 'Deployment commands',
+  Examples: [
+    '{{token}} deploy staging',
+    '{{token}} deploy production --force',
+  ],
+};
+```
+
+### Commands in Groups
+
+```typescript
+// commands/deploy/staging.ts
+import { Command } from '@fathym/cli';
+
+export default Command('deploy/staging', 'Deploy to staging')
+  .Run(async ({ Log }) => {
+    Log.Info('Deploying to staging...');
+    // deployment logic
+  });
+```
+
+### Invocation
+
+```bash
+{{token}} deploy staging
+{{token}} deploy production
+{{token}} db migrate up
+```
+
+> **See also:** [Command Groups Guide](https://github.com/fathym-deno/fathym-cli/blob/main/docs/guides/command-groups.mdx) for nested groups, multiple command sources, and best practices.
+
+---
+
+## Task: Create Custom Templates
+
+Templates enable code generation commands using Handlebars.
+
+### Step 1: Create template folder
+
+```
+templates/
+└── component/
+    ├── {{name}}.tsx.hbs
+    └── {{name}}.test.ts.hbs
+```
+
+### Step 2: Use Handlebars syntax
+
+```handlebars
+// templates/component/{{curly_open}}{{curly_open}}name{{curly_close}}{{curly_close}}.tsx.hbs
+export const {{name}} = () => {
+  return <div>{{name}} Component</div>;
+};
+```
+
+### Step 3: Create generator command
+
+```typescript
+import { Command, TemplateScaffolder, TemplateLocator, CLIDFSContextManager } from '@fathym/cli';
+import { z } from 'zod';
+
+const ArgsSchema = z.tuple([z.string().describe('Component name').meta({ argName: 'name' })]);
+
+export default Command('generate', 'Generate a component')
+  .Args(ArgsSchema)
+  .Services(async (ctx, ioc) => ({
+    Scaffolder: new TemplateScaffolder(
+      await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
+      (await ioc.Resolve(CLIDFSContextManager)).GetExecutionDFS(),
+      { name: ctx.Params.Arg(0) }
+    ),
+  }))
+  .Run(async ({ Services, Params, Log }) => {
+    const name = Params.Arg(0);
+    await Services.Scaffolder.Scaffold({
+      templateName: 'component',
+      outputDir: `./src/components/${name}`,
+    });
+    Log.Success(`Generated component: ${name}`);
+  });
+```
+
+> **See also:** [Templates Concept](https://github.com/fathym-deno/fathym-cli/blob/main/docs/concepts/templates.mdx) for advanced Handlebars features, conditionals, and loops.
+
+---
+
 ## Intent Testing Reference
 
 ### Suite Pattern (Recommended)
@@ -610,3 +725,43 @@ Before committing changes:
 - [ ] New commands have intent tests
 - [ ] New flags have intent tests
 - [ ] Mutation commands support `--dry-run`
+
+---
+
+## External Documentation
+
+This guide covers the essentials for building CLIs with Fathym. For complete documentation:
+
+### Core Framework
+
+- **[@fathym/cli on JSR](https://jsr.io/@fathym/cli)** - API reference and types
+- **[fathym-cli GitHub](https://github.com/fathym-deno/fathym-cli)** - Full documentation, examples, and source
+
+### Documentation Topics
+
+| Topic | Link |
+|-------|------|
+| Command Groups | [docs/guides/command-groups.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/guides/command-groups.mdx) |
+| Authoring Commands | [docs/guides/authoring-commands.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/guides/authoring-commands.mdx) |
+| Templates & Scaffolding | [docs/concepts/templates.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/concepts/templates.mdx) |
+| CLI Configuration | [docs/concepts/configuration.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/concepts/configuration.mdx) |
+| CLI Lifecycle | [docs/concepts/cli-lifecycle.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/concepts/cli-lifecycle.mdx) |
+| Distribution | [docs/guides/distribution.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/guides/distribution.mdx) |
+
+### Command Reference
+
+| Command | Link |
+|---------|------|
+| `ftm init` | [docs/api/init.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/init.mdx) |
+| `ftm build` | [docs/api/build.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/build.mdx) |
+| `ftm compile` | [docs/api/compile.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/compile.mdx) |
+| `ftm run` | [docs/api/run.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/run.mdx) |
+| `ftm test` | [docs/api/test.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/test.mdx) |
+| `ftm release` | [docs/api/release.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/release.mdx) |
+| `ftm install` | [docs/api/install.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/install.mdx) |
+
+### Related Packages
+
+- **[@fathym/dfs](https://jsr.io/@fathym/dfs)** - Distributed File System abstraction
+- **[@fathym/ioc](https://jsr.io/@fathym/ioc)** - Inversion of Control container
+- **[@fathym/ftm/projects](https://jsr.io/@fathym/ftm)** - Project resolution utilities

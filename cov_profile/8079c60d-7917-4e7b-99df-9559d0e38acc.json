@@ -1,0 +1,131 @@
+{
+  "scriptId": "674",
+  "url": "file:///C:/Users/MileH/AppData/Local/deno/npm/registry.npmjs.org/zod/4.1.13/v4/core/regexes.js",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 8767,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "uuid",
+      "ranges": [
+        {
+          "startOffset": 1381,
+          "endOffset": 1724,
+          "count": 3
+        },
+        {
+          "startOffset": 1422,
+          "endOffset": 1598,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "emoji",
+      "ranges": [
+        {
+          "startOffset": 3115,
+          "endOffset": 3171,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "mac",
+      "ranges": [
+        {
+          "startOffset": 3734,
+          "endOffset": 3933,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "timeSource",
+      "ranges": [
+        {
+          "startOffset": 5567,
+          "endOffset": 5952,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "time",
+      "ranges": [
+        {
+          "startOffset": 5960,
+          "endOffset": 6031,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "datetime",
+      "ranges": [
+        {
+          "startOffset": 6091,
+          "endOffset": 6493,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "string",
+      "ranges": [
+        {
+          "startOffset": 6516,
+          "endOffset": 6671,
+          "count": 45
+        },
+        {
+          "startOffset": 6585,
+          "endOffset": 6589,
+          "count": 38
+        },
+        {
+          "startOffset": 6618,
+          "endOffset": 6631,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "fixedBase64",
+      "ranges": [
+        {
+          "startOffset": 7328,
+          "endOffset": 7440,
+          "count": 5
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "fixedBase64url",
+      "ranges": [
+        {
+          "startOffset": 7517,
+          "endOffset": 7605,
+          "count": 5
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}
