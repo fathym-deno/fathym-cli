@@ -11,15 +11,17 @@
     "exclude": ["!.dist/install.ts"]
   },
   "tasks": {
-    "build": "deno task build:fmt && deno task build:lint && deno task publish:check && deno task test",
+    "build": "deno task build:check && deno task ftm:install:scripts && deno task test",
+    "build:check": "deno task build:fmt && deno task build:lint && deno task publish:check",
     "build:fmt": "deno fmt",
     "build:lint": "deno lint --fix",
-    "deploy": "npx rimraf cov && deno task publish:check && deno task build && fathym git",
+    "deploy": "npx rimraf cov && deno task build && fathym git",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
     "ftm:run": "deno task cli:run cli run",
     "ftm:build": "deno task cli:run cli build",
     "ftm:compile": "deno task cli:run cli compile",
     "ftm:install": "deno task cli:run cli install --useHome --to=.bin",
+    "ftm:install:scripts": "deno task cli:run cli install scripts",
     "ftm:release": "deno task ftm:build && deno task ftm:compile && deno task ftm:install",
     "publish:check": "deno publish --dry-run --allow-dirty",
     "test": "deno test -A ./tests/.tests.ts"
