@@ -1,10 +1,10 @@
 import { CommandIntents } from '@fathym/cli';
-import CompileCommand from '../../../commands/cli/compile.ts';
+import CompileCommand from '../../../../commands/cli/compile.ts';
 
 CommandIntents(
   'Compile Command Suite',
   CompileCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.json'),
 )
   .Intent('Compile CLI binary from build output', (int) =>
     int

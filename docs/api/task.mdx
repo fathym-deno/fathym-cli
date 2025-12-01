@@ -1,0 +1,119 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm task
+Summary: API reference for the task command that runs any deno task from a resolved project.
+Created: 2025-12-01
+Updated: 2025-12-01
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm projects:dev
+    Path: ./projects-dev.mdx
+  - Label: Getting Started Guide
+    Path: ../guides/getting-started.mdx
+---
+
+# ftm task
+
+Run any deno task from a resolved project by package name, path, or directory.
+
+## Usage
+
+```bash
+ftm task <project> <task> [flags]
+```
+
+## Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `project` | Yes | Project name, path to deno.json(c), or directory path |
+| `task` | Yes | The deno task name to execute |
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--dry-run` | boolean | `false` | Show what would run without executing |
+
+## Resolution Logic
+
+The `project` argument is resolved in the following order:
+
+1. **deno.json(c) path**: Load single project from config file
+2. **Directory path**: Look for deno.json(c) in directory
+3. **Package name**: Search discovered projects for matching name
+
+## Examples
+
+```bash
+# Run 'build' task for @fathym/cli package
+ftm task @fathym/cli build
+
+# Run 'publish:check' task from a directory path
+ftm task ./projects/ref-arch publish:check
+
+# Run 'ftm:release' task from explicit config path
+ftm task ./projects/open-source/fathym-cli/deno.jsonc ftm:release
+
+# Dry run to see what would execute
+ftm task @myorg/my-package build --dry-run
+```
+
+## Task Validation
+
+The command validates that the specified task exists in the project's deno.json(c). If the task is not found, it displays available tasks:
+
+```bash
+$ ftm task @myorg/my-package nonexistent
+Error: Task 'nonexistent' not found in /path/to/deno.jsonc.
+Available tasks:
+  - build
+  - test
+  - dev
+```
+
+## Project Requirements
+
+The target project must have a `tasks` section in its deno.json(c):
+
+```jsonc
+{
+  "name": "@myorg/my-package",
+  "tasks": {
+    "build": "deno task build:fmt && deno task build:lint",
+    "test": "deno test -A ./tests/.tests.ts",
+    "dev": "deno run -A --watch src/main.ts"
+  }
+}
+```
+
+## Exit Codes
+
+| Code | Description |
+|------|-------------|
+| 0 | Task completed successfully |
+| 1 | Project not found, multiple projects found, or task not found |
+| * | Exit code from `deno task <task>` |
+
+## Comparison with projects:dev
+
+| Feature | `ftm task` | `ftm projects:dev` |
+|---------|------------|-------------------|
+| Task selection | Any task | Only `dev` task |
+| Project argument | Required | Optional (auto-discovers) |
+| Use case | Run specific tasks | Quick dev workflow |
+
+## Source
+
+- Implementation: [`commands/task.ts`](../../commands/task.ts)
+- Tests: [`tests/task.test.ts`](../../tests/task.test.ts)
+- Intent Tests: [`tests/intents/ftm/task.intents.ts`](../../tests/intents/ftm/task.intents.ts)
+
+## Related
+
+- [ftm projects:dev](./projects-dev.mdx) - Run project dev task
+- [Getting Started](../guides/getting-started.mdx) - Development workflow

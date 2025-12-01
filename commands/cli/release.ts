@@ -139,7 +139,10 @@ export class ReleaseParams extends CommandParams<
 /**
  * Release command - orchestrates a full CLI release.
  */
-export default Command('release', 'Build and compile CLI for all target platforms')
+export default Command(
+  'release',
+  'Build and compile CLI for all target platforms',
+)
   .Args(ReleaseArgsSchema)
   .Flags(ReleaseFlagsSchema)
   .Params(ReleaseParams)
@@ -174,7 +177,8 @@ export default Command('release', 'Build and compile CLI for all target platform
     Log.Info('');
 
     // Determine targets
-    const targets = Params.Targets ?? config.Release?.Targets ?? [...DEFAULT_TARGETS];
+    const targets = Params.Targets ?? config.Release?.Targets ??
+      [...DEFAULT_TARGETS];
     Log.Info(`📦 Targets: ${targets.join(', ')}`);
     Log.Info('');
 

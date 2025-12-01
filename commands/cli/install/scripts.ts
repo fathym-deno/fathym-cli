@@ -82,7 +82,9 @@ export const ScriptsFlagsSchema = z
     repo: z
       .string()
       .optional()
-      .describe('GitHub repository (owner/repo). Auto-detected from .git/config if not specified'),
+      .describe(
+        'GitHub repository (owner/repo). Auto-detected from .git/config if not specified',
+      ),
     output: z
       .string()
       .optional()
@@ -580,19 +582,34 @@ export default Command(
     await Deno.mkdir(outputDir, { recursive: true });
 
     // Generate bash script
-    const bashScript = generateBashScript(binaryName, repo, Params.InstallDir, aliases);
+    const bashScript = generateBashScript(
+      binaryName,
+      repo,
+      Params.InstallDir,
+      aliases,
+    );
     const bashPath = join(outputDir, 'install.sh');
     await Deno.writeTextFile(bashPath, bashScript);
     Log.Success(`✅ Generated: ${bashPath}`);
 
     // Generate PowerShell script
-    const psScript = generatePowerShellScript(binaryName, repo, Params.InstallDir, aliases);
+    const psScript = generatePowerShellScript(
+      binaryName,
+      repo,
+      Params.InstallDir,
+      aliases,
+    );
     const psPath = join(outputDir, 'install.ps1');
     await Deno.writeTextFile(psPath, psScript);
     Log.Success(`✅ Generated: ${psPath}`);
 
     // Generate Deno script
-    const denoScript = generateDenoScript(binaryName, repo, Params.InstallDir, aliases);
+    const denoScript = generateDenoScript(
+      binaryName,
+      repo,
+      Params.InstallDir,
+      aliases,
+    );
     const denoPath = join(outputDir, 'install.ts');
     await Deno.writeTextFile(denoPath, denoScript);
     Log.Success(`✅ Generated: ${denoPath}`);
@@ -613,10 +630,14 @@ export default Command(
     Log.Info('📋 Users can install via:');
     Log.Info('');
     Log.Info('   # macOS/Linux');
-    Log.Info(`   curl -fsSL https://github.com/${repo}/releases/latest/download/install.sh | bash`);
+    Log.Info(
+      `   curl -fsSL https://github.com/${repo}/releases/latest/download/install.sh | bash`,
+    );
     Log.Info('');
     Log.Info('   # Windows PowerShell');
-    Log.Info(`   iwr -useb https://github.com/${repo}/releases/latest/download/install.ps1 | iex`);
+    Log.Info(
+      `   iwr -useb https://github.com/${repo}/releases/latest/download/install.ps1 | iex`,
+    );
     Log.Info('');
     Log.Info('   # Deno (cross-platform)');
     Log.Info(`   deno run -A jsr:@scope/${binaryName}/install`);

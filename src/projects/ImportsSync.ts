@@ -167,7 +167,9 @@ const ORIGINAL_END = '// @sync-imports END ORIGINAL IMPORTS';
  * });
  * ```
  */
-export async function syncImports(options: SyncImportsOptions): Promise<SyncImportsResult> {
+export async function syncImports(
+  options: SyncImportsOptions,
+): Promise<SyncImportsResult> {
   const logger = makeLogger(options.log);
   const dfs = options.resolver.DFS;
 
@@ -195,7 +197,9 @@ export async function syncImports(options: SyncImportsOptions): Promise<SyncImpo
   );
 
   if (targetConfigs.length === 0) {
-    throw new Error(`[sync-imports] No usable deno.jsonc targets resolved for: ${options.target}`);
+    throw new Error(
+      `[sync-imports] No usable deno.jsonc targets resolved for: ${options.target}`,
+    );
   }
 
   logger.info(
@@ -209,12 +213,16 @@ export async function syncImports(options: SyncImportsOptions): Promise<SyncImpo
     for (const cfg of targetConfigs) {
       await applyLocalModeToConfig(cfg, localPackages, dfs, logger);
     }
-    logger.info('[sync-imports] Local mode completed for all resolved targets.');
+    logger.info(
+      '[sync-imports] Local mode completed for all resolved targets.',
+    );
   } else {
     for (const cfg of targetConfigs) {
       await applyRemoteModeToConfig(cfg, dfs, logger);
     }
-    logger.info('[sync-imports] Remote mode completed for all resolved targets.');
+    logger.info(
+      '[sync-imports] Remote mode completed for all resolved targets.',
+    );
   }
 
   return { localPackages, targetConfigs };
@@ -280,7 +288,10 @@ async function discoverLocalPackages(
     const name = (config as { name: unknown }).name;
     const exports = (config as { exports: unknown }).exports;
 
-    if (typeof name !== 'string' || typeof exports !== 'object' || exports === null) {
+    if (
+      typeof name !== 'string' || typeof exports !== 'object' ||
+      exports === null
+    ) {
       continue;
     }
 
@@ -299,7 +310,10 @@ async function discoverLocalPackages(
   return packages;
 }
 
-async function isRuntimePackage(pkgDir: string, dfs: DFSFileHandler): Promise<boolean> {
+async function isRuntimePackage(
+  pkgDir: string,
+  dfs: DFSFileHandler,
+): Promise<boolean> {
   const requirementSets = [
     ['main.ts', 'dev.ts', 'DOCKERFILE'],
     ['.cli.json'],
@@ -324,8 +338,12 @@ async function isRuntimePackage(pkgDir: string, dfs: DFSFileHandler): Promise<bo
   return false;
 }
 
-function parseJsrSpecifier(spec: string): { pkgName: string; bucket: string | null } | null {
-  const match = /^jsr:(@[^/@]+\/[^/@]+|[^/@]+)(?:@[^/]+)?(?:\/(.*))?$/.exec(spec);
+function parseJsrSpecifier(
+  spec: string,
+): { pkgName: string; bucket: string | null } | null {
+  const match = /^jsr:(@[^/@]+\/[^/@]+|[^/@]+)(?:@[^/]+)?(?:\/(.*))?$/.exec(
+    spec,
+  );
 
   if (!match) return null;
 
@@ -372,7 +390,9 @@ async function collectLibraryOverrides(
   logger: Logger,
 ): Promise<LibraryOverride[]> {
   const overrides = new Map<string, string>();
-  logger.info(`[sync-imports] Scanning library ${lib.name} for .deps jsr overrides...`);
+  logger.info(
+    `[sync-imports] Scanning library ${lib.name} for .deps jsr overrides...`,
+  );
 
   const libRelPath = relative(dfs.Root, lib.packageDir);
 
@@ -387,7 +407,9 @@ async function collectLibraryOverrides(
     const entryPath = entry.path.replace(/\\/g, '/');
     const libPath = libRelPath.replace(/\\/g, '/');
 
-    if (!entryPath.startsWith(libPath) && !entryPath.startsWith(libPath + '/')) {
+    if (
+      !entryPath.startsWith(libPath) && !entryPath.startsWith(libPath + '/')
+    ) {
       continue;
     }
 
@@ -411,7 +433,11 @@ async function collectLibraryOverrides(
 
       if (overrides.has(specifier)) continue;
 
-      const importPath = resolveLocalPathForSpec(specifier, dirname(lib.configPath), localByName);
+      const importPath = resolveLocalPathForSpec(
+        specifier,
+        dirname(lib.configPath),
+        localByName,
+      );
 
       if (!importPath) {
         logger.info(
@@ -421,7 +447,9 @@ async function collectLibraryOverrides(
 
       if (importPath) {
         overrides.set(specifier, importPath);
-        logger.info(`[sync-imports]     jsr spec ${specifier} => ${importPath}`);
+        logger.info(
+          `[sync-imports]     jsr spec ${specifier} => ${importPath}`,
+        );
       }
     }
   }
@@ -465,7 +493,9 @@ async function collectRuntimeOverridesFromLibraries(
     const imports = (config as { imports: unknown }).imports;
     if (!imports || typeof imports !== 'object') continue;
 
-    for (const [key, value] of Object.entries(imports as Record<string, unknown>)) {
+    for (
+      const [key, value] of Object.entries(imports as Record<string, unknown>)
+    ) {
       if (typeof key !== 'string' || !key.startsWith('jsr:')) continue;
       if (typeof value !== 'string') continue;
 
@@ -552,7 +582,10 @@ function findMarkerRange(lines: string[]): [number, number] | null {
   return start !== -1 && end !== -1 && end > start ? [start, end] : null;
 }
 
-function extractOriginalBlock(lines: string[], range: [number, number]): string[] {
+function extractOriginalBlock(
+  lines: string[],
+  range: [number, number],
+): string[] {
   const [start, end] = range;
   return lines.slice(start + 1, end).map((l) => uncommentLine(l));
 }
@@ -618,13 +651,17 @@ async function applyRemoteModeToConfig(
   }
 
   if (!config || typeof config !== 'object' || !('imports' in config)) {
-    logger.warn(`[sync-imports] No imports block found in ${configPath}; skipping.`);
+    logger.warn(
+      `[sync-imports] No imports block found in ${configPath}; skipping.`,
+    );
     return;
   }
 
   const imports = (config as { imports: unknown }).imports;
   if (!imports || typeof imports !== 'object') {
-    logger.warn(`[sync-imports] Imports block in ${configPath} is not an object; skipping.`);
+    logger.warn(
+      `[sync-imports] Imports block in ${configPath} is not an object; skipping.`,
+    );
     return;
   }
 
@@ -632,7 +669,9 @@ async function applyRemoteModeToConfig(
   const range = findImportsBlockRange(lines);
 
   if (!range) {
-    logger.warn(`[sync-imports] Unable to locate imports block in ${configPath}; skipping.`);
+    logger.warn(
+      `[sync-imports] Unable to locate imports block in ${configPath}; skipping.`,
+    );
     return;
   }
 
@@ -651,13 +690,18 @@ async function applyRemoteModeToConfig(
   if (markerStart > 0 && lines[markerStart - 1].trim() === '/**') {
     markerStart -= 1;
   }
-  if (markerEnd + 1 < lines.length && lines[markerEnd + 1].trim().startsWith('*/')) {
+  if (
+    markerEnd + 1 < lines.length && lines[markerEnd + 1].trim().startsWith('*/')
+  ) {
     markerEnd += 1;
   }
   lines.splice(markerStart, markerEnd - markerStart + 1);
 
   const refreshedRange = findImportsBlockRange(lines) ?? range;
-  lines.splice(refreshedRange.braceStart, refreshedRange.braceEnd - refreshedRange.braceStart + 1);
+  lines.splice(
+    refreshedRange.braceStart,
+    refreshedRange.braceEnd - refreshedRange.braceStart + 1,
+  );
 
   lines.splice(refreshedRange.braceStart, 0, ...originalBlock);
 
@@ -718,13 +762,17 @@ async function applyLocalModeToConfig(
   }
 
   if (!config || typeof config !== 'object' || !('imports' in config)) {
-    logger.warn(`[sync-imports] No imports block found in ${configPath}; skipping.`);
+    logger.warn(
+      `[sync-imports] No imports block found in ${configPath}; skipping.`,
+    );
     return;
   }
 
   const imports = (config as { imports: unknown }).imports;
   if (!imports || typeof imports !== 'object') {
-    logger.warn(`[sync-imports] Imports block in ${configPath} is not an object; skipping.`);
+    logger.warn(
+      `[sync-imports] Imports block in ${configPath} is not an object; skipping.`,
+    );
     return;
   }
 
@@ -732,7 +780,9 @@ async function applyLocalModeToConfig(
   let range = findImportsBlockRange(lines);
 
   if (!range) {
-    logger.warn(`[sync-imports] Unable to locate imports block in ${configPath}; skipping.`);
+    logger.warn(
+      `[sync-imports] Unable to locate imports block in ${configPath}; skipping.`,
+    );
     return;
   }
 
@@ -780,8 +830,13 @@ async function applyLocalModeToConfig(
       continue;
     }
     const pkg = localByName.get(key);
-    if (pkg && value.startsWith('jsr:') && typeof pkg.exports['.'] === 'string') {
-      const relPath = toRelativeImportPath(configDir, join(pkg.packageDir, pkg.exports['.']));
+    if (
+      pkg && value.startsWith('jsr:') && typeof pkg.exports['.'] === 'string'
+    ) {
+      const relPath = toRelativeImportPath(
+        configDir,
+        join(pkg.packageDir, pkg.exports['.']),
+      );
       newImports[key] = relPath;
     } else {
       newImports[key] = value;
@@ -795,14 +850,22 @@ async function applyLocalModeToConfig(
     for (const [exportKey, exportPath] of Object.entries(pkg.exports)) {
       if (typeof exportPath !== 'string') continue;
       const bucketKey = exportKeyToImportKey(pkg.name, exportKey);
-      const rel = toRelativeImportPath(configDir, join(pkg.packageDir, exportPath));
+      const rel = toRelativeImportPath(
+        configDir,
+        join(pkg.packageDir, exportPath),
+      );
       newImports[bucketKey] = rel;
     }
   }
 
   if (currentPkg && currentPkg.kind === 'library') {
     try {
-      const overrides = await collectLibraryOverrides(currentPkg, localByName, dfs, logger);
+      const overrides = await collectLibraryOverrides(
+        currentPkg,
+        localByName,
+        dfs,
+        logger,
+      );
       for (const override of overrides) {
         newImports[override.specifier] = override.importPath;
       }
@@ -817,7 +880,10 @@ async function applyLocalModeToConfig(
 
   if (currentPkg && currentPkg.kind === 'runtime' && runtimeOverrides.length) {
     for (const override of runtimeOverrides) {
-      const relImportPath = toRelativeImportPath(configDir, override.importPath);
+      const relImportPath = toRelativeImportPath(
+        configDir,
+        override.importPath,
+      );
       newImports[override.specifier] = relImportPath;
     }
   }
@@ -825,9 +891,17 @@ async function applyLocalModeToConfig(
   const originalBlock = lines.slice(range.braceStart, range.braceEnd + 1);
 
   const rendered = generateImportsBlock(indent, newImports, trailingComma);
-  lines.splice(range.braceStart, range.braceEnd - range.braceStart + 1, ...rendered);
+  lines.splice(
+    range.braceStart,
+    range.braceEnd - range.braceStart + 1,
+    ...rendered,
+  );
 
-  insertOriginalBlockCommented(lines, originalBlock, range.braceStart + rendered.length);
+  insertOriginalBlockCommented(
+    lines,
+    originalBlock,
+    range.braceStart + rendered.length,
+  );
 
   try {
     const relativePath = relative(dfs.Root, configPath);

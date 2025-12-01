@@ -1,7 +1,7 @@
 import { CommandIntents } from '@fathym/cli';
-import ConfigSetCommand from '../../../commands/cli/config/set.ts';
-import ConfigGetCommand from '../../../commands/cli/config/get.ts';
-import type { ConfigFileService } from '../../../src/services/ConfigFileService.ts';
+import ConfigSetCommand from '../../../../commands/cli/config/set.ts';
+import ConfigGetCommand from '../../../../commands/cli/config/get.ts';
+import type { ConfigFileService } from '../../../../src/services/ConfigFileService.ts';
 
 // Config intents test the config set/get commands using mocked ConfigFileService.
 // This avoids needing actual ConfigDFS registration in tests.
@@ -61,7 +61,7 @@ const CONFIG_FILE = 'test-config.json';
 CommandIntents(
   'Config Set Command Suite',
   ConfigSetCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.json'),
 )
   .BeforeAll(() => {
     // Clear mock store before tests
@@ -86,7 +86,7 @@ CommandIntents(
 CommandIntents(
   'Config Get Command Suite',
   ConfigGetCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.json'),
 )
   .BeforeAll(() => {
     // Pre-populate mock store with test data

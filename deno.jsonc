@@ -11,9 +11,9 @@
     "exclude": ["!.dist/install.ts"]
   },
   "tasks": {
-    "build": "deno fmt && deno lint && deno test -A ./tests",
-    "fmt": "deno fmt",
-    "lint": "deno lint",
+    "build": "deno task build:fmt && deno task build:lint && deno task publish:check && deno task test",
+    "build:fmt": "deno fmt",
+    "build:lint": "deno lint --fix",
     "deploy": "npx rimraf cov && deno task publish:check && deno task build && fathym git",
     "cli:run": "deno run -A ./scripts/cli-runtime.ts",
     "ftm:run": "deno task cli:run cli run",

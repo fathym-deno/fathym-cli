@@ -74,7 +74,10 @@ Deno.test('Task - Resolver finds project by explicit config path', async () => {
   const projects = await resolver.Resolve('/projects/cli/deno.jsonc');
 
   assertEquals(projects.length, 1);
-  assertEquals(projects[0].tasks!['ftm:release'], 'deno run -A scripts/release.ts');
+  assertEquals(
+    projects[0].tasks!['ftm:release'],
+    'deno run -A scripts/release.ts',
+  );
 });
 
 Deno.test('Task - Returns empty array for non-existent project', async () => {

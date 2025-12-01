@@ -27,7 +27,10 @@ Deno.test('DFSProjectResolver - Resolve with no ref returns all projects', async
       name: '@test/app2',
       exports: { '.': './mod.ts' },
     }),
-    '/other/deno.jsonc': JSON.stringify({ name: '@test/other', exports: { '.': './mod.ts' } }),
+    '/other/deno.jsonc': JSON.stringify({
+      name: '@test/other',
+      exports: { '.': './mod.ts' },
+    }),
   });
 
   const resolver = new DFSProjectResolver(dfs);
@@ -113,7 +116,10 @@ Deno.test('DFSProjectResolver - Resolve directory with multiple projects', async
 
 Deno.test('DFSProjectResolver - Resolve skips node_modules', async () => {
   const dfs = createTestDFS({
-    '/projects/app/deno.jsonc': JSON.stringify({ name: '@test/app', exports: { '.': './mod.ts' } }),
+    '/projects/app/deno.jsonc': JSON.stringify({
+      name: '@test/app',
+      exports: { '.': './mod.ts' },
+    }),
     '/projects/app/node_modules/dep/deno.jsonc': JSON.stringify({
       name: 'dep',
       exports: { '.': './mod.ts' },
@@ -129,7 +135,10 @@ Deno.test('DFSProjectResolver - Resolve skips node_modules', async () => {
 
 Deno.test('DFSProjectResolver - Resolve returns empty array for non-existent ref', async () => {
   const dfs = createTestDFS({
-    '/projects/app/deno.jsonc': JSON.stringify({ name: '@test/app', exports: { '.': './mod.ts' } }),
+    '/projects/app/deno.jsonc': JSON.stringify({
+      name: '@test/app',
+      exports: { '.': './mod.ts' },
+    }),
   });
 
   const resolver = new DFSProjectResolver(dfs);
@@ -144,7 +153,9 @@ Deno.test('DFSProjectResolver - Resolve with includeNameless option', async () =
       name: '@test/named',
       exports: { '.': './mod.ts' },
     }),
-    '/projects/unnamed/deno.jsonc': JSON.stringify({ exports: { '.': './mod.ts' } }),
+    '/projects/unnamed/deno.jsonc': JSON.stringify({
+      exports: { '.': './mod.ts' },
+    }),
   });
 
   const resolver = new DFSProjectResolver(dfs);
@@ -154,7 +165,9 @@ Deno.test('DFSProjectResolver - Resolve with includeNameless option', async () =
   assertEquals(allProjects.length, 2);
 
   // With includeNameless: false
-  const namedOnly = await resolver.Resolve(undefined, { includeNameless: false });
+  const namedOnly = await resolver.Resolve(undefined, {
+    includeNameless: false,
+  });
   assertEquals(namedOnly.length, 1);
   assertEquals(namedOnly[0].name, '@test/named');
 });

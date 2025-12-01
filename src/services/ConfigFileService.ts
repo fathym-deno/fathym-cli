@@ -9,7 +9,10 @@ export class ConfigFileService {
   /**
    * Get a value from a config file using dot-notation key.
    */
-  async get<T = unknown>(filePath: string, key: string): Promise<T | undefined> {
+  async get<T = unknown>(
+    filePath: string,
+    key: string,
+  ): Promise<T | undefined> {
     const config = await this.load(filePath);
     return this.getNestedValue(config, key) as T | undefined;
   }

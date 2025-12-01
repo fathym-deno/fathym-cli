@@ -57,7 +57,9 @@ import { DFSProjectResolver } from '../src/projects/ProjectResolver.ts';
  * @property dry-run - Preview what would run without executing
  */
 const TaskFlagsSchema = z.object({
-  'dry-run': z.boolean().optional().describe('Show what would run without executing'),
+  'dry-run': z.boolean().optional().describe(
+    'Show what would run without executing',
+  ),
 });
 
 /**
@@ -164,7 +166,9 @@ export default Command('task', 'Run a deno task from a resolved project.')
         return 0;
       }
 
-      Log.Info(`Starting 'deno task ${taskName}' in ${project.dir} (${project.configPath}).`);
+      Log.Info(
+        `Starting 'deno task ${taskName}' in ${project.dir} (${project.configPath}).`,
+      );
 
       const cmd = new Deno.Command('deno', {
         args: ['task', taskName],

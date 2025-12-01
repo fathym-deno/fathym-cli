@@ -289,7 +289,9 @@ export default Command(
       if (isWindows) {
         Log.Info(`👉 Add to PATH: setx PATH "%PATH%;${installBase}"`);
       } else {
-        Log.Info(`👉 Add to your shell profile: export PATH="${installBase}:$PATH"`);
+        Log.Info(
+          `👉 Add to your shell profile: export PATH="${installBase}:$PATH"`,
+        );
       }
     }
 

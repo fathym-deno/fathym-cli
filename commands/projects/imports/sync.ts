@@ -82,7 +82,9 @@ const SyncArgsSchema = z.tuple([]);
 const SyncFlagsSchema = z.object({
   mode: z
     .enum(['local', 'remote'])
-    .describe("Either 'local' (enable local overrides) or 'remote' (restore jsr imports)."),
+    .describe(
+      "Either 'local' (enable local overrides) or 'remote' (restore jsr imports).",
+    ),
   target: z
     .string()
     .describe(

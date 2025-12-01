@@ -63,7 +63,9 @@ import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
  * @property dry-run - Preview what would run without executing
  */
 const DevFlagsSchema = z.object({
-  'dry-run': z.boolean().optional().describe('Show what would run without executing'),
+  'dry-run': z.boolean().optional().describe(
+    'Show what would run without executing',
+  ),
 });
 
 /**
@@ -78,7 +80,9 @@ const DevArgsSchema = z.tuple([
   z
     .string()
     .optional()
-    .describe('Project name, path to deno.json(c), or directory to find projects')
+    .describe(
+      'Project name, path to deno.json(c), or directory to find projects',
+    )
     .meta({ argName: 'project' }),
 ]);
 
@@ -102,7 +106,10 @@ class DevCommandParams extends CommandParams<
   }
 }
 
-export default Command('projects:dev', "Run a project's `deno task dev` by project name or path.")
+export default Command(
+  'projects:dev',
+  "Run a project's `deno task dev` by project name or path.",
+)
   .Args(DevArgsSchema)
   .Flags(DevFlagsSchema)
   .Params(DevCommandParams)
@@ -156,7 +163,9 @@ export default Command('projects:dev', "Run a project's `deno task dev` by proje
         return 0;
       }
 
-      Log.Info(`Starting 'deno task dev' in ${project.dir} (${project.configPath}).`);
+      Log.Info(
+        `Starting 'deno task dev' in ${project.dir} (${project.configPath}).`,
+      );
 
       const cmd = new Deno.Command('deno', {
         args: ['task', 'dev'],

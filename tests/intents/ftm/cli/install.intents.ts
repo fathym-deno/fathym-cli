@@ -1,10 +1,10 @@
 import { CommandIntents } from '@fathym/cli';
-import InstallCommand from '../../../commands/cli/install.ts';
+import InstallCommand from '../../../../commands/cli/install.ts';
 
 CommandIntents(
   'Install Command Suite',
   InstallCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.json'),
 )
   .Intent('Install CLI binary to system path', (int) =>
     int

@@ -639,7 +639,27 @@ This runs `ftm cli release` which:
 
 If your CLI is part of a larger workspace with multiple packages, you can use the project management commands.
 
+### Run any deno task from a project
+
+The `ftm task` command lets you run any deno task from a resolved project:
+
+```bash
+# Run 'build' task for @myorg/my-package
+ftm task @myorg/my-package build
+
+# Run 'test' task from a directory path
+ftm task ./packages/my-package test
+
+# Run 'ftm:release' task from explicit config path
+ftm task ./packages/cli/deno.jsonc ftm:release
+
+# Dry run to see what would execute
+ftm task @myorg/my-package build --dry-run
+```
+
 ### Run a project's dev task
+
+For quick development iteration, use `ftm projects:dev` to run the `dev` task:
 
 ```bash
 # Run dev task for a single project in workspace
@@ -757,6 +777,7 @@ This guide covers the essentials for building CLIs with Fathym. For complete doc
 | `ftm compile` | [docs/api/compile.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/compile.mdx) |
 | `ftm run` | [docs/api/run.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/run.mdx) |
 | `ftm test` | [docs/api/test.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/test.mdx) |
+| `ftm task` | [docs/api/task.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/task.mdx) |
 | `ftm release` | [docs/api/release.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/release.mdx) |
 | `ftm install` | [docs/api/install.mdx](https://github.com/fathym-deno/fathym-cli/blob/main/docs/api/install.mdx) |
 

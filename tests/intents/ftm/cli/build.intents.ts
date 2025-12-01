@@ -1,10 +1,10 @@
 import { CommandIntents } from '@fathym/cli';
-import BuildCommand from '../../../commands/cli/build.ts';
+import BuildCommand from '../../../../commands/cli/build.ts';
 
 CommandIntents(
   'Build Command Suite',
   BuildCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.json'),
 )
   .Intent('Build CLI from scaffolded config', (int) =>
     int

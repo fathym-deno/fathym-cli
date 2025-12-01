@@ -1,10 +1,10 @@
 import { CommandIntents } from '@fathym/cli';
-import RunCommand from '../../../commands/cli/run.ts';
+import RunCommand from '../../../../commands/cli/run.ts';
 
 CommandIntents(
   'Run Command Suite',
   RunCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.json'),
 )
   // === HELLO COMMAND TESTS ===
   .Intent("Run 'hello' command with default args", (int) =>

@@ -129,7 +129,10 @@ export class DFSProjectResolver implements ProjectResolver {
    */
   constructor(public readonly DFS: DFSFileHandler) {}
 
-  async Resolve(ref?: string, options?: ProjectResolveOptions): Promise<ProjectRef[]> {
+  async Resolve(
+    ref?: string,
+    options?: ProjectResolveOptions,
+  ): Promise<ProjectRef[]> {
     const includeNameless = options?.includeNameless ?? true;
 
     // No ref provided - discover all projects
@@ -173,7 +176,9 @@ export class DFSProjectResolver implements ProjectResolver {
     return await this.resolveByName(ref, includeNameless);
   }
 
-  private async discoverProjects(includeNameless: boolean): Promise<ProjectRef[]> {
+  private async discoverProjects(
+    includeNameless: boolean,
+  ): Promise<ProjectRef[]> {
     const projects: ProjectRef[] = [];
 
     for await (
@@ -194,7 +199,10 @@ export class DFSProjectResolver implements ProjectResolver {
     return projects;
   }
 
-  private async walkDirectory(dirPath: string, includeNameless: boolean): Promise<ProjectRef[]> {
+  private async walkDirectory(
+    dirPath: string,
+    includeNameless: boolean,
+  ): Promise<ProjectRef[]> {
     const projects: ProjectRef[] = [];
     // Normalize: remove leading ./ or ensure consistent format, add trailing /
     const normalizedDir = this.normalizePath(dirPath) + '/';
@@ -225,7 +233,10 @@ export class DFSProjectResolver implements ProjectResolver {
     return projects;
   }
 
-  private async resolveByName(ref: string, includeNameless: boolean): Promise<ProjectRef[]> {
+  private async resolveByName(
+    ref: string,
+    includeNameless: boolean,
+  ): Promise<ProjectRef[]> {
     const projects = await this.discoverProjects(true);
     const matches: ProjectRef[] = [];
 
@@ -239,7 +250,9 @@ export class DFSProjectResolver implements ProjectResolver {
     return matches;
   }
 
-  private async loadProjectFromPath(configPath: string): Promise<ProjectRef | undefined> {
+  private async loadProjectFromPath(
+    configPath: string,
+  ): Promise<ProjectRef | undefined> {
     try {
       const fileInfo = await this.DFS.GetFileInfo(configPath);
       if (!fileInfo) return undefined;
@@ -286,7 +299,8 @@ export class DFSProjectResolver implements ProjectResolver {
 
   private isDenoConfig(path: string): boolean {
     const normalized = path.replace(/\\/g, '/');
-    return normalized.endsWith('deno.json') || normalized.endsWith('deno.jsonc');
+    return normalized.endsWith('deno.json') ||
+      normalized.endsWith('deno.jsonc');
   }
 
   /**
