@@ -54,8 +54,10 @@
  */
 
 import { join } from '@std/path';
+import { parse as parseJsonc } from '@std/jsonc';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams, loadCLIConfig } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
 import { DEFAULT_INSTALL_DIR, type FathymCLIConfig } from '../../../src/config/FathymCLIConfig.ts';
 
 /**
@@ -464,6 +466,73 @@ main().catch((err) => {
 }
 
 /**
+ * Updates deno.jsonc to add the ./install export pointing to .dist/install.ts.
+ * Uses JSONC parsing (handles comments/trailing commas) but writes clean JSON.
+ *
+ * @param dfs - The DFS handler for the project
+ * @param outputDir - The output directory (e.g., "./.dist")
+ */
+async function updateDenoJsoncExports(
+  dfs: DFSFileHandler,
+  outputDir: string,
+): Promise<{ success: boolean; message: string; configPath?: string }> {
+  const denoJsoncPath = await dfs.ResolvePath('deno.jsonc');
+  const denoJsonPath = await dfs.ResolvePath('deno.json');
+
+  // Check if deno.jsonc exists, fall back to deno.json
+  let configPath: string | undefined;
+  try {
+    await Deno.stat(denoJsoncPath);
+    configPath = denoJsoncPath;
+  } catch {
+    try {
+      await Deno.stat(denoJsonPath);
+      configPath = denoJsonPath;
+    } catch {
+      return {
+        success: false,
+        message: 'No deno.jsonc or deno.json found - skipping export update',
+      };
+    }
+  }
+
+  // Read and parse (JSONC handles comments/trailing commas)
+  const content = await Deno.readTextFile(configPath);
+  const config = parseJsonc(content) as Record<string, unknown>;
+
+  // Ensure exports object exists
+  if (!config.exports || typeof config.exports !== 'object') {
+    config.exports = {};
+  }
+
+  const exports = config.exports as Record<string, string>;
+  // Normalize path: "./.dist" -> ".dist", then prepend "./"
+  const normalizedOutput = outputDir.replace(/^\.\//, '');
+  const installPath = `./${normalizedOutput}/install.ts`;
+
+  // Check if already set correctly
+  if (exports['./install'] === installPath) {
+    return {
+      success: true,
+      message: 'Export ./install already configured',
+      configPath,
+    };
+  }
+
+  // Update export
+  exports['./install'] = installPath;
+
+  // Write back (clean JSON, 2-space indent)
+  await Deno.writeTextFile(configPath, JSON.stringify(config, null, 2) + '\n');
+
+  return {
+    success: true,
+    message: `Added export: "./install" → "${installPath}"`,
+    configPath,
+  };
+}
+
+/**
  * Scripts command - generates platform-specific installation scripts.
  */
 export default Command(
@@ -527,6 +596,18 @@ export default Command(
     const denoPath = join(outputDir, 'install.ts');
     await Deno.writeTextFile(denoPath, denoScript);
     Log.Success(`✅ Generated: ${denoPath}`);
+
+    // Update deno.jsonc exports to include ./install
+    const exportResult = await updateDenoJsoncExports(DFS, Params.OutputDir);
+    if (exportResult.success) {
+      if (exportResult.message.includes('already configured')) {
+        Log.Info(`ℹ️  ${exportResult.message}`);
+      } else {
+        Log.Success(`✅ ${exportResult.message} in ${exportResult.configPath}`);
+      }
+    } else {
+      Log.Warn(`⚠️  ${exportResult.message}`);
+    }
 
     Log.Info('');
     Log.Info('📋 Users can install via:');

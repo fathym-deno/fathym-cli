@@ -1,0 +1,170 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm cli release
+Summary: API reference for the release command that orchestrates full CLI releases.
+Created: 2025-11-30
+Updated: 2025-11-30
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm cli build
+    Path: ./build.mdx
+  - Label: ftm cli compile
+    Path: ./compile.mdx
+  - Label: ftm cli install scripts
+    Path: ./install.mdx
+  - Label: Distribution Guide
+    Path: ../guides/distribution.mdx
+---
+
+# ftm cli release
+
+Orchestrate a full CLI release - build, compile for all targets, and generate install scripts in a single command.
+
+## Usage
+
+```bash
+ftm cli release [flags]
+```
+
+## Arguments
+
+The release command takes no positional arguments.
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | `./.cli.json` | Path to CLI configuration |
+| `--targets` | string | (all 5 platforms) | Comma-separated target platforms |
+| `--skip-scripts` | boolean | `false` | Skip generating install scripts |
+| `--repo` | string | - | GitHub repository for install scripts (e.g., `owner/repo`) |
+
+## Examples
+
+```bash
+# Full release with all 5 default targets
+ftm cli release
+
+# Release for specific platforms only
+ftm cli release --targets=x86_64-pc-windows-msvc,x86_64-apple-darwin
+
+# Release without install scripts
+ftm cli release --skip-scripts
+
+# Release with GitHub repo configured for install scripts
+ftm cli release --repo=fathym/my-cli
+
+# Release from specific config
+ftm cli release --config=./my-cli/.cli.json
+```
+
+## Execution Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  1. Load .cli.json and determine targets                           │
+│  2. Run `ftm cli build` to prepare static artifacts                │
+│  3. For each target, run `ftm cli compile --target=<target>`       │
+│  4. Run `ftm cli install scripts` to generate install scripts      │
+│  5. Output summary of generated files                              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Default Targets
+
+When no `--targets` flag is provided and no `Release.Targets` is configured in `.cli.json`, the command compiles for all 5 standard Deno platforms:
+
+| Target | Platform |
+|--------|----------|
+| `x86_64-pc-windows-msvc` | Windows x64 |
+| `x86_64-apple-darwin` | macOS x64 (Intel) |
+| `aarch64-apple-darwin` | macOS ARM64 (Apple Silicon) |
+| `x86_64-unknown-linux-gnu` | Linux x64 |
+| `aarch64-unknown-linux-gnu` | Linux ARM64 |
+
+## Output Structure
+
+```
+.dist/
+├── install.sh                       # Unix install script
+├── install.ps1                      # Windows PowerShell install script
+├── x86_64-pc-windows-msvc/
+│   └── my-cli.exe
+├── x86_64-apple-darwin/
+│   └── my-cli
+├── aarch64-apple-darwin/
+│   └── my-cli
+├── x86_64-unknown-linux-gnu/
+│   └── my-cli
+└── aarch64-unknown-linux-gnu/
+    └── my-cli
+```
+
+## Target Configuration
+
+Configure default targets in `.cli.json`:
+
+```json
+{
+  "Name": "My CLI",
+  "Tokens": ["my-cli"],
+  "Version": "1.0.0",
+  "Release": {
+    "Targets": ["x86_64-pc-windows-msvc", "x86_64-apple-darwin"],
+    "DefaultInstallDir": {
+      "unix": "~/.local/bin",
+      "windows": "~/.bin"
+    }
+  }
+}
+```
+
+### Release Configuration Schema
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `Release.Targets` | `string[]` | All 5 platforms | Target platforms to compile |
+| `Release.DefaultInstallDir.unix` | `string` | `~/.bin` | Default install directory for Unix |
+| `Release.DefaultInstallDir.windows` | `string` | `~/.bin` | Default install directory for Windows |
+
+## How It Works
+
+1. **Load Configuration** - Read `.cli.json` and determine targets from flag, config, or defaults
+2. **Build Artifacts** - Execute `ftm cli build` to prepare static embeddings
+3. **Cross-Compile** - For each target, execute `ftm cli compile --target=<target>`
+4. **Generate Scripts** - Execute `ftm cli install scripts` to create install.sh and install.ps1
+5. **Summary** - Output list of generated files and next steps
+
+## Post-Release Steps
+
+After running `ftm cli release`, the command outputs next steps:
+
+1. Create a GitHub release with tag `v{version}`
+2. Upload all files from `.dist/` to the release
+3. Users can then install via:
+
+**macOS/Linux:**
+```bash
+curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | bash
+```
+
+**Windows PowerShell:**
+```powershell
+iwr -useb https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex
+```
+
+## Source
+
+- Implementation: [`commands/cli/release.ts`](../../commands/cli/release.ts)
+- Config type: [`src/config/FathymCLIConfig.ts`](../../src/config/FathymCLIConfig.ts)
+
+## Related
+
+- [ftm cli build](./build.mdx) - Step 1: Prepare build artifacts
+- [ftm cli compile](./compile.mdx) - Step 2: Compile to native binary
+- [ftm cli install scripts](./install.mdx#ftm-cli-install-scripts) - Step 3: Generate install scripts
+- [Distribution Guide](../guides/distribution.mdx) - Full distribution workflow

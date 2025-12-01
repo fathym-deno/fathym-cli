@@ -59,7 +59,8 @@ The root configuration file defining CLI identity:
   "Tokens": ["my-cli", "mc"],
   "Version": "1.0.0",
   "Description": "My awesome CLI tool",
-  "Commands": "./commands"
+  "Commands": "./commands",
+  "ConfigDFSName": ".my-cli"
 }
 ```
 
@@ -71,7 +72,12 @@ The root configuration file defining CLI identity:
 | `Tokens` | string[] | Yes | CLI entry point names (first is primary) |
 | `Version` | string | Yes | Semantic version |
 | `Description` | string | No | Brief description |
-| `Commands` | string | No | Commands directory (default: `./commands`) |
+| `Commands` | string \| string[] \| CLICommandSource[] | No | Commands directory (default: `./commands`) |
+| `Templates` | string | No | Templates directory (default: `./templates`) |
+| `ConfigDFSName` | string | No | Config directory name (e.g., `.my-cli`) - enables ConfigDFS |
+| `ConfigDFSRoot` | string | No | Explicit root for config directory |
+| `ConfigDFSRootEnvVar` | string | No | Env var name for root override, or "" to disable |
+| `Release` | ReleaseConfig | No | Cross-compilation release configuration |
 
 ### Tokens
 
@@ -85,6 +91,53 @@ The `Tokens` array defines how users invoke your CLI:
 
 - First token (`my-cli`) becomes the primary binary name
 - Additional tokens (`mc`) become aliases during install
+
+### ConfigDFS
+
+The ConfigDFS settings enable user configuration storage:
+
+```json
+{
+  "ConfigDFSName": ".my-cli",
+  "ConfigDFSRoot": "/opt/config",
+  "ConfigDFSRootEnvVar": "MYCLI_CONFIG_DIR"
+}
+```
+
+**Root Resolution Precedence:**
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 | Custom env var (`ConfigDFSRootEnvVar`) | `MYCLI_CONFIG_DIR=/data` |
+| 2 | Explicit root (`ConfigDFSRoot`) | `"/opt/config"` |
+| 3 | Default env var (`{TOKEN}_CONFIG_ROOT`) | `MYCLI_CONFIG_ROOT=/alt` |
+| 4 | User home directory | `~/.my-cli/` |
+
+See [ftm cli config](../api/config.mdx) for config commands.
+
+### Release Configuration
+
+Configure cross-compilation targets for releases:
+
+```json
+{
+  "Release": {
+    "Targets": ["x86_64-pc-windows-msvc", "x86_64-apple-darwin"],
+    "DefaultInstallDir": {
+      "unix": "~/.local/bin",
+      "windows": "~/.bin"
+    }
+  }
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `Release.Targets` | string[] | All 5 platforms | Target platforms to compile |
+| `Release.DefaultInstallDir.unix` | string | `~/.bin` | Default install dir for Unix |
+| `Release.DefaultInstallDir.windows` | string | `~/.bin` | Default install dir for Windows |
+
+See [ftm cli release](../api/release.mdx) for release workflow.
 
 ## .cli.init.ts
 
@@ -165,7 +218,7 @@ Local Deno configuration (not used by CLI runtime):
   "name": "@my-org/my-cli",
   "version": "1.0.0",
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.85"
+    "@fathym/cli": "jsr:@fathym/cli@0.0.90-integration"
   },
   "tasks": {
     "build": "deno task fmt && deno task lint && deno task test",

@@ -51,12 +51,13 @@ Guardrails for humans and AI collaborating on this CLI project.
 
 | File | Purpose |
 |------|---------|
-| `.cli.json` | CLI identity (Name, Tokens, Version) |
+| `.cli.json` | CLI identity (Name, Tokens, Version, ConfigDFSName) |
 | `.cli.init.ts` | IoC service registration |
 | `deno.jsonc` | Deno tasks (`run`, `build`, `test`, `compile`, `install`, `release`, `deploy`) and imports |
 | `commands/*.ts` | Command implementations |
 | `intents/*.intents.ts` | Intent tests |
 | `intents/.intents.ts` | Test entry point (imports all tests) |
+| `~/.{{token}}/` | User config directory (ConfigDFS) |
 
 ---
 
@@ -165,6 +166,32 @@ CommandIntents('Command Suite', cmd.Build(), origin)
 
 ---
 
+## ConfigDFS Pattern (User Config Storage)
+
+### Accessing ConfigDFS
+
+```typescript
+.Services(async (_, ioc) => ({
+  DfsCtx: await ioc.Resolve(CLIDFSContextManager),
+}))
+.Run(async ({ Services }) => {
+  const dfsCtx = await Services.DfsCtx;
+  const configDfs = await dfsCtx.GetConfigDFS();
+  // Use configDfs to read/write user config files
+});
+```
+
+### Configuration Locations
+
+| Source | Priority | Example |
+|--------|----------|---------|
+| Custom env var (`ConfigDFSRootEnvVar`) | 1 (highest) | `MYCLI_DATA_DIR=/custom` |
+| Explicit root (`ConfigDFSRoot`) | 2 | `"ConfigDFSRoot": "/data"` |
+| Default env var (`{TOKEN}_CONFIG_ROOT`) | 3 | `MYCLI_CONFIG_ROOT=/alt` |
+| User home directory | 4 (fallback) | `~/.mycli/` |
+
+---
+
 ## Anti-Patterns
 
 | Anti-Pattern | Why | Do Instead |
@@ -175,6 +202,7 @@ CommandIntents('Command Suite', cmd.Build(), origin)
 | Hardcode paths | Breaks portability | Use `import.meta.resolve()` |
 | Skip `--dry-run` support | Poor UX | Add dry-run to mutation commands |
 | Mutate global state | Side effects | Use IoC services |
+| Hardcode config paths | Breaks portability | Use ConfigDFS |
 
 ---
 
@@ -195,5 +223,6 @@ Before considering any change complete:
 | Add a new command | [GUIDE.md - Task: Add a New Command](./GUIDE.md#task-add-a-new-command) |
 | Add a flag to existing command | [GUIDE.md - Task: Add a Flag](./GUIDE.md#task-add-a-flag-to-existing-command) |
 | Add a service | [GUIDE.md - Task: Add a Service](./GUIDE.md#task-add-a-service) |
+| Use user configuration | [GUIDE.md - Task: Use User Configuration](./GUIDE.md#task-use-user-configuration) |
 | Write intent tests | [GUIDE.md - Intent Testing Reference](./GUIDE.md#intent-testing-reference) |
 | Build and compile | [GUIDE.md - Build Pipeline](./GUIDE.md#build-pipeline) |

@@ -1,0 +1,175 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm cli config
+Summary: API reference for the config commands that manage user configuration files.
+Created: 2025-11-30
+Updated: 2025-11-30
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: Configuration Concepts
+    Path: ../concepts/configuration.mdx
+  - Label: CLI Configuration Guide
+    Path: https://jsr.io/@fathym/cli
+---
+
+# ftm cli config
+
+Manage user configuration stored in the ConfigDFS directory.
+
+## Usage
+
+```bash
+ftm cli config set <filePath> <key> <value>
+ftm cli config get <filePath> <key>
+```
+
+## Subcommands
+
+### ftm cli config set
+
+Store a configuration value in a JSON config file.
+
+```bash
+ftm cli config set <filePath> <key> <value>
+```
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `filePath` | string | Yes | Config file path (relative to ConfigDFS) |
+| `key` | string | Yes | Configuration key (dot notation supported) |
+| `value` | string | Yes | Value to store |
+
+**Examples:**
+
+```bash
+# Set a simple value
+ftm cli config set config.json api.url https://api.example.com
+
+# Set nested configuration (creates nested objects)
+ftm cli config set config.json azure.ai.apiKey "my-secret-key"
+# Creates: { "azure": { "ai": { "apiKey": "my-secret-key" } } }
+
+# Set a value in a different config file
+ftm cli config set settings.json timeout 30
+```
+
+### ftm cli config get
+
+Retrieve a configuration value from a JSON config file.
+
+```bash
+ftm cli config get <filePath> <key>
+```
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `filePath` | string | Yes | Config file path (relative to ConfigDFS) |
+| `key` | string | Yes | Configuration key to retrieve |
+
+**Examples:**
+
+```bash
+# Get a value
+ftm cli config get config.json api.url
+# Output: https://api.example.com
+
+# Get nested value
+ftm cli config get config.json azure.ai.apiKey
+# Output: my-secret-key
+```
+
+## How It Works
+
+The config commands use the `ConfigFileService` to manage JSON configuration files in the ConfigDFS directory.
+
+### Storage Location
+
+Configuration files are stored at:
+```
+{ConfigDFS Root}/{ConfigDFSName}/<filePath>
+```
+
+For a CLI with `"ConfigDFSName": ".mycli"` and `filePath` of `config.json`, this would typically be:
+- **Default:** `~/.mycli/config.json`
+- **With env var:** `$MYCLI_CONFIG_ROOT/.mycli/config.json`
+
+### ConfigDFS Root Resolution
+
+The root directory follows this precedence:
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 | Custom env var (`ConfigDFSRootEnvVar`) | `MYCLI_DATA_DIR=/custom` |
+| 2 | Explicit root (`ConfigDFSRoot`) | `"ConfigDFSRoot": "/data"` |
+| 3 | Default env var (`{TOKEN}_CONFIG_ROOT`) | `MYCLI_CONFIG_ROOT=/alt` |
+| 4 | User home directory | `~/.mycli/` |
+
+## Configuration File Format
+
+Config files use nested JSON structure. Dot notation in keys creates nested objects:
+
+```json
+{
+  "api": {
+    "url": "https://api.example.com",
+    "timeout": "30"
+  },
+  "auth": {
+    "provider": "azure",
+    "tenant": "my-tenant-id"
+  }
+}
+```
+
+## CLI Configuration Requirements
+
+To use the config commands, your CLI's `.cli.json` must define `ConfigDFSName`:
+
+```json
+{
+  "Name": "My CLI",
+  "Tokens": ["mycli"],
+  "Version": "1.0.0",
+  "ConfigDFSName": ".mycli"
+}
+```
+
+## Using ConfigFileService Programmatically
+
+For more complex configuration needs, use `ConfigFileService` directly in your commands:
+
+```typescript
+import { Command, CommandParams } from '@fathym/cli';
+import { ConfigFileService } from '@fathym/ftm/config';
+
+export default Command('my-command', 'Uses config')
+  .Services(async (_, ioc) => ({
+    ConfigSvc: await ioc.Resolve(ConfigFileService),
+  }))
+  .Run(async ({ Services, Log }) => {
+    const configSvc = await Services.ConfigSvc;
+
+    // Get a value
+    const apiUrl = await configSvc.Get('api.url');
+
+    // Set a value
+    await configSvc.Set('last.run', new Date().toISOString());
+
+    Log.Info(`Using API: ${apiUrl}`);
+  });
+```
+
+## Source
+
+- Set command: [`commands/cli/config/set.ts`](../../commands/cli/config/set.ts)
+- Get command: [`commands/cli/config/get.ts`](../../commands/cli/config/get.ts)
+- ConfigFileService: [`src/config/ConfigFileService.ts`](../../src/config/ConfigFileService.ts)
+
+## Related
+
+- [Configuration Concepts](../concepts/configuration.mdx) - Understanding `.cli.json`
+- [ftm init](./init.mdx) - Create new CLI with ConfigDFS enabled

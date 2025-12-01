@@ -206,6 +206,72 @@ class MyParams extends CommandParams<...> {
 
 ---
 
+## Task: Use User Configuration
+
+Your CLI includes a user configuration system at `~/.{{token}}/` (or custom location via `{{token | upper}}_CONFIG_ROOT` env var).
+
+### Step 1: Access ConfigDFS in a command
+
+```typescript
+import { Command, CommandParams, CLIDFSContextManager } from '@fathym/cli';
+
+export default Command('settings', 'Manage user settings.')
+  .Args(ArgsSchema)
+  .Flags(FlagsSchema)
+  .Params(SettingsParams)
+  .Services(async (_, ioc) => ({
+    DfsCtx: await ioc.Resolve(CLIDFSContextManager),
+  }))
+  .Run(async ({ Services, Log }) => {
+    const dfsCtx = await Services.DfsCtx;
+    const configDfs = await dfsCtx.GetConfigDFS();
+
+    // Read/write files in the config directory
+    const settingsPath = await configDfs.ResolvePath('settings.json');
+    Log.Info(`Settings stored at: ${settingsPath}`);
+  });
+```
+
+### Step 2: Store/retrieve JSON configuration
+
+```typescript
+import type { DFSFileHandler } from '@fathym/dfs';
+
+async function loadSettings(dfs: DFSFileHandler): Promise<Record<string, unknown>> {
+  const content = await dfs.GetFileContent('settings.json');
+  return content ? JSON.parse(content) : {};
+}
+
+async function saveSettings(dfs: DFSFileHandler, settings: Record<string, unknown>): Promise<void> {
+  const path = await dfs.ResolvePath('settings.json');
+  await Deno.writeTextFile(path, JSON.stringify(settings, null, 2));
+}
+```
+
+### ConfigDFS Root Precedence
+
+The config directory location follows this precedence:
+
+1. **Custom env var** - If `ConfigDFSRootEnvVar` is set in `.cli.json`
+2. **Explicit root** - If `ConfigDFSRoot` is set in `.cli.json`
+3. **Default env var** - `{TOKEN}_CONFIG_ROOT` (e.g., `MYCLI_CONFIG_ROOT`)
+4. **User home** - `~/.{{token}}/`
+
+Example `.cli.json` with custom config location:
+
+```json
+{
+  "Name": "{{name}}",
+  "Tokens": ["{{token}}"],
+  "Version": "0.0.0",
+  "ConfigDFSName": ".{{token}}",
+  "ConfigDFSRoot": "/data/{{token}}",
+  "ConfigDFSRootEnvVar": "{{token | upper}}_DATA_DIR"
+}
+```
+
+---
+
 ## Task: Add a Service
 
 ### Step 1: Define interface and implementation

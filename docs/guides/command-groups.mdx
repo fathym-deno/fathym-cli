@@ -1,0 +1,408 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: Command Groups
+Summary: Guide to organizing CLI commands into hierarchical groups.
+Created: 2025-11-30
+Updated: 2025-11-30
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: Authoring Commands
+    Path: ./authoring-commands.mdx
+  - Label: Configuration
+    Path: ../concepts/configuration.mdx
+---
+
+# Command Groups
+
+Command groups organize related commands into hierarchical namespaces. This guide explains how to create, configure, and use command groups in your CLI.
+
+## Overview
+
+Groups let you structure commands logically:
+
+```bash
+# Flat structure (without groups)
+mycli deploy-staging
+mycli deploy-production
+mycli scaffold-component
+mycli scaffold-service
+
+# Grouped structure (with groups)
+mycli deploy staging
+mycli deploy production
+mycli scaffold component
+mycli scaffold service
+```
+
+## Creating Groups
+
+Groups are created using directories in your `commands/` folder. Each subdirectory becomes a group.
+
+### Directory Structure
+
+```
+commands/
+├── deploy/                    # Group: deploy
+│   ├── .metadata.ts          # Group metadata (optional)
+│   ├── staging.ts            # Command: deploy staging
+│   └── production.ts         # Command: deploy production
+├── scaffold/                  # Group: scaffold
+│   ├── .metadata.ts          # Group metadata
+│   ├── component.ts          # Command: scaffold component
+│   └── service.ts            # Command: scaffold service
+└── init.ts                    # Root command: init
+```
+
+### Invocation
+
+```bash
+# Root commands
+mycli init
+
+# Grouped commands
+mycli deploy staging
+mycli deploy production
+mycli scaffold component
+mycli scaffold service
+```
+
+## Group Metadata
+
+Create a `.metadata.ts` file in the group directory to define group information:
+
+```typescript
+// commands/scaffold/.metadata.ts
+export default {
+  Name: 'scaffold',
+  Description: 'Code generation and scaffolding commands',
+  Usage: 'mycli scaffold <generator> [options]',
+  Examples: [
+    'mycli scaffold component Button',
+    'mycli scaffold service AuthService',
+    'mycli scaffold hook useAuth',
+  ],
+};
+```
+
+### Metadata Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `Name` | `string` | Yes | Group display name |
+| `Description` | `string` | No | Brief description |
+| `Usage` | `string` | No | Usage pattern |
+| `Examples` | `string[]` | No | Example invocations |
+
+### Without Metadata
+
+Groups work without `.metadata.ts`, but help output will be minimal:
+
+```bash
+$ mycli scaffold --help
+# Shows only list of subcommands
+```
+
+With metadata:
+
+```bash
+$ mycli scaffold --help
+
+📘 Group: scaffold
+Code generation and scaffolding commands
+
+Usage:
+  mycli scaffold <generator> [options]
+
+Examples:
+  mycli scaffold component Button
+  mycli scaffold service AuthService
+
+🔸 Available Commands
+  component - Generate a new component
+  service - Generate a new service
+```
+
+## Nested Groups
+
+Groups can be nested to any depth:
+
+```
+commands/
+└── db/                        # Group: db
+    ├── .metadata.ts
+    ├── migrate/               # Subgroup: db migrate
+    │   ├── .metadata.ts
+    │   ├── up.ts             # Command: db migrate up
+    │   ├── down.ts           # Command: db migrate down
+    │   └── status.ts         # Command: db migrate status
+    └── seed/                  # Subgroup: db seed
+        ├── .metadata.ts
+        ├── run.ts            # Command: db seed run
+        └── reset.ts          # Command: db seed reset
+```
+
+Invocation:
+
+```bash
+mycli db migrate up
+mycli db migrate down
+mycli db migrate status
+mycli db seed run
+mycli db seed reset
+```
+
+## Commands Within Groups
+
+Commands in groups are regular commands:
+
+```typescript
+// commands/deploy/staging.ts
+import { Command } from '@fathym/cli';
+
+export default Command('deploy/staging', 'Deploy to staging environment')
+  .Run(async ({ Log }) => {
+    Log.Info('Deploying to staging...');
+    // deployment logic
+    Log.Success('Deployed to staging!');
+  });
+```
+
+The command key includes the group path (`deploy/staging`), but users invoke it with spaces (`deploy staging`).
+
+## Group-Level Commands
+
+A group can have its own command that runs when called without subcommands:
+
+```
+commands/
+└── scaffold/
+    ├── .metadata.ts
+    ├── scaffold.ts           # Runs for: mycli scaffold
+    ├── component.ts          # Runs for: mycli scaffold component
+    └── service.ts            # Runs for: mycli scaffold service
+```
+
+```typescript
+// commands/scaffold/scaffold.ts
+import { Command } from '@fathym/cli';
+
+export default Command('scaffold', 'Interactive scaffolding wizard')
+  .Run(async ({ Log }) => {
+    Log.Info('Starting interactive scaffold wizard...');
+    // show interactive menu
+  });
+```
+
+## Multiple Command Sources
+
+You can organize groups across multiple directories using `.cli.json`:
+
+```json
+{
+  "Name": "My CLI",
+  "Tokens": ["mycli"],
+  "Version": "1.0.0",
+  "Commands": [
+    { "Path": "./commands" },
+    { "Path": "./plugins", "Root": "plugins" }
+  ]
+}
+```
+
+Structure:
+
+```
+my-cli/
+├── commands/
+│   ├── init.ts              # mycli init
+│   └── build.ts             # mycli build
+└── plugins/
+    └── analytics/
+        ├── .metadata.ts
+        └── track.ts         # mycli plugins analytics track
+```
+
+### Root Prefix
+
+The `Root` option prefixes all commands from that source:
+
+```json
+{
+  "Commands": [
+    { "Path": "./core-commands" },
+    { "Path": "./experimental", "Root": "experimental" }
+  ]
+}
+```
+
+Experimental commands are namespaced:
+
+```bash
+mycli experimental new-feature
+```
+
+## Help Navigation
+
+Groups appear in help output with navigation hints:
+
+```bash
+$ mycli --help
+
+📘 My CLI v1.0.0
+A powerful command-line tool
+
+🔸 Available Commands
+  init - Initialize a project
+  build - Build the project
+
+🔸 Available Groups
+  deploy - Deployment commands
+  scaffold - Code generation commands
+```
+
+```bash
+$ mycli deploy --help
+
+📘 Group: deploy
+Deployment commands
+
+🔸 Available Commands
+  staging - Deploy to staging
+  production - Deploy to production
+```
+
+## Best Practices
+
+### 1. Group Related Commands
+
+```
+# Good - logical grouping
+commands/
+├── auth/
+│   ├── login.ts
+│   ├── logout.ts
+│   └── status.ts
+└── project/
+    ├── init.ts
+    ├── build.ts
+    └── deploy.ts
+
+# Bad - flat with long names
+commands/
+├── auth-login.ts
+├── auth-logout.ts
+├── auth-status.ts
+├── project-init.ts
+├── project-build.ts
+└── project-deploy.ts
+```
+
+### 2. Keep Nesting Shallow
+
+Two levels of nesting is usually sufficient:
+
+```bash
+# Good
+mycli db migrate up
+mycli scaffold component Button
+
+# Potentially confusing
+mycli cloud aws ec2 instance create --name foo
+```
+
+### 3. Provide Group Metadata
+
+Always create `.metadata.ts` for groups:
+
+```typescript
+// commands/deploy/.metadata.ts
+export default {
+  Name: 'deploy',
+  Description: 'Deploy applications to various environments',
+  Examples: [
+    'mycli deploy staging',
+    'mycli deploy production --skip-tests',
+  ],
+};
+```
+
+### 4. Consistent Naming
+
+Use consistent verb-noun patterns:
+
+```
+commands/
+├── generate/          # verb-based group
+│   ├── component.ts
+│   └── service.ts
+├── run/               # verb-based group
+│   ├── tests.ts
+│   └── build.ts
+```
+
+Or noun-based:
+
+```
+commands/
+├── components/        # noun-based group
+│   ├── create.ts
+│   └── delete.ts
+├── services/          # noun-based group
+│   ├── create.ts
+│   └── delete.ts
+```
+
+## Example: Full CLI Structure
+
+```
+my-cli/
+├── .cli.json
+├── commands/
+│   ├── init.ts
+│   ├── build.ts
+│   ├── deploy/
+│   │   ├── .metadata.ts
+│   │   ├── staging.ts
+│   │   ├── production.ts
+│   │   └── preview.ts
+│   ├── scaffold/
+│   │   ├── .metadata.ts
+│   │   ├── component.ts
+│   │   ├── service.ts
+│   │   └── hook.ts
+│   └── db/
+│       ├── .metadata.ts
+│       ├── migrate/
+│       │   ├── .metadata.ts
+│       │   ├── up.ts
+│       │   ├── down.ts
+│       │   └── status.ts
+│       └── seed/
+│           ├── .metadata.ts
+│           ├── run.ts
+│           └── reset.ts
+└── deno.jsonc
+```
+
+Usage:
+
+```bash
+mycli init my-project
+mycli build
+mycli deploy staging
+mycli deploy production --force
+mycli scaffold component Header
+mycli db migrate up
+mycli db migrate status
+mycli db seed run
+```
+
+## Related
+
+- [Authoring Commands](./authoring-commands.mdx) - Writing commands
+- [Configuration](../concepts/configuration.mdx) - `.cli.json` options
+- [Distribution](./distribution.mdx) - Compiling and distributing

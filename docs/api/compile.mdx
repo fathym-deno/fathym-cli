@@ -40,12 +40,19 @@ The compile command takes no positional arguments.
 | `--config` | string | (alongside entry) | Path to `.cli.json` |
 | `--output` | string | `./.dist` | Output directory for binary |
 | `--permissions` | string | (full access) | Space-separated Deno permission flags |
+| `--target` | string | (current platform) | Cross-compilation target (e.g., `x86_64-pc-windows-msvc`) |
 
 ## Examples
 
 ```bash
-# Compile CLI in current directory
+# Compile CLI for current platform
 ftm compile
+
+# Cross-compile for Windows
+ftm compile --target=x86_64-pc-windows-msvc
+
+# Cross-compile for macOS Apple Silicon
+ftm compile --target=aarch64-apple-darwin
 
 # Compile with custom entry point
 ftm compile --entry=./my-cli/.build/cli.ts
@@ -71,12 +78,37 @@ Override with `--permissions` flag for restricted binaries.
 
 ## Output Structure
 
+**Without `--target` (current platform):**
 ```
 .dist/
 └── <token-name>       # Native binary (e.g., 'my-cli' or 'my-cli.exe')
 ```
 
+**With `--target` (cross-compilation):**
+```
+.dist/
+└── <target>/
+    └── <token-name>   # Binary in target subdirectory
+```
+
+Example with `--target=x86_64-pc-windows-msvc`:
+```
+.dist/
+└── x86_64-pc-windows-msvc/
+    └── my-cli.exe
+```
+
 The binary name is derived from `Tokens[0]` in `.cli.json`.
+
+## Supported Targets
+
+| Target | Platform |
+|--------|----------|
+| `x86_64-pc-windows-msvc` | Windows x64 |
+| `x86_64-apple-darwin` | macOS x64 (Intel) |
+| `aarch64-apple-darwin` | macOS ARM64 (Apple Silicon) |
+| `x86_64-unknown-linux-gnu` | Linux x64 |
+| `aarch64-unknown-linux-gnu` | Linux ARM64 |
 
 ## How It Works
 

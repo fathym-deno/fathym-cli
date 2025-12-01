@@ -37,6 +37,7 @@ The install command takes no positional arguments.
 | `--to` | string | `./.bin` | Target installation directory |
 | `--config` | string | `./.cli.json` | Path to CLI configuration |
 | `--useHome` | boolean | `false` | Use user home directory as DFS root |
+| `--target` | string | (auto-detected) | Override target platform for cross-compiled binaries |
 
 ## Examples
 
@@ -52,6 +53,9 @@ ftm install --useHome --to=.bin
 
 # Install from specific project
 ftm install --config=./my-cli/.cli.json
+
+# Install specific target (override auto-detection)
+ftm install --target=x86_64-unknown-linux-gnu
 ```
 
 ## Cross-Platform Handling
@@ -110,14 +114,110 @@ fish_add_path ~/.bin
 
 1. Resolve config DFS and install DFS (project or home)
 2. Read `.cli.json` to get binary name from `Tokens[0]`
-3. Copy binary from `.dist/<token>` to install directory
-4. For each alias token, create shell/batch wrapper script
-5. Set executable permissions on Unix (chmod 755)
-6. Check if install directory is in PATH and warn if not
+3. Detect target from `--target` flag or auto-detect from OS/arch
+4. Locate binary in `.dist/<target>/` or `.dist/` (flat structure)
+5. Copy binary to install directory
+6. For each alias token, create shell/batch wrapper script
+7. Set executable permissions on Unix (chmod 755)
+8. Check if install directory is in PATH and warn if not
+
+## Target Auto-Detection
+
+When `--target` is not specified, the install command auto-detects the appropriate binary based on the current OS and architecture:
+
+| OS/Arch | Detected Target |
+|---------|-----------------|
+| Windows x64 | `x86_64-pc-windows-msvc` |
+| macOS x64 | `x86_64-apple-darwin` |
+| macOS ARM64 | `aarch64-apple-darwin` |
+| Linux x64 | `x86_64-unknown-linux-gnu` |
+| Linux ARM64 | `aarch64-unknown-linux-gnu` |
+
+The command looks for binaries in this order:
+1. `.dist/<target>/<binary>` (cross-compiled structure)
+2. `.dist/<binary>` (flat structure from local compile)
+
+---
+
+## ftm cli install scripts
+
+Generate install scripts for distributing your CLI.
+
+### Usage
+
+```bash
+ftm cli install scripts [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--out` | string | `.dist` | Output directory for scripts |
+| `--config` | string | `.cli.json` | Path to CLI configuration |
+
+### Generated Files
+
+```
+.dist/
+├── install.sh          # Bash install script for Unix
+├── install.ps1         # PowerShell install script for Windows
+└── install.ts          # Deno-native install script
+```
+
+### deno.jsonc Export
+
+The `scripts` command automatically adds an export to your `deno.jsonc`:
+
+```json
+{
+  "exports": {
+    "./install": "./.dist/install.ts"
+  }
+}
+```
+
+This enables JSR-based installation:
+
+```bash
+deno run -A jsr:@scope/my-cli/install
+```
+
+### Examples
+
+```bash
+# Generate scripts to default .dist/ directory
+ftm cli install scripts
+
+# Generate to custom directory
+ftm cli install scripts --out=./release
+
+# Generate for specific config
+ftm cli install scripts --config=./my-cli/.cli.json
+```
+
+### Install Script Behavior
+
+**Unix (`install.sh`):**
+- Downloads appropriate binary for detected platform
+- Places in `~/.local/bin` (or custom location)
+- Sets executable permissions
+- Validates PATH includes install directory
+
+**Windows (`install.ps1`):**
+- Downloads Windows binary
+- Places in `~/.local/bin` (or custom location)
+- Creates CMD wrapper for PATH support
+
+**Deno (`install.ts`):**
+- Cross-platform installation via `deno run`
+- Auto-detects platform and architecture
+- Supports `--to` flag for custom install location
 
 ## Source
 
-- Implementation: [`commands/install.ts`](../../commands/install.ts)
+- Install command: [`commands/install.ts`](../../commands/install.ts)
+- Scripts command: [`commands/cli/install/scripts.ts`](../../commands/cli/install/scripts.ts)
 - Tests: [`tests/intents/ftm/install.intents.ts`](../../tests/intents/ftm/install.intents.ts)
 
 ## Related

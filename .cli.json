@@ -3,5 +3,5 @@
   "Tokens": ["ftm"],
   "Version": "0.0.0",
   "Description": "Open-source Fathym CLI",
-  "ConfigDFS": ".ftm"
+  "ConfigDFSName": ".ftm"
 }
