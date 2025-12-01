@@ -1,0 +1,98 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm projects:dev
+Summary: API reference for the projects:dev command that runs a project's dev task.
+Created: 2025-12-01
+Updated: 2025-12-01
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm projects:imports:sync
+    Path: ./projects-imports-sync.mdx
+  - Label: Getting Started Guide
+    Path: ../guides/getting-started.mdx
+---
+
+# ftm projects:dev
+
+Run a project's `deno task dev` by project name, path, or directory.
+
+## Usage
+
+```bash
+ftm projects:dev [project] [flags]
+```
+
+## Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `project` | No | Project name, path to deno.json(c), or directory path |
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--dry-run` | boolean | `false` | Show what would run without executing |
+
+## Resolution Logic
+
+The `project` argument is resolved in the following order:
+
+1. **No argument**: Discover all projects, fail if multiple found
+2. **deno.json(c) path**: Load single project from config file
+3. **Directory path**: Look for deno.jsonc/deno.json in directory
+4. **Package name**: Search discovered projects for matching name
+
+## Examples
+
+```bash
+# Run dev task for single project in workspace
+ftm projects:dev
+
+# Run dev task by package name
+ftm projects:dev @myorg/my-package
+
+# Run dev task by directory path
+ftm projects:dev ./packages/my-package
+
+# Run dev task by config path
+ftm projects:dev ./packages/my-package/deno.jsonc
+
+# Dry run to see what would execute
+ftm projects:dev @myorg/my-package --dry-run
+```
+
+## Project Requirements
+
+The target project must have a `dev` task defined in its deno.json(c):
+
+```jsonc
+{
+  "name": "@myorg/my-package",
+  "tasks": {
+    "dev": "deno run -A --watch src/main.ts"
+  }
+}
+```
+
+## Exit Codes
+
+| Code | Description |
+|------|-------------|
+| 0 | Dev task completed successfully |
+| 1 | No projects found, multiple projects found, or no dev task |
+| * | Exit code from `deno task dev` |
+
+## Source
+
+- Implementation: [`commands/projects/dev.ts`](../../commands/projects/dev.ts)
+- Tests: [`tests/intents/ftm/projects/dev.intents.ts`](../../tests/intents/ftm/projects/dev.intents.ts)
+
+## Related
+
+- [ftm projects:imports:sync](./projects-imports-sync.mdx) - Sync import mappings
+- [Getting Started](../guides/getting-started.mdx) - Development workflow

@@ -520,6 +520,88 @@ This runs `ftm cli release` which:
 
 ---
 
+## Task: Work with Multi-Package Workspaces
+
+If your CLI is part of a larger workspace with multiple packages, you can use the project management commands.
+
+### Run a project's dev task
+
+```bash
+# Run dev task for a single project in workspace
+ftm projects:dev
+
+# Run by package name
+ftm projects:dev @myorg/my-package
+
+# Run by directory path
+ftm projects:dev ./packages/my-package
+
+# Dry run to see what would execute
+ftm projects:dev @myorg/my-package --dry-run
+```
+
+### Sync import mappings for local development
+
+When developing multiple packages locally, you can switch between JSR imports and local workspace paths:
+
+```bash
+# Enable local development mode (use workspace paths)
+ftm projects:imports:sync --mode=local --target=@myorg/my-app
+
+# Sync all packages in a directory
+ftm projects:imports:sync --mode=local --target=./packages/apps
+
+# Restore remote imports (use JSR registry)
+ftm projects:imports:sync --mode=remote --target=@myorg/my-app
+```
+
+Local mode preserves your original JSR imports in comments, so you can easily switch back:
+
+```jsonc
+{
+  "imports": {
+    // @sync-imports BEGIN ORIGINAL IMPORTS
+    // "@myorg/utils": "jsr:@myorg/utils@1.0.0"
+    // @sync-imports END ORIGINAL IMPORTS
+    "@myorg/utils": "../utils/src/.exports.ts"
+  }
+}
+```
+
+### Using ProjectResolver in commands
+
+You can use the `ProjectResolver` to build commands that work with projects:
+
+```typescript
+import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '@fathym/ftm/projects';
+
+export default Command('my-command', 'Work with projects.')
+  .Args(ArgsSchema)
+  .Flags(FlagsSchema)
+  .Params(MyParams)
+  .Services(async (_, ioc) => {
+    const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
+    const dfs = await dfsCtx.GetExecutionDFS();
+    return {
+      ProjectResolver: new DFSProjectResolver(dfs as unknown as DFSFileHandler),
+    };
+  })
+  .Run(async ({ Params, Services, Log }) => {
+    const resolver = Services.ProjectResolver;
+
+    // Resolve by package name, path, or directory
+    const projects = await resolver.Resolve(Params.ProjectRef);
+
+    for (const project of projects) {
+      Log.Info(`Found: ${project.name} at ${project.dir}`);
+    }
+  });
+```
+
+---
+
 ## Verification Checklist
 
 Before committing changes:

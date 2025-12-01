@@ -1,27 +1,112 @@
+/**
+ * Import synchronization utilities for multi-package workspaces.
+ *
+ * This module provides the core logic for switching deno.jsonc import maps
+ * between local workspace paths (for development) and JSR registry imports
+ * (for production/publishing).
+ *
+ * ## How It Works
+ *
+ * ```
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │  LOCAL MODE                                                        │
+ * │  ─────────                                                         │
+ * │  1. Discovers all local packages in workspace                      │
+ * │  2. Classifies as 'runtime' (has subpath exports) or 'library'     │
+ * │  3. For each target config:                                        │
+ * │     a. Preserves original JSR imports in comments                  │
+ * │     b. Rewrites imports to relative workspace paths                │
+ * │     c. Handles both base imports and subpath exports               │
+ * │                                                                    │
+ * │  REMOTE MODE                                                       │
+ * │  ───────────                                                       │
+ * │  1. Reads preserved original imports from comments                 │
+ * │  2. Restores JSR registry imports                                  │
+ * │  3. Removes local workspace overrides                              │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * ```
+ *
+ * ## Package Classification
+ *
+ * - **Runtime packages**: Have exports with `/` subpaths (e.g., `"./api"`)
+ * - **Library packages**: Only have root export or no special subpaths
+ *
+ * ## Preserved Comments
+ *
+ * Original imports are preserved using special comment markers:
+ *
+ * ```jsonc
+ * {
+ *   "imports": {
+ *     // @sync-imports BEGIN ORIGINAL IMPORTS
+ *     // "@myorg/utils": "jsr:@myorg/utils@1.0.0"
+ *     // @sync-imports END ORIGINAL IMPORTS
+ *     "@myorg/utils": "../utils/src/.exports.ts"
+ *   }
+ * }
+ * ```
+ *
+ * @module
+ */
+
 import type { DFSFileHandler } from '@fathym/dfs';
 import { dirname, isAbsolute, join, relative } from '@std/path';
 import { parse as parseJsonc } from '@std/jsonc';
 import type { ProjectResolver } from './ProjectResolver.ts';
 
+/**
+ * Sync mode for import operations.
+ *
+ * - `'local'`: Rewrite imports to use local workspace paths
+ * - `'remote'`: Restore original JSR registry imports
+ */
 export type ImportsSyncMode = 'local' | 'remote';
 
+/**
+ * Options for the syncImports function.
+ */
 export interface SyncImportsOptions {
+  /** Sync direction: 'local' or 'remote' */
   mode: ImportsSyncMode;
+
+  /** Target package name, config path, or directory */
   target: string;
+
+  /** Project resolver for file system operations */
   resolver: ProjectResolver;
+
+  /** Optional logger function for progress messages */
   log?: (message: string) => void;
 }
 
+/**
+ * Result of a sync operation.
+ */
 export interface SyncImportsResult {
+  /** All local packages discovered in the workspace */
   localPackages: LocalPackageConfig[];
+
+  /** Config files that were modified */
   targetConfigs: string[];
 }
 
+/**
+ * Configuration for a discovered local package.
+ */
 export interface LocalPackageConfig {
+  /** Package name from deno.json(c) */
   name: string;
+
+  /** Absolute path to the deno.json(c) file */
   configPath: string;
+
+  /** Absolute path to the package directory */
   packageDir: string;
+
+  /** Export map from deno.json(c) */
   exports: Record<string, string>;
+
+  /** Package classification: 'runtime' has subpath exports, 'library' does not */
   kind: 'runtime' | 'library';
 }
 
@@ -46,9 +131,42 @@ type Logger = {
   error: (message: string) => void;
 };
 
+/** Comment marker indicating the start of preserved original imports */
 const ORIGINAL_BEGIN = '// @sync-imports BEGIN ORIGINAL IMPORTS';
+
+/** Comment marker indicating the end of preserved original imports */
 const ORIGINAL_END = '// @sync-imports END ORIGINAL IMPORTS';
 
+/**
+ * Synchronize import mappings for target project(s).
+ *
+ * This is the main entry point for import synchronization. It discovers
+ * local packages, resolves target configs, and applies the appropriate
+ * mode transformation to each target.
+ *
+ * @param options - Sync options including mode, target, and resolver
+ * @returns Result containing discovered packages and modified configs
+ * @throws Error if no valid targets are found
+ *
+ * @example Sync to local mode
+ * ```typescript
+ * const result = await syncImports({
+ *   mode: 'local',
+ *   target: '@myorg/my-app',
+ *   resolver: new DFSProjectResolver(dfs),
+ *   log: console.log,
+ * });
+ * ```
+ *
+ * @example Restore remote imports
+ * ```typescript
+ * const result = await syncImports({
+ *   mode: 'remote',
+ *   target: './packages/apps',
+ *   resolver: new DFSProjectResolver(dfs),
+ * });
+ * ```
+ */
 export async function syncImports(options: SyncImportsOptions): Promise<SyncImportsResult> {
   const logger = makeLogger(options.log);
   const dfs = options.resolver.DFS;

@@ -1,0 +1,129 @@
+---
+FrontmatterVersion: 1
+DocumentType: API
+Title: ftm projects:imports:sync
+Summary: API reference for the projects:imports:sync command that synchronizes import mappings.
+Created: 2025-12-01
+Updated: 2025-12-01
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: ftm projects:dev
+    Path: ./projects-dev.mdx
+  - Label: Configuration Guide
+    Path: ../concepts/configuration.mdx
+---
+
+# ftm projects:imports:sync
+
+Synchronize import mappings between local workspace packages and target projects.
+
+## Usage
+
+```bash
+ftm projects:imports:sync --mode=<mode> --target=<target>
+```
+
+## Flags
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--mode` | `local` \| `remote` | Yes | Sync mode |
+| `--target` | string | Yes | Target package name, config path, or directory |
+
+## Modes
+
+### Local Mode
+
+Rewrites target's import map to use local workspace paths:
+
+```jsonc
+// Before (remote)
+{
+  "imports": {
+    "@myorg/utils": "jsr:@myorg/utils@1.0.0"
+  }
+}
+
+// After (local)
+{
+  "imports": {
+    "@myorg/utils": "../utils/src/.exports.ts"
+  }
+}
+```
+
+### Remote Mode
+
+Restores original remote imports from preserved comments:
+
+```jsonc
+// Before (local with preserved original)
+{
+  "imports": {
+    // @sync-imports BEGIN ORIGINAL IMPORTS
+    // "@myorg/utils": "jsr:@myorg/utils@1.0.0"
+    // @sync-imports END ORIGINAL IMPORTS
+    "@myorg/utils": "../utils/src/.exports.ts"
+  }
+}
+
+// After (remote)
+{
+  "imports": {
+    "@myorg/utils": "jsr:@myorg/utils@1.0.0"
+  }
+}
+```
+
+## Examples
+
+```bash
+# Sync local imports for a specific package
+ftm projects:imports:sync --mode=local --target=@myorg/my-app
+
+# Sync local imports for a directory of projects
+ftm projects:imports:sync --mode=local --target=./packages/apps
+
+# Restore remote imports
+ftm projects:imports:sync --mode=remote --target=@myorg/my-app
+
+# Sync by config path
+ftm projects:imports:sync --mode=local --target=./packages/my-app/deno.jsonc
+```
+
+## Package Discovery
+
+The command discovers local packages by walking the workspace for deno.json(c) files:
+
+- **Runtime packages**: Have exports with `/` paths (e.g., `"./api": "./src/api.ts"`)
+- **Library packages**: Standard export patterns
+
+Packages in `node_modules/`, `.git/`, and `cov/` directories are skipped.
+
+## Import Mapping
+
+For each discovered local package, the sync creates mappings for:
+
+1. **Base import**: `@scope/pkg` → `<relative-path>/src/.exports.ts`
+2. **Subpath exports**: `@scope/pkg/sub` → `<relative-path>/src/sub/.exports.ts`
+
+## Exit Codes
+
+| Code | Description |
+|------|-------------|
+| 0 | Sync completed successfully |
+| 1 | No targets found or sync error |
+
+## Source
+
+- Implementation: [`commands/projects/imports/sync.ts`](../../commands/projects/imports/sync.ts)
+- Core logic: [`src/projects/ImportsSync.ts`](../../src/projects/ImportsSync.ts)
+- Tests: [`tests/intents/ftm/projects/imports/sync.intents.ts`](../../tests/intents/ftm/projects/imports/sync.intents.ts)
+
+## Related
+
+- [ftm projects:dev](./projects-dev.mdx) - Run project dev tasks
+- [Configuration](../concepts/configuration.mdx) - CLI configuration

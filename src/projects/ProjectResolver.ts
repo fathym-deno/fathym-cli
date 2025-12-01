@@ -1,3 +1,45 @@
+/**
+ * Project resolution utilities for workspace management.
+ *
+ * This module provides a unified way to discover and resolve project references
+ * across different file system contexts using the DFS (Distributed File System)
+ * abstraction layer.
+ *
+ * ## Resolution Logic
+ *
+ * The resolver accepts flexible input and determines project scope automatically:
+ *
+ * ```
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │  Input                    │  Resolution                            │
+ * │──────────────────────────────────────────────────────────────────── │
+ * │  undefined                │  Discover all projects in workspace    │
+ * │  deno.json(c) path        │  Load single project from config       │
+ * │  Directory path           │  Walk directory for all projects       │
+ * │  Package name             │  Search discovered projects by name    │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * ```
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { DFSProjectResolver } from '@fathym/ftm/projects';
+ *
+ * const resolver = new DFSProjectResolver(dfsHandler);
+ *
+ * // Discover all projects
+ * const allProjects = await resolver.Resolve();
+ *
+ * // Resolve by package name
+ * const [project] = await resolver.Resolve('@myorg/my-package');
+ *
+ * // Resolve by directory
+ * const projects = await resolver.Resolve('./packages/apps');
+ * ```
+ *
+ * @module
+ */
+
 import type { DFSFileHandler } from '@fathym/dfs';
 import { parse as parseJsonc } from '@std/jsonc';
 import { dirname } from '@std/path';
@@ -5,9 +47,18 @@ import type { ProjectRef } from './ProjectRef.ts';
 
 /**
  * Options for project resolution.
+ *
+ * Controls filtering behavior during project discovery.
  */
 export interface ProjectResolveOptions {
-  /** Include projects without a name in deno.json(c). Default: true */
+  /**
+   * Include projects without a name in deno.json(c).
+   *
+   * When false, only named packages (with `"name"` field) are returned.
+   * Useful for filtering out test fixtures or internal projects.
+   *
+   * @default true
+   */
   includeNameless?: boolean;
 }
 
@@ -15,7 +66,24 @@ export interface ProjectResolveOptions {
  * Project resolver interface that works with DFS handlers.
  *
  * Provides a unified way to resolve project references across different
- * file system contexts (local, remote, virtual, etc.)
+ * file system contexts (local, remote, virtual, etc.). This abstraction
+ * enables commands to work with any DFS-compatible storage backend.
+ *
+ * @example Basic resolution
+ * ```typescript
+ * const projects = await resolver.Resolve('@myorg/utils');
+ * if (projects.length === 0) {
+ *   console.log('Project not found');
+ * }
+ * ```
+ *
+ * @example Discover all projects
+ * ```typescript
+ * const allProjects = await resolver.Resolve();
+ * for (const project of allProjects) {
+ *   console.log(`${project.name}: ${project.dir}`);
+ * }
+ * ```
  */
 export interface ProjectResolver {
   /** The DFS handler used for file operations */
@@ -41,9 +109,24 @@ export interface ProjectResolver {
  * DFS-based project resolver implementation.
  *
  * Uses DFSFileHandler for all file system operations, making it work
- * across different storage backends (local, blob storage, etc.)
+ * across different storage backends (local, blob storage, etc.).
+ *
+ * The resolver walks the file system looking for `deno.json` or `deno.jsonc`
+ * files, automatically skipping common non-project directories like
+ * `node_modules/`, `.git/`, and `cov/`.
+ *
+ * @example Create resolver with local DFS
+ * ```typescript
+ * const dfs = await dfsCtx.GetExecutionDFS();
+ * const resolver = new DFSProjectResolver(dfs);
+ * ```
  */
 export class DFSProjectResolver implements ProjectResolver {
+  /**
+   * Create a new project resolver.
+   *
+   * @param DFS - DFSFileHandler instance for file operations
+   */
   constructor(public readonly DFS: DFSFileHandler) {}
 
   async Resolve(ref?: string, options?: ProjectResolveOptions): Promise<ProjectRef[]> {

@@ -1,11 +1,84 @@
+/**
+ * Sync command - synchronizes import mappings between local and remote modes.
+ *
+ * The projects:imports:sync command manages deno.jsonc import maps to enable
+ * seamless switching between local development (workspace paths) and production
+ * (JSR registry) dependencies.
+ *
+ * ## Modes
+ *
+ * ```
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │  LOCAL MODE                                                        │
+ * │  ─────────                                                         │
+ * │  1. Discovers all local packages in workspace                      │
+ * │  2. Preserves original JSR imports in comments                     │
+ * │  3. Rewrites imports to use relative workspace paths               │
+ * │                                                                    │
+ * │  REMOTE MODE                                                       │
+ * │  ───────────                                                       │
+ * │  1. Reads preserved original imports from comments                 │
+ * │  2. Restores JSR registry imports                                  │
+ * │  3. Removes local workspace overrides                              │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * ```
+ *
+ * ## Local Mode Example
+ *
+ * Before:
+ * ```jsonc
+ * { "imports": { "@myorg/utils": "jsr:@myorg/utils@1.0.0" } }
+ * ```
+ *
+ * After:
+ * ```jsonc
+ * {
+ *   "imports": {
+ *     // @sync-imports BEGIN ORIGINAL IMPORTS
+ *     // "@myorg/utils": "jsr:@myorg/utils@1.0.0"
+ *     // @sync-imports END ORIGINAL IMPORTS
+ *     "@myorg/utils": "../utils/src/.exports.ts"
+ *   }
+ * }
+ * ```
+ *
+ * @example Sync local imports for a package
+ * ```bash
+ * ftm projects:imports:sync --mode=local --target=@myorg/my-app
+ * ```
+ *
+ * @example Sync local imports for a directory
+ * ```bash
+ * ftm projects:imports:sync --mode=local --target=./packages/apps
+ * ```
+ *
+ * @example Restore remote imports
+ * ```bash
+ * ftm projects:imports:sync --mode=remote --target=@myorg/my-app
+ * ```
+ *
+ * @module
+ */
+
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import { type ImportsSyncMode, syncImports } from '../../../src/projects/ImportsSync.ts';
 
+/**
+ * Zod schema for sync command positional arguments.
+ *
+ * This command takes no positional arguments; all inputs are via flags.
+ */
 const SyncArgsSchema = z.tuple([]);
 
+/**
+ * Zod schema for sync command flags.
+ *
+ * @property mode - Sync direction: 'local' for workspace paths, 'remote' for JSR
+ * @property target - Package name, config path, or directory to sync
+ */
 const SyncFlagsSchema = z.object({
   mode: z
     .enum(['local', 'remote'])
@@ -17,14 +90,21 @@ const SyncFlagsSchema = z.object({
     ),
 });
 
+/**
+ * Typed parameter accessor for the sync command.
+ *
+ * Provides getters for mode and target flags.
+ */
 class SyncParams extends CommandParams<
   z.infer<typeof SyncArgsSchema>,
   z.infer<typeof SyncFlagsSchema>
 > {
+  /** Sync mode: 'local' or 'remote' */
   get Mode(): ImportsSyncMode {
     return this.Flag('mode') as ImportsSyncMode;
   }
 
+  /** Target package name, config path, or directory */
   get Target(): string {
     return this.Flag('target') as string;
   }
