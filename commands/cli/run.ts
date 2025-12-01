@@ -123,12 +123,22 @@ class RunParams extends CommandParams<
    * Flags to forward to the target command.
    *
    * Excludes `--config` flag and formats remaining flags
-   * as `--key=value` strings.
+   * appropriately for CLI forwarding:
+   * - Boolean `true` → `--flagname`
+   * - Boolean `false` → omitted
+   * - Other values → `--key=value`
    */
   get ForwardedFlags(): string[] {
+    const mapFlag = (key: string, val: unknown): string | undefined => {
+      if (key === 'config') return undefined;
+      if (val === true) return `--${key}`;
+      if (val === false) return undefined;
+      return `--${key}=${val}`;
+    };
+
     return Object.entries(this.Flags)
-      .filter(([key]) => key !== 'config')
-      .map(([key, val]) => `--${key}=${val}`);
+      .map(([k, v]) => mapFlag(k, v))
+      .filter(Boolean) as string[];
   }
 }
 

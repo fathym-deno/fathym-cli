@@ -1,12 +1,6 @@
 import { z } from 'zod';
-import {
-  type CommandContext,
-  CommandParams,
-  CommandRuntime,
-  defineCommandModule,
-} from '@fathym/cli';
+import { Command, CommandParams } from '@fathym/cli';
 
-// 🧩 Define schemas
 const ManageFlagsSchema = z.object({
   verbose: z.boolean().optional().describe('Show detailed output'),
   'dry-run': z
@@ -17,7 +11,6 @@ const ManageFlagsSchema = z.object({
 
 const ManageArgsSchema = z.tuple([]);
 
-// 🧩 Parameter class
 class ManageCommandParams extends CommandParams<
   z.infer<typeof ManageArgsSchema>,
   z.infer<typeof ManageFlagsSchema>
@@ -27,37 +20,17 @@ class ManageCommandParams extends CommandParams<
   }
 }
 
-// 🚀 Command logic
-export class ManageCommand extends CommandRuntime<ManageCommandParams> {
-  public Run(ctx: CommandContext<ManageCommandParams>): Promise<void> {
-    const { Verbose, DryRun } = ctx.Params;
-    const { Log } = ctx;
-
-    if (DryRun) {
+export default Command('manage', 'Show management status and options.')
+  .Args(ManageArgsSchema)
+  .Flags(ManageFlagsSchema)
+  .Params(ManageCommandParams)
+  .Run(async ({ Params, Log }) => {
+    if (Params.DryRun) {
       Log.Info('🛑 Dry run: Would show management status');
     } else {
       Log.Info('📊 Showing management status...');
-      if (Verbose) {
+      if (Params.Verbose) {
         Log.Info('   Detailed view enabled');
       }
     }
-
-    return Promise.resolve();
-  }
-
-  public BuildMetadata() {
-    return this.buildMetadataFromSchemas(
-      'manage',
-      'Show management status and options.',
-      ManageArgsSchema,
-      ManageFlagsSchema
-    );
-  }
-}
-
-export default defineCommandModule({
-  FlagsSchema: ManageFlagsSchema,
-  ArgsSchema: ManageArgsSchema,
-  Params: ManageCommandParams,
-  Command: ManageCommand,
-});
+  });

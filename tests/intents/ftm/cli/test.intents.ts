@@ -36,12 +36,12 @@ CommandIntents(
       .Args([undefined])
       .Flags({
         config: './tests/.temp/my-cli/.cli.json',
-        coverage: './coverage',
+        coverage: './cov',
         'no-check': true,
       })
       .ExpectLogs(
         '🧪 Running tests from:',
-        '➡️  deno test -A --coverage=./coverage --no-check',
+        '➡️  deno test -A --coverage=./cov --no-check',
         '✅ Tests passed successfully',
       )
       .ExpectExit(0))

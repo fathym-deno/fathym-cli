@@ -208,7 +208,7 @@ class MyParams extends CommandParams<...> {
 
 ## Task: Use User Configuration
 
-Your CLI includes a user configuration system at `~/.{{token}}/` (or custom location via `{{token | upper}}_CONFIG_ROOT` env var).
+Your CLI includes a user configuration system at `~/.my-cli/` (or custom location via `MYCLI_CONFIG_ROOT` env var).
 
 ### Step 1: Access ConfigDFS in a command
 
@@ -266,7 +266,7 @@ Example `.cli.json` with custom config location:
   "Version": "0.0.0",
   "ConfigDFSName": ".{{token}}",
   "ConfigDFSRoot": "/data/{{token}}",
-  "ConfigDFSRootEnvVar": "{{token | upper}}_DATA_DIR"
+  "ConfigDFSRootEnvVar": "{{upperToken}}_DATA_DIR"
 }
 ```
 

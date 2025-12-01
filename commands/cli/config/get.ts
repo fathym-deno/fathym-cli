@@ -44,17 +44,18 @@ export default Command('cli/config/get', 'Get a value from a JSON config file')
   .Params(ConfigGetParams)
   .Services(async (_ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-    const configDfs = await dfsCtx.GetConfigDFS();
 
-    // Try to resolve from IoC (allows override), fallback to default
-    let configService: ConfigFileService;
+    // Create ConfigFileService if ConfigDFS is available.
+    // If not (e.g., in tests), the service will be provided via WithServices().
+    let configService: ConfigFileService | undefined;
     try {
-      configService = await ioc.Resolve(ConfigFileService);
-    } catch {
+      const configDfs = await dfsCtx.GetConfigDFS();
       configService = new ConfigFileService(configDfs);
+    } catch {
+      // ConfigDFS not registered - service will be provided via WithServices() in tests
     }
 
-    return { configService };
+    return { configService: configService! };
   })
   .Run(async ({ Params, Services, Log }) => {
     const value = await Services.configService.get(Params.FilePath, Params.Key);
