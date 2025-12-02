@@ -394,7 +394,18 @@ async function collectLibraryOverrides(
     `[sync-imports] Scanning library ${lib.name} for .deps jsr overrides...`,
   );
 
+  // Normalize paths for comparison: forward slashes, lowercase for Windows, strip leading ./
+  const normalizeForComparison = (p: string): string => {
+    let normalized = p.replace(/\\/g, '/').toLowerCase();
+    // Strip leading ./ if present for consistent comparison
+    if (normalized.startsWith('./')) {
+      normalized = normalized.substring(2);
+    }
+    return normalized;
+  };
+
   const libRelPath = relative(dfs.Root, lib.packageDir);
+  const normalizedLibPath = normalizeForComparison(libRelPath);
 
   for await (
     const entry of dfs.Walk({
@@ -404,12 +415,16 @@ async function collectLibraryOverrides(
   ) {
     if (!entry.isFile) continue;
 
-    const entryPath = entry.path.replace(/\\/g, '/');
-    const libPath = libRelPath.replace(/\\/g, '/');
+    const normalizedEntryPath = normalizeForComparison(entry.path);
 
-    if (
-      !entryPath.startsWith(libPath) && !entryPath.startsWith(libPath + '/')
-    ) {
+    // Check if this .deps.ts file is within the library's directory
+    // Handle empty libPath (library at DFS root) by matching all files
+    const isInLib = normalizedLibPath === ''
+      ? true
+      : normalizedEntryPath === normalizedLibPath ||
+        normalizedEntryPath.startsWith(normalizedLibPath + '/');
+
+    if (!isInLib) {
       continue;
     }
 

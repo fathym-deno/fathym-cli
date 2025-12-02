@@ -1,5 +1,7 @@
 import './dev.intents.ts';
 import './imports/sync.intents.ts';
+import './publish/check.intents.ts';
+import './deps/upgrade.intents.ts';
 import './fmt.intents.ts';
 import './lint.intents.ts';
 import './check.intents.ts';

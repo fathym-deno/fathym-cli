@@ -339,9 +339,11 @@ async function collectCommandMetadata(
     const key = isMeta ? rel.replace(/\/\.metadata\.ts$/, '') : rel.replace(/\.ts$/, '');
     const group = key.split('/')[0];
 
-    // Use different suffixes for commands vs groups to avoid duplicate identifiers
-    // when a key has both a command file and a group metadata file
-    const baseName = pascalCase(key.split('/').pop()!);
+    // Use full path to generate unique alias - avoids collisions when
+    // commands have the same filename in different directories
+    // Replace slashes with dashes before pascalCase to ensure valid JS identifiers
+    // e.g., "cli/build" → "cli-build" → "CliBuild" → "CliBuildCommand"
+    const baseName = pascalCase(key.replace(/\//g, '-'));
     const alias = isMeta ? `${baseName}Group` : `${baseName}Command`;
 
     // Use different module keys for command vs group when both exist
