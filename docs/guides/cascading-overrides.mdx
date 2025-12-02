@@ -1,0 +1,405 @@
+---
+FrontmatterVersion: 1
+DocumentType: Guide
+Title: Cascading Override System
+Summary: Guide to building commands that support project-level task overrides with automatic fallback to CLI defaults.
+Created: 2025-12-02
+Updated: 2025-12-02
+Owners:
+  - fathym
+References:
+  - Label: Documentation Index
+    Path: ../README.mdx
+  - Label: Authoring Commands Guide
+    Path: ./authoring-commands.mdx
+  - Label: ftm projects:build
+    Path: ../api/build.mdx
+---
+
+# Cascading Override System
+
+The cascading override system enables CLI commands to check for project-level task overrides before falling back to CLI defaults. This provides a powerful balance: standardized behavior out of the box, with full customization when needed.
+
+## Philosophy: Compose, Don't Duplicate
+
+The core principle is micro-orchestration through composition:
+
+- **Commands are legos** - Atomic building blocks that do one thing well
+- **Pipelines assemble legos** - Compose atomic commands into workflows
+- **Projects can override** - Replace any piece at any level
+- **CLI provides defaults** - Sensible behavior when no override exists
+
+This eliminates the need to duplicate task definitions across dozens of projects while still allowing per-project customization when truly needed.
+
+## How Cascade Resolution Works
+
+When you run a pipeline command like `ftm projects build @myorg/my-package`:
+
+```
+ftm projects build @myorg/my-package
+     │
+     ├─► Check: project has 'build' task?
+     │   └─► YES: delegate entirely (full override)
+     │
+     └─► NO: run step pipeline
+         ├─► fmt:   'build:fmt' exists? → project task : deno fmt
+         ├─► lint:  'build:lint' exists? → project task : deno lint
+         ├─► check: 'build:check' exists? → project task : deno check
+         └─► test:  'test' exists? → project task : deno test
+```
+
+### Resolution Priority
+
+1. **Full Override**: If project defines the pipeline task (e.g., `build`), delegate entirely
+2. **Step Override**: Each step checks for its override task (e.g., `build:fmt`)
+3. **CLI Default**: When no override exists, use the CLI's default implementation
+
+## Using Pipeline Commands
+
+### Basic Usage
+
+```bash
+# Build with default behavior
+ftm projects build @myorg/my-package
+
+# Run only tests
+ftm projects test @myorg/my-package
+
+# Format code
+ftm projects fmt @myorg/my-package
+
+# Type check
+ftm projects check @myorg/my-package
+
+# Lint
+ftm projects lint @myorg/my-package
+```
+
+### Inspection Flags
+
+```bash
+# Show what would run without executing
+ftm projects build @myorg/my-package --dry-run
+
+# Show detailed resolution and execution
+ftm projects build @myorg/my-package --verbose
+
+# Show pipeline structure and override status
+ftm projects build @myorg/my-package --explain
+```
+
+The `--explain` flag is particularly useful for understanding how overrides affect your project:
+
+```
+=== build Pipeline ===
+
+Project: @myorg/my-package
+Config:  /path/to/deno.jsonc
+
+Full override task 'build': not defined
+
+Steps:
+  Step         Override Task        Status
+  ──────────── ──────────────────── ──────────
+  fmt          build:fmt            default
+  lint         build:lint           OVERRIDE
+  check        build:check          default
+  test         test                 default
+
+Override priority:
+  1. Full override: 'build' task runs exclusively
+  2. Step overrides: Each step task replaces that step's default
+  3. CLI defaults: Used when no override is defined
+```
+
+### Error Handling
+
+```bash
+# Continue on step failure
+ftm projects build @myorg/my-package --ignore-faults
+```
+
+## Overriding Steps
+
+### Step-Level Overrides
+
+To customize specific steps, add task definitions to your `deno.jsonc`:
+
+```jsonc
+{
+  "tasks": {
+    "build:fmt": "deno fmt --line-width=100",
+    "build:lint": "deno lint --fix",
+    "build:check": "deno check src/",
+    "test": "deno test -A --coverage=cov tests/"
+  }
+}
+```
+
+Each task you define replaces that step's default behavior.
+
+### Full Pipeline Override
+
+To take complete control, define the pipeline task itself:
+
+```jsonc
+{
+  "tasks": {
+    "build": "deno task build:fmt && deno task build:lint && npm run special-step"
+  }
+}
+```
+
+When a full override exists, the CLI delegates entirely—no step pipeline runs.
+
+## Building Pipeline Commands
+
+The cascade system is implemented using the `CascadeRunner` utility class and atomic command composition.
+
+### Atomic Step Commands
+
+First, create atomic commands for each step:
+
+```typescript
+// commands/projects/fmt.ts
+import { Command, CommandParams, CLIDFSContextManager } from '@fathym/cli';
+import { z } from 'zod';
+
+const FmtFlagsSchema = z.object({
+  'dry-run': z.boolean().optional(),
+  'check': z.boolean().optional(),
+});
+
+const FmtArgsSchema = z.tuple([
+  z.string().describe('Project reference').meta({ argName: 'project' }),
+]);
+
+class FmtParams extends CommandParams<
+  z.infer<typeof FmtArgsSchema>,
+  z.infer<typeof FmtFlagsSchema>
+> {
+  get ProjectRef(): string {
+    return this.Arg(0)!;
+  }
+
+  get Check(): boolean {
+    return this.Flag('check') ?? false;
+  }
+
+  override get DryRun(): boolean {
+    return this.Flag('dry-run') ?? false;
+  }
+}
+
+export default Command('projects:fmt', 'Format project code')
+  .Args(FmtArgsSchema)
+  .Flags(FmtFlagsSchema)
+  .Params(FmtParams)
+  .Services(async (_, ioc) => {
+    const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
+    const dfs = await dfsCtx.GetExecutionDFS();
+    return { ProjectResolver: new DFSProjectResolver(dfs) };
+  })
+  .Run(async ({ Params, Log, Services }) => {
+    const project = await Services.ProjectResolver.Resolve(Params.ProjectRef);
+
+    const args = ['fmt'];
+    if (Params.Check) args.push('--check');
+
+    if (Params.DryRun) {
+      Log.Info(`[DRY RUN] Would run: deno ${args.join(' ')}`);
+      return 0;
+    }
+
+    const cmd = new Deno.Command('deno', { args, cwd: project.dir });
+    const { code } = await cmd.output();
+    return code;
+  });
+```
+
+### Pipeline Command with CascadeRunner
+
+Then compose them into a pipeline:
+
+```typescript
+// commands/projects/build.ts
+import { Command, CommandParams, CLIDFSContextManager } from '@fathym/cli';
+import { z } from 'zod';
+import { CascadeRunner } from '../../src/pipelines/CascadeRunner.ts';
+import type { CascadeStepDef, CommandInvoker } from '../../src/pipelines/CascadeTypes.ts';
+import TaskCommand from '../task.ts';
+import FmtCommand from './fmt.ts';
+import LintCommand from './lint.ts';
+import CheckCommand from './check.ts';
+import TestCommand from './test.ts';
+
+// Define the pipeline steps
+const BUILD_STEPS: CascadeStepDef[] = [
+  {
+    name: 'fmt',
+    overrideTask: 'build:fmt',
+    description: 'Formatting code',
+    commandKey: 'Fmt',
+  },
+  {
+    name: 'lint',
+    overrideTask: 'build:lint',
+    description: 'Linting code',
+    commandKey: 'Lint',
+  },
+  {
+    name: 'check',
+    overrideTask: 'build:check',
+    description: 'Type checking',
+    commandKey: 'Check',
+  },
+  {
+    name: 'test',
+    overrideTask: 'test',
+    description: 'Running tests',
+    commandKey: 'Test',
+  },
+];
+
+const BuildFlagsSchema = z.object({
+  'dry-run': z.boolean().optional(),
+  'verbose': z.boolean().optional(),
+  'ignore-faults': z.boolean().optional(),
+  'explain': z.boolean().optional(),
+});
+
+const BuildArgsSchema = z.tuple([
+  z.string().describe('Project reference').meta({ argName: 'project' }),
+]);
+
+class BuildParams extends CommandParams<
+  z.infer<typeof BuildArgsSchema>,
+  z.infer<typeof BuildFlagsSchema>
+> {
+  get ProjectRef(): string {
+    return this.Arg(0)!;
+  }
+
+  get Verbose(): boolean {
+    return this.Flag('verbose') ?? false;
+  }
+
+  get IgnoreFaults(): boolean {
+    return this.Flag('ignore-faults') ?? false;
+  }
+
+  get Explain(): boolean {
+    return this.Flag('explain') ?? false;
+  }
+
+  override get DryRun(): boolean {
+    return this.Flag('dry-run') ?? false;
+  }
+}
+
+export default Command('projects:build', 'Build with cascading overrides')
+  .Args(BuildArgsSchema)
+  .Flags(BuildFlagsSchema)
+  .Params(BuildParams)
+  .Commands({
+    Task: TaskCommand.Build(),
+    Fmt: FmtCommand.Build(),
+    Lint: LintCommand.Build(),
+    Check: CheckCommand.Build(),
+    Test: TestCommand.Build(),
+  })
+  .Services(async (ctx, ioc) => {
+    const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
+    const dfs = await dfsCtx.GetExecutionDFS();
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve(ctx.Params.ProjectRef);
+
+    if (projects.length !== 1) {
+      throw new Error(`Expected exactly one project`);
+    }
+
+    return { Project: projects[0] };
+  })
+  .Run(async ({ Params, Commands, Services, Log }) => {
+    const { Project } = Services;
+    const { Task, Fmt, Lint, Check, Test } = Commands!;
+
+    const stepCommands: Record<string, CommandInvoker> = {
+      Fmt: Fmt as CommandInvoker,
+      Lint: Lint as CommandInvoker,
+      Check: Check as CommandInvoker,
+      Test: Test as CommandInvoker,
+    };
+
+    const runner = new CascadeRunner(Project, Log, Task as CommandInvoker, {
+      verbose: Params.Verbose,
+      ignoreFaults: Params.IgnoreFaults,
+      dryRun: Params.DryRun,
+      explain: Params.Explain,
+    });
+
+    const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+    return await runner.run(resolution, stepCommands, Params.ProjectRef);
+  });
+```
+
+## CascadeRunner API
+
+The `CascadeRunner` class handles resolution and execution:
+
+### Constructor
+
+```typescript
+new CascadeRunner(project, log, taskInvoker, options)
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `project` | `ProjectRef` | Resolved project with `tasks` property |
+| `log` | `CascadeLog` | Logger with Info/Warn/Error methods |
+| `taskInvoker` | `CommandInvoker` | Task command for delegating to project tasks |
+| `options` | `CascadeOptions` | Execution options |
+
+### CascadeOptions
+
+```typescript
+interface CascadeOptions {
+  verbose: boolean;      // Detailed logging
+  ignoreFaults: boolean; // Continue on failure
+  dryRun: boolean;       // Preview without executing
+  explain: boolean;      // Show pipeline structure
+}
+```
+
+### Methods
+
+#### resolve()
+
+```typescript
+runner.resolve(pipelineName, fullOverrideTask, steps): CascadeResolution
+```
+
+Resolves which steps use overrides vs defaults.
+
+#### run()
+
+```typescript
+await runner.run(resolution, stepCommands, projectRef): Promise<number>
+```
+
+Executes the pipeline and returns exit code.
+
+## Best Practices
+
+1. **Keep step commands atomic** - Each step command should do one thing well
+2. **Use consistent override naming** - Follow the `pipeline:step` pattern
+3. **Document override behavior** - Tell users what tasks they can override
+4. **Test both paths** - Test with and without overrides
+5. **Provide verbose output** - Help users understand what's happening
+6. **Support dry-run** - Let users preview before executing
+
+## Related
+
+- [Authoring Commands](./authoring-commands.mdx) - Command building basics
+- [ftm projects:build](../api/build.mdx) - Build command reference
+- [ftm task](../api/task.mdx) - Task execution command
