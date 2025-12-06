@@ -25,7 +25,8 @@
     "ftm:install:scripts": "deno task cli:run cli install scripts",
     "ftm:release": "deno task ftm:build && deno task ftm:compile && deno task ftm:install",
     "publish:check": "deno publish --dry-run --allow-dirty",
-    "test": "deno test -A ./tests/.tests.ts"
+    "test": "deno test -A ./tests/.tests.ts",
+    "version": "deno run -A jsr:@fathym/common@0.2.299/build/version"
   },
   "imports": {
     "@fathym/cli": "jsr:@fathym/cli@0.0.99-integration",
