@@ -49,9 +49,6 @@ jobs:
       - name: Deno Build
         run: deno task build
 
-      - name: Compile CLI binaries for all targets
-        run: deno task ftm:compile
-
       - name: Set Version
         id: version
         uses: paulhatch/semantic-version@v5.0.2
@@ -66,21 +63,11 @@ jobs:
           user_format_type: 'json'
           enable_prerelease_mode: ${{ steps.vars.outputs.currentBranch != env.MainBranch }}
 
-      # - name: NPM Package Build
-      #   run: |
-      #     deno task npm:build ${{ steps.version.outputs.version }}
-      #     npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
-
-      # - name: NPM Package Publish Release
-      #   if: steps.vars.outputs.currentBranch == env.MainBranch
-      #   run: deno task npm:publish
-
-      # - name: NPM Package Publish Prerelease
-      #   if: steps.vars.outputs.currentBranch != env.MainBranch
-      #   run: deno task npm:publish --tag ${{ steps.vars.outputs.currentBranch }}
-
       - name: Version package
         run: deno task version -- "${{ steps.version.outputs.version }}"
+
+      - name: Compile CLI binaries for all targets
+        run: deno task ftm:compile
 
       - name: Regenerate install scripts with version
         run: deno task ftm:install:scripts
