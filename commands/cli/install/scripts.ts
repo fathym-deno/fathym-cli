@@ -359,7 +359,7 @@ import {
   findBinary,
   getBinaryExtension,
   installBinary,
-} from "${packageName}/utils";
+} from "../src/utils/.exports.ts";
 
 const BINARY_NAME = "${binaryName}";
 const DEFAULT_INSTALL_DIR = "${installDir}";
