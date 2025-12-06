@@ -328,6 +328,7 @@ function generateDenoScript(
   installDir: string,
   aliases: string[],
   packageName: string,
+  packageVersion: string,
 ): string {
   const aliasesJson = JSON.stringify(aliases);
   return `/**
@@ -340,13 +341,14 @@ function generateDenoScript(
  *
  * Environment variables:
  *   INSTALL_DIR - Override install directory
- *   VERSION - Install specific version (default: latest)
+ *   VERSION - Install specific version (overrides embedded version)
  */
 
 const REPO = "${repo}";
 const BINARY_NAME = "${binaryName}";
 const DEFAULT_INSTALL_DIR = "${installDir}";
 const ALIASES: string[] = ${aliasesJson};
+const EMBEDDED_VERSION = "${packageVersion}";
 
 interface Target {
   os: string;
@@ -383,6 +385,22 @@ async function getLatestVersion(): Promise<string> {
   return data.tag_name;
 }
 
+async function getVersion(): Promise<string> {
+  // 1. Environment variable override takes priority
+  const envVersion = Deno.env.get("VERSION");
+  if (envVersion) {
+    return envVersion;
+  }
+
+  // 2. Use embedded version if it's a real version (not dev placeholder)
+  if (EMBEDDED_VERSION && EMBEDDED_VERSION !== "0.0.0") {
+    return EMBEDDED_VERSION;
+  }
+
+  // 3. Fall back to fetching latest from GitHub
+  return await getLatestVersion();
+}
+
 function expandHome(path: string): string {
   if (path.startsWith("~")) {
     const home = Deno.env.get(Deno.build.os === "windows" ? "USERPROFILE" : "HOME");
@@ -397,8 +415,8 @@ async function main() {
   const target = detectTarget();
   console.log(\`   Target: \${target.target}\`);
 
-  console.log("📦 Fetching latest version...");
-  const version = Deno.env.get("VERSION") ?? await getLatestVersion();
+  console.log("📦 Resolving version...");
+  const version = await getVersion();
   console.log(\`   Version: \${version}\`);
 
   const installDir = expandHome(
@@ -567,14 +585,18 @@ export default Command(
     const binaryName = tokens[0];
     const aliases = tokens.slice(1);
 
-    // Read package name from deno.jsonc for the install script
+    // Read package name and version from deno.jsonc for the install script
     let packageName = `@scope/${binaryName}`; // fallback
+    let packageVersion = '0.0.0'; // fallback - will trigger "fetch latest" behavior
     try {
       const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
       const denoContent = await Deno.readTextFile(denoJsoncPath);
       const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
       if (typeof denoConfig.name === 'string') {
         packageName = denoConfig.name;
+      }
+      if (typeof denoConfig.version === 'string') {
+        packageVersion = denoConfig.version;
       }
     } catch {
       // Try deno.json as fallback
@@ -584,6 +606,9 @@ export default Command(
         const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
         if (typeof denoConfig.name === 'string') {
           packageName = denoConfig.name;
+        }
+        if (typeof denoConfig.version === 'string') {
+          packageVersion = denoConfig.version;
         }
       } catch {
         Log.Warn(
@@ -636,6 +661,7 @@ export default Command(
       Params.InstallDir,
       aliases,
       packageName,
+      packageVersion,
     );
     const denoPath = join(outputDir, 'install.ts');
     await Deno.writeTextFile(denoPath, denoScript);
