@@ -23,7 +23,7 @@ Deno.test('DepsFileParser.parse - Parses JSR scoped package', () => {
 });
 
 Deno.test('DepsFileParser.parse - Parses JSR package with channel version', () => {
-  const content = `export { type EverythingAsCode } from "jsr:@fathym/eac@0.2.185-hmis";`;
+  const content = `export { type EverythingAsCode } from "jsr:@fathym/eac@0.2.196-hmis";`;
   const refs = parser.parse(content);
 
   assertEquals(refs.length, 1);
