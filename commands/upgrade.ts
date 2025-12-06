@@ -77,10 +77,14 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
   .Args(UpgradeArgsSchema)
   .Flags(UpgradeFlagsSchema)
   .Params(UpgradeParams)
-  .Services(() => ({
-    VersionResolver: new VersionResolver(),
-    VersionComparator: new VersionComparator(),
-  }))
+  .Services(async () => {
+    await Promise.resolve();
+
+    return {
+      VersionResolver: new VersionResolver(),
+      VersionComparator: new VersionComparator(),
+    };
+  })
   .Run(async ({ Params, Log, Services, Config }) => {
     const { VersionResolver, VersionComparator } = Services;
 

@@ -6,3 +6,4 @@ import './cli/.tests.ts';
 import './cli.test.ts';
 import './compiled-binary.test.ts';
 import './task.test.ts';
+import './upgrade.test.ts';

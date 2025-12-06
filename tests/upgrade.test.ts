@@ -57,7 +57,7 @@ class MockVersionResolver {
 // Upgrade Logic - Version Selection Tests
 // =============================================================================
 
-Deno.test('Upgrade - Selects latest production version when no version specified', async () => {
+Deno.test('Upgrade - Selects latest production version when no version specified', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.72', channel: undefined },
@@ -66,14 +66,14 @@ Deno.test('Upgrade - Selects latest production version when no version specified
     { version: '0.0.72-integration', channel: 'integration' },
   ]);
 
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
   const latestProduction = versionsByChannel.get('production')?.[0]?.version;
 
   // Should select 0.0.72 as latest production (not 0.0.73-integration)
   assertEquals(latestProduction, '0.0.72');
 });
 
-Deno.test('Upgrade - Returns undefined when no production versions exist', async () => {
+Deno.test('Upgrade - Returns undefined when no production versions exist', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.73-integration', channel: 'integration' },
@@ -81,13 +81,13 @@ Deno.test('Upgrade - Returns undefined when no production versions exist', async
     { version: '0.0.71-hmis', channel: 'hmis' },
   ]);
 
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
   const latestProduction = versionsByChannel.get('production')?.[0]?.version;
 
   assertEquals(latestProduction, undefined);
 });
 
-Deno.test('Upgrade - Uses explicit version when provided', async () => {
+Deno.test('Upgrade - Uses explicit version when provided', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.72', channel: undefined },
@@ -96,12 +96,12 @@ Deno.test('Upgrade - Uses explicit version when provided', async () => {
   ]);
 
   const explicitVersion = '0.0.73-integration';
-  const exists = await mockResolver.hasVersion('jsr', '@fathym/ftm', explicitVersion);
+  const exists = mockResolver.hasVersion('jsr', '@fathym/ftm', explicitVersion);
 
   assertEquals(exists, true);
 });
 
-Deno.test('Upgrade - Rejects non-existent version', async () => {
+Deno.test('Upgrade - Rejects non-existent version', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.72', channel: undefined },
@@ -109,7 +109,7 @@ Deno.test('Upgrade - Rejects non-existent version', async () => {
   ]);
 
   const nonExistent = '0.0.999';
-  const exists = await mockResolver.hasVersion('jsr', '@fathym/ftm', nonExistent);
+  const exists = mockResolver.hasVersion('jsr', '@fathym/ftm', nonExistent);
 
   assertEquals(exists, false);
 });
@@ -165,7 +165,7 @@ Deno.test('Upgrade - Audit handles newer pre-release base than production', () =
 // Upgrade Logic - List Mode Tests
 // =============================================================================
 
-Deno.test('Upgrade - List groups versions by channel', async () => {
+Deno.test('Upgrade - List groups versions by channel', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.72', channel: undefined },
@@ -175,7 +175,7 @@ Deno.test('Upgrade - List groups versions by channel', async () => {
     { version: '0.0.70-hmis', channel: 'hmis' },
   ]);
 
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
 
   assertEquals(versionsByChannel.has('production'), true);
   assertEquals(versionsByChannel.has('integration'), true);
@@ -186,7 +186,7 @@ Deno.test('Upgrade - List groups versions by channel', async () => {
   assertEquals(versionsByChannel.get('hmis')!.length, 1);
 });
 
-Deno.test('Upgrade - List marks current version correctly', async () => {
+Deno.test('Upgrade - List marks current version correctly', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.72', channel: undefined },
@@ -195,7 +195,7 @@ Deno.test('Upgrade - List marks current version correctly', async () => {
   ]);
 
   const currentVersion = '0.0.72';
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
 
   // Find current version in the list
   let foundCurrent = false;
@@ -263,35 +263,35 @@ Deno.test('Upgrade - Constructs correct JSR install script URL for production', 
 // Upgrade Logic - Edge Cases
 // =============================================================================
 
-Deno.test('Upgrade - Handles empty version list gracefully', async () => {
+Deno.test('Upgrade - Handles empty version list gracefully', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([]);
 
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
   const latestProduction = versionsByChannel.get('production')?.[0]?.version;
 
   assertEquals(latestProduction, undefined);
   assertEquals(versionsByChannel.size, 0);
 });
 
-Deno.test('Upgrade - Handles single production version', async () => {
+Deno.test('Upgrade - Handles single production version', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([{ version: '1.0.0', channel: undefined }]);
 
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
   const latestProduction = versionsByChannel.get('production')?.[0]?.version;
 
   assertEquals(latestProduction, '1.0.0');
 });
 
-Deno.test('Upgrade - Handles only pre-release versions', async () => {
+Deno.test('Upgrade - Handles only pre-release versions', () => {
   const mockResolver = new MockVersionResolver();
   mockResolver.setVersions([
     { version: '0.0.1-alpha', channel: 'alpha' },
     { version: '0.0.2-beta', channel: 'beta' },
   ]);
 
-  const versionsByChannel = await mockResolver.getVersionsByChannel();
+  const versionsByChannel = mockResolver.getVersionsByChannel();
   const latestProduction = versionsByChannel.get('production')?.[0]?.version;
 
   assertEquals(latestProduction, undefined);
