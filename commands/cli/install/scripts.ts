@@ -322,8 +322,9 @@ Main
 /**
  * Generates the Deno install script for `deno run jsr:@scope/pkg/install`.
  *
- * The script uses InstallService from the package itself to avoid duplicating
- * installation logic. It accepts the same flags as InstallCommand:
+ * The script downloads binaries from the JSR package (via HTTPS) and uses
+ * InstallService for the actual installation. It accepts the same flags as
+ * InstallCommand:
  * - First positional arg or INSTALL_DIR env: install directory
  * - --target: Override platform auto-detection
  */
@@ -351,12 +352,11 @@ function generateDenoScript(
  *   --target=<t>   - Target platform (auto-detected if not specified)
  */
 
-import { dirname, fromFileUrl, join } from "jsr:@std/path@1";
+import { join } from "jsr:@std/path@1";
 import {
   consoleLogger,
   detectTarget,
   expandHome,
-  findBinary,
   getBinaryExtension,
   installBinary,
 } from "../src/utils/.exports.ts";
@@ -392,6 +392,42 @@ function parseArgs(): { installDir: string; target: string } {
   };
 }
 
+/**
+ * Downloads a binary from the JSR package via HTTPS.
+ *
+ * import.meta.url gives us something like:
+ * - https://jsr.io/@fathym/ftm/0.0.67-integration/.dist/install.ts
+ *
+ * We construct the binary URL relative to this script's location:
+ * - https://jsr.io/@fathym/ftm/0.0.67-integration/.dist/exe/<target>/<binary>
+ */
+async function downloadBinaryFromPackage(target: string, binaryName: string): Promise<string> {
+  const scriptUrl = import.meta.url;
+
+  // Get the base directory URL (remove "install.ts" from the end)
+  const baseUrl = scriptUrl.replace(/install\\.ts$/, "");
+
+  // Construct URL to the binary: .dist/exe/<target>/<binary>
+  const binaryUrl = \`\${baseUrl}exe/\${target}/\${binaryName}\`;
+
+  console.log(\`📥 Downloading binary from package...\`);
+  console.log(\`   URL: \${binaryUrl}\`);
+
+  const response = await fetch(binaryUrl);
+  if (!response.ok) {
+    throw new Error(\`Failed to download binary: \${response.status} \${response.statusText}\\n   URL: \${binaryUrl}\`);
+  }
+
+  // Save to temp file
+  const tempDir = await Deno.makeTempDir();
+  const tempPath = join(tempDir, binaryName);
+
+  const data = new Uint8Array(await response.arrayBuffer());
+  await Deno.writeFile(tempPath, data);
+
+  return tempPath;
+}
+
 async function main() {
   const { installDir, target } = parseArgs();
   const binaryExt = getBinaryExtension(target);
@@ -400,21 +436,10 @@ async function main() {
   console.log("🔍 Detecting platform...");
   console.log(\`   Target: \${target}\`);
 
-  // Find the binary bundled in the package
-  // The script is at .dist/install.ts, binaries are at .dist/exe/<target>/
-  const scriptDir = dirname(fromFileUrl(import.meta.url));
-  const distDir = dirname(scriptDir); // Go up from .dist to project root, then back to .dist
+  // Download binary from JSR package
+  const sourcePath = await downloadBinaryFromPackage(target, binaryName);
 
-  console.log(\`📦 Looking for binary in package...\`);
-  const sourcePath = await findBinary({ distDir: scriptDir, target, binaryName });
-
-  if (!sourcePath) {
-    console.error(\`❌ Could not find binary for target: \${target}\`);
-    console.error(\`   Expected at: \${join(scriptDir, "exe", target, binaryName)}\`);
-    Deno.exit(1);
-  }
-
-  console.log(\`   Found: \${sourcePath}\`);
+  console.log(\`   Downloaded to: \${sourcePath}\`);
 
   // Install using shared service
   await installBinary({
@@ -424,6 +449,14 @@ async function main() {
     aliases: ALIASES,
     log: consoleLogger,
   });
+
+  // Clean up temp file
+  try {
+    await Deno.remove(sourcePath);
+    await Deno.remove(join(sourcePath, ".."), { recursive: true });
+  } catch {
+    // Ignore cleanup errors
+  }
 }
 
 main().catch((err) => {
