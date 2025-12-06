@@ -56,9 +56,9 @@
 import { join } from '@std/path';
 import { parse as parseJsonc } from '@std/jsonc';
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams, loadCLIConfig } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DEFAULT_INSTALL_DIR, type FathymCLIConfig } from '../../../src/config/FathymCLIConfig.ts';
+import { DEFAULT_INSTALL_DIR } from '../../../src/config/FathymCLIConfig.ts';
 
 /**
  * Zod schema for scripts command positional arguments.
@@ -551,14 +551,11 @@ export default Command(
 
     return { DFS: dfs };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services, Config: Config }) => {
     const { DFS } = Services;
 
     // Load config
-    const configPath = await DFS.ResolvePath('.cli.json');
-    const config = await loadCLIConfig<FathymCLIConfig>(configPath);
-
-    const tokens = config.Tokens ?? ['cli'];
+    const tokens = Config.Tokens ?? ['cli'];
     const binaryName = tokens[0];
     const aliases = tokens.slice(1);
 

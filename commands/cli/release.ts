@@ -71,8 +71,8 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams, loadCLIConfig } from '@fathym/cli';
-import { DEFAULT_TARGETS, type FathymCLIConfig } from '../../src/config/FathymCLIConfig.ts';
+import { Command, CommandParams } from '@fathym/cli';
+import { DEFAULT_TARGETS } from '../../src/config/FathymCLIConfig.ts';
 import BuildCommand from './build.ts';
 import CompileCommand from './compile.ts';
 import ScriptsCommand from './install/scripts.ts';
@@ -151,34 +151,20 @@ export default Command(
     Compile: CompileCommand.Build(),
     Scripts: ScriptsCommand.Build(),
   })
-  .Services(async (ctx, ioc) => {
-    const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-
-    if (ctx.Params.ConfigPath) {
-      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
-    }
-
-    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
-
-    return { DFS: dfs };
-  })
-  .Run(async ({ Params, Log, Commands, Services }) => {
-    const { DFS } = Services;
+  .Run(async ({ Params, Log, Commands, Config }) => {
     const { Build, Compile, Scripts } = Commands!;
 
-    // Load config
-    const configPath = await DFS.ResolvePath('.cli.json');
-    const config = await loadCLIConfig<FathymCLIConfig>(configPath);
+    // // Load config
+    const configPath = Params.ConfigPath || '.cli.json';
 
-    const cliName = config.Tokens?.[0] ?? 'cli';
-    const version = config.Version;
+    const cliName = Config.Tokens?.[0] ?? 'cli';
+    const version = Config.Version;
 
-    Log.Info(`🚀 Starting release for ${config.Name} v${version}`);
+    Log.Info(`🚀 Starting release for ${Config.Name} v${version}`);
     Log.Info('');
 
     // Determine targets
-    const targets = Params.Targets ?? config.Release?.Targets ??
-      [...DEFAULT_TARGETS];
+    const targets = Params.Targets ?? [...DEFAULT_TARGETS];
     Log.Info(`📦 Targets: ${targets.join(', ')}`);
     Log.Info('');
 
@@ -219,8 +205,8 @@ export default Command(
     Log.Info('━'.repeat(50));
     Log.Info('📋 Release Summary');
     Log.Info('━'.repeat(50));
-    Log.Info(`   CLI: ${config.Name} v${version}`);
-    Log.Info(`   Tokens: ${config.Tokens?.join(', ')}`);
+    Log.Info(`   CLI: ${Config.Name} v${version}`);
+    Log.Info(`   Tokens: ${Config.Tokens?.join(', ')}`);
     Log.Info(`   Targets: ${targets.length} platforms`);
     Log.Info('');
     Log.Info('📁 Generated files in .dist/:');
