@@ -113,6 +113,17 @@ import { getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
 export const CompileArgsSchema = z.tuple([]);
 
 /**
+ * All supported cross-compilation targets.
+ */
+export const COMPILE_TARGETS = [
+  'x86_64-unknown-linux-gnu',
+  'aarch64-unknown-linux-gnu',
+  'x86_64-apple-darwin',
+  'aarch64-apple-darwin',
+  'x86_64-pc-windows-msvc',
+] as const;
+
+/**
  * Zod schema for compile command flags.
  *
  * @property entry - Entry point file (output of build command)
@@ -120,6 +131,7 @@ export const CompileArgsSchema = z.tuple([]);
  * @property output - Output directory for compiled binary
  * @property permissions - Space-separated Deno permission flags
  * @property target - Cross-compilation target (Deno compile target triple)
+ * @property all - Compile for all supported targets
  */
 export const CompileFlagsSchema = z
   .object({
@@ -140,6 +152,10 @@ export const CompileFlagsSchema = z
       .string()
       .optional()
       .describe('Cross-compilation target (e.g., x86_64-pc-windows-msvc)'),
+    all: z
+      .boolean()
+      .optional()
+      .describe('Compile for all supported targets'),
   })
   .passthrough();
 
@@ -219,6 +235,16 @@ export class CompileParams extends CommandParams<
   get Target(): string | undefined {
     return this.Flag('target');
   }
+
+  /**
+   * Whether to compile for all supported targets.
+   *
+   * When true, compiles binaries for all targets in COMPILE_TARGETS.
+   * Output files are named `<target>-<binary>` for GitHub release compatibility.
+   */
+  get All(): boolean {
+    return this.Flag('all') ?? false;
+  }
 }
 
 /**
@@ -254,7 +280,6 @@ export default Command('compile', 'Compile the CLI into a native binary')
     const entryPath = await CLIDFS.ResolvePath(`./${relativeEntry}`);
     const baseOutputDir = await CLIDFS.ResolvePath(Params.OutputDir);
     const permissions = Params.Permissions;
-    const target = Params.Target;
 
     const configInfo = await CLIDFS.GetFileInfo('./.cli.json');
     if (!configInfo) {
@@ -273,48 +298,75 @@ export default Command('compile', 'Compile the CLI into a native binary')
 
     const primaryToken = tokens[0];
 
-    // Determine binary extension based on target or current OS
-    const binaryExt = target
-      ? getBinaryExtension(target)
-      : (Deno.build.os === 'windows' ? '.exe' : '');
-    const _binaryName = `${primaryToken}${binaryExt}`;
-
-    // Output to target subdirectory when cross-compiling
-    const outputDir = target ? join(baseOutputDir, target) : baseOutputDir;
-    const outputBinaryPath = join(outputDir, primaryToken);
-
-    Log.Info(`🔧 Compiling CLI for: ${primaryToken}`);
-    Log.Info(`- Entry: ${entryPath}`);
-    Log.Info(`- Output: ${outputBinaryPath}${binaryExt}`);
-    if (target) {
-      Log.Info(`- Target: ${target}`);
-    }
-    Log.Info(`- Permissions: ${permissions.join(' ')}`);
-
+    // Run build once before compilation
     const { Build } = Commands!;
     await Build([], { config: join(Services.CLIRoot, configInfo.Path) });
 
-    // Build compile command with optional target
-    const compileArgs = [
-      'compile',
-      ...permissions,
-      '--output',
-      outputBinaryPath,
-      ...(target ? ['--target', target] : []),
-      entryPath,
-    ];
+    // Determine which targets to compile
+    const targets: (string | undefined)[] = Params.All ? [...COMPILE_TARGETS] : [Params.Target];
 
-    await runCommandWithLogs(compileArgs, Log, {
-      stdin: 'null',
-      exitOnFail: true,
-      cwd: Services.CLIDFS.Root,
-    });
-
-    Log.Success(`✅ Compiled: ${outputBinaryPath}${binaryExt}`);
-    if (target) {
-      Log.Info(`📦 Cross-compiled for: ${target}`);
+    if (Params.All) {
+      Log.Info(`🔧 Compiling CLI for all ${COMPILE_TARGETS.length} targets...`);
     }
-    Log.Info(
-      `👉 To install, run: \`ftm cli install${target ? ` --target=${target}` : ''}\``,
-    );
+
+    for (const target of targets) {
+      // Determine binary extension based on target or current OS
+      const binaryExt = target
+        ? getBinaryExtension(target)
+        : (Deno.build.os === 'windows' ? '.exe' : '');
+
+      // When compiling for all targets, use flat naming: <target>-<binary>
+      // This matches what the install scripts expect for GitHub releases
+      let outputBinaryPath: string;
+      if (Params.All && target) {
+        // Flat structure for release: .dist/x86_64-unknown-linux-gnu-ftm
+        outputBinaryPath = join(baseOutputDir, `${target}-${primaryToken}`);
+      } else if (target) {
+        // Subdirectory structure for single cross-compile: .dist/target/ftm
+        outputBinaryPath = join(baseOutputDir, target, primaryToken);
+      } else {
+        // Local compile: .dist/ftm
+        outputBinaryPath = join(baseOutputDir, primaryToken);
+      }
+
+      Log.Info(`🔧 Compiling CLI for: ${primaryToken}`);
+      Log.Info(`- Entry: ${entryPath}`);
+      Log.Info(`- Output: ${outputBinaryPath}${binaryExt}`);
+      if (target) {
+        Log.Info(`- Target: ${target}`);
+      }
+      Log.Info(`- Permissions: ${permissions.join(' ')}`);
+
+      // Build compile command with optional target
+      const compileArgs = [
+        'compile',
+        ...permissions,
+        '--output',
+        outputBinaryPath,
+        ...(target ? ['--target', target] : []),
+        entryPath,
+      ];
+
+      await runCommandWithLogs(compileArgs, Log, {
+        stdin: 'null',
+        exitOnFail: true,
+        cwd: Services.CLIDFS.Root,
+      });
+
+      Log.Success(`✅ Compiled: ${outputBinaryPath}${binaryExt}`);
+      if (target) {
+        Log.Info(`📦 Cross-compiled for: ${target}`);
+      }
+    }
+
+    if (Params.All) {
+      Log.Success(`🎉 All ${COMPILE_TARGETS.length} targets compiled successfully`);
+      Log.Info(`📦 Binaries ready for release in: ${baseOutputDir}`);
+    } else {
+      Log.Info(
+        `👉 To install, run: \`ftm cli install${
+          Params.Target ? ` --target=${Params.Target}` : ''
+        }\``,
+      );
+    }
   });

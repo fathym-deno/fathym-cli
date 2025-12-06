@@ -348,7 +348,7 @@ const REPO = "${repo}";
 const BINARY_NAME = "${binaryName}";
 const DEFAULT_INSTALL_DIR = "${installDir}";
 const ALIASES: string[] = ${aliasesJson};
-const EMBEDDED_VERSION = "${packageVersion}";
+const EMBEDDED_VERSION: string = "${packageVersion}";
 
 interface Target {
   os: string;
