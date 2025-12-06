@@ -39,7 +39,7 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { dirname, join, relative } from '@std/path';
+import { dirname, relative } from '@std/path';
 import { parse as parseJsonc } from '@std/jsonc';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import { DepsFileParser, type DepsReference } from '../../../src/deps/DepsFileParser.ts';
@@ -580,7 +580,7 @@ async function applyImportMapUpgrades(
       'g',
     );
 
-    text = text.replace(regex, (match, quote, registry, subpath) => {
+    text = text.replace(regex, (_match, quote, registry, subpath) => {
       const newSubpath = subpath || '';
       return `${quote}${registry}:${upgrade.packageName}@${upgrade.newVersion}${newSubpath}${quote}`;
     });

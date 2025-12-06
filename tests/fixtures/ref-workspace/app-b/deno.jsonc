@@ -1,0 +1,7 @@
+{
+  "name": "@fathym/test-app-no-dependents",
+  "version": "0.0.1",
+  "imports": {
+    "@fathym/common": "jsr:@fathym/common@0.2.299"
+  }
+}

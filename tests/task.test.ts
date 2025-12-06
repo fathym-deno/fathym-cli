@@ -5,10 +5,10 @@ import { DFSProjectResolver } from '../src/projects/ProjectResolver.ts';
 /**
  * Test helper to create a memory DFS with project files
  */
-function createTestDFS(files: Record<string, string>): MemoryDFSFileHandler {
+async function createTestDFS(files: Record<string, string>): Promise<MemoryDFSFileHandler> {
   const handler = new MemoryDFSFileHandler({});
   for (const [path, content] of Object.entries(files)) {
-    handler.setFile(path, content);
+    await handler.WriteFile(path, content);
   }
   return handler;
 }
@@ -18,7 +18,7 @@ function createTestDFS(files: Record<string, string>): MemoryDFSFileHandler {
 // =============================================================================
 
 Deno.test('Task - Resolver finds project by package name with tasks', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/myapp/deno.jsonc': JSON.stringify({
       name: '@test/myapp',
       exports: { '.': './mod.ts' },
@@ -41,7 +41,7 @@ Deno.test('Task - Resolver finds project by package name with tasks', async () =
 });
 
 Deno.test('Task - Resolver finds project by directory path with tasks', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/ref-arch/deno.jsonc': JSON.stringify({
       name: '@test/ref-arch',
       exports: { '.': './mod.ts' },
@@ -60,7 +60,7 @@ Deno.test('Task - Resolver finds project by directory path with tasks', async ()
 });
 
 Deno.test('Task - Resolver finds project by explicit config path', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/cli/deno.jsonc': JSON.stringify({
       name: '@test/cli',
       exports: { '.': './mod.ts' },
@@ -81,7 +81,7 @@ Deno.test('Task - Resolver finds project by explicit config path', async () => {
 });
 
 Deno.test('Task - Returns empty array for non-existent project', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/app/deno.jsonc': JSON.stringify({
       name: '@test/app',
       exports: { '.': './mod.ts' },
@@ -95,7 +95,7 @@ Deno.test('Task - Returns empty array for non-existent project', async () => {
 });
 
 Deno.test('Task - Returns multiple projects when directory has multiple', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/libs/lib1/deno.jsonc': JSON.stringify({
       name: '@test/lib1',
       exports: { '.': './mod.ts' },
@@ -115,7 +115,7 @@ Deno.test('Task - Returns multiple projects when directory has multiple', async 
 });
 
 Deno.test('Task - Project with no tasks returns empty tasks object', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/empty/deno.jsonc': JSON.stringify({
       name: '@test/empty',
       exports: { '.': './mod.ts' },
@@ -130,7 +130,7 @@ Deno.test('Task - Project with no tasks returns empty tasks object', async () =>
 });
 
 Deno.test('Task - Validates task exists in project', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/app/deno.jsonc': JSON.stringify({
       name: '@test/app',
       exports: { '.': './mod.ts' },

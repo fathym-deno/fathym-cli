@@ -419,10 +419,8 @@ async function collectLibraryOverrides(
 
     // Check if this .deps.ts file is within the library's directory
     // Handle empty libPath (library at DFS root) by matching all files
-    const isInLib = normalizedLibPath === ''
-      ? true
-      : normalizedEntryPath === normalizedLibPath ||
-        normalizedEntryPath.startsWith(normalizedLibPath + '/');
+    const isInLib = normalizedLibPath === '' ? true : normalizedEntryPath === normalizedLibPath ||
+      normalizedEntryPath.startsWith(normalizedLibPath + '/');
 
     if (!isInLib) {
       continue;

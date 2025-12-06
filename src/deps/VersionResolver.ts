@@ -240,6 +240,8 @@ export class VersionResolver {
     });
 
     if (!response.ok) {
+      // Consume response body to avoid leaking resources
+      await response.body?.cancel();
       if (response.status === 404) {
         throw new Error(`Package not found: ${packageName}`);
       }
@@ -291,6 +293,8 @@ export class VersionResolver {
     });
 
     if (!response.ok) {
+      // Consume response body to avoid leaking resources
+      await response.body?.cancel();
       if (response.status === 404) {
         throw new Error(`Package not found: ${packageName}`);
       }

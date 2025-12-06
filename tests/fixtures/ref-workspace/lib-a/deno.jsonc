@@ -1,0 +1,5 @@
+{
+  "name": "@fathym/common",
+  "version": "0.2.299",
+  "exports": "./mod.ts"
+}

@@ -29,7 +29,7 @@ Deno.test('DepsFileParser.parse - Parses JSR package with channel version', () =
   assertEquals(refs.length, 1);
   assertEquals(refs[0].registry, 'jsr');
   assertEquals(refs[0].fullName, '@fathym/eac');
-  assertEquals(refs[0].version, '0.2.166-hmis');
+  assertEquals(refs[0].version, '0.2.196-hmis');
   assertEquals(refs[0].subpath, undefined);
 });
 

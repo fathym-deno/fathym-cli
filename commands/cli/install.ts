@@ -255,7 +255,87 @@ export default Command(
     await Deno.mkdir(installBase, { recursive: true });
 
     const destBinaryPath = join(installBase, binaryName);
-    await Deno.copyFile(sourceBinaryPath, destBinaryPath);
+
+    // On Windows, a running executable can be renamed but not overwritten.
+    // If the destination exists and is locked, rename it first.
+    // We use a timestamped suffix to avoid conflicts with previous .old files that may still be locked.
+    const timestamp = Date.now();
+    const oldBinaryPath = `${destBinaryPath}.${timestamp}.old`;
+
+    // Clean up any old .old files from previous installs (best effort)
+    try {
+      for await (const entry of Deno.readDir(installBase)) {
+        if (entry.name.startsWith(`${binaryName}.`) && entry.name.endsWith('.old')) {
+          try {
+            await Deno.remove(join(installBase, entry.name));
+          } catch {
+            // Ignore - file may still be in use
+          }
+        }
+      }
+    } catch {
+      // Ignore directory read errors
+    }
+
+    // Try direct copy first; if locked, try rename-then-copy
+    try {
+      await Deno.copyFile(sourceBinaryPath, destBinaryPath);
+    } catch (err) {
+      // Check for EBUSY/EACCES error (file in use or access denied)
+      const isBusy = err instanceof Deno.errors.Busy ||
+        err instanceof Deno.errors.PermissionDenied ||
+        (err && typeof err === 'object' && 'code' in err &&
+          (err.code === 'EBUSY' || err.code === 'EACCES'));
+
+      if (isWindows && isBusy) {
+        Log.Info('🔄 Binary in use, using rename workaround...');
+        try {
+          Log.Info(`   Renaming ${destBinaryPath} → ${oldBinaryPath}`);
+          await Deno.rename(destBinaryPath, oldBinaryPath);
+          Log.Info(`   Copying ${sourceBinaryPath} → ${destBinaryPath}`);
+          await Deno.copyFile(sourceBinaryPath, destBinaryPath);
+          Log.Success(`✅ Installed using rename workaround`);
+          // Try to clean up old file (may fail if still in use, that's ok)
+          try {
+            await Deno.remove(oldBinaryPath);
+          } catch {
+            Log.Info(`ℹ️  Old binary will be cleaned up on next install`);
+          }
+        } catch (renameErr) {
+          // Extract a useful error message
+          let errMsg: string;
+          if (renameErr instanceof Error) {
+            errMsg = renameErr.message;
+          } else if (renameErr && typeof renameErr === 'object') {
+            // Try to get code or stringify
+            const code = 'code' in renameErr ? renameErr.code : undefined;
+            const message = 'message' in renameErr ? renameErr.message : undefined;
+            errMsg = message
+              ? String(message)
+              : code
+              ? `Error code: ${code}`
+              : JSON.stringify(renameErr);
+          } else {
+            errMsg = String(renameErr);
+          }
+
+          Log.Error(`❌ Rename workaround failed: ${errMsg}`);
+          Log.Error('');
+          Log.Error('The binary is locked and cannot be replaced.');
+          Log.Error('This usually happens when ftm.exe is still running.');
+          Log.Error('');
+          Log.Error('Try one of these solutions:');
+          Log.Error('  1. Close all terminal windows running ftm');
+          Log.Error('  2. Run the install command in a new terminal:');
+          Log.Error(`     deno task cli:run cli install --useHome --to=.bin`);
+          Log.Error('  3. Manually copy the binary:');
+          Log.Error(`     copy "${sourceBinaryPath}" "${destBinaryPath}"`);
+          Deno.exit(1);
+        }
+      } else {
+        throw err;
+      }
+    }
 
     // Set executable permission on Unix
     if (!isWindows) {

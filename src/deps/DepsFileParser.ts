@@ -229,7 +229,7 @@ export class DepsFileParser {
 
       result = result.replace(
         regex,
-        (match, quote, registry, _oldVersion, subpath) => {
+        (_match, quote, registry, _oldVersion, subpath) => {
           const newSubpath = subpath || '';
           return `${quote}${registry}:${packageName}@${newVersion}${newSubpath}${quote}`;
         },

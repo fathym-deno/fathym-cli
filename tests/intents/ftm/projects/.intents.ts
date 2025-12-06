@@ -7,3 +7,4 @@ import './lint.intents.ts';
 import './check.intents.ts';
 import './test.intents.ts';
 import './build.intents.ts';
+import './ref.intents.ts';

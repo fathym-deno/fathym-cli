@@ -28,7 +28,7 @@
     "test": "deno test -A ./tests/.tests.ts"
   },
   "imports": {
-  "@fathym/cli": "jsr:@fathym/cli@0.0.98-integration",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.99-integration",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.299",
     "@fathym/dfs": "jsr:@fathym/dfs@0.0.78-integration",

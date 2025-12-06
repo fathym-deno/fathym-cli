@@ -5,10 +5,10 @@ import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
 /**
  * Test helper to create a memory DFS with project files
  */
-function createTestDFS(files: Record<string, string>): MemoryDFSFileHandler {
+async function createTestDFS(files: Record<string, string>): Promise<MemoryDFSFileHandler> {
   const handler = new MemoryDFSFileHandler({});
   for (const [path, content] of Object.entries(files)) {
-    handler.setFile(path, content);
+    await handler.WriteFile(path, content);
   }
   return handler;
 }
@@ -18,7 +18,7 @@ function createTestDFS(files: Record<string, string>): MemoryDFSFileHandler {
 // =============================================================================
 
 Deno.test('DFSProjectResolver - Resolve with no ref returns all projects', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/app1/deno.jsonc': JSON.stringify({
       name: '@test/app1',
       exports: { '.': './mod.ts' },
@@ -40,7 +40,7 @@ Deno.test('DFSProjectResolver - Resolve with no ref returns all projects', async
 });
 
 Deno.test('DFSProjectResolver - Resolve by direct deno.jsonc path', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/myapp/deno.jsonc': JSON.stringify({
       name: '@test/myapp',
       exports: { '.': './mod.ts' },
@@ -57,7 +57,7 @@ Deno.test('DFSProjectResolver - Resolve by direct deno.jsonc path', async () => 
 });
 
 Deno.test('DFSProjectResolver - Resolve by directory path', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/myapp/deno.jsonc': JSON.stringify({
       name: '@test/myapp',
       exports: { '.': './mod.ts' },
@@ -72,7 +72,7 @@ Deno.test('DFSProjectResolver - Resolve by directory path', async () => {
 });
 
 Deno.test('DFSProjectResolver - Resolve by package name', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/app1/deno.jsonc': JSON.stringify({
       name: '@test/app1',
       exports: { '.': './mod.ts' },
@@ -91,7 +91,7 @@ Deno.test('DFSProjectResolver - Resolve by package name', async () => {
 });
 
 Deno.test('DFSProjectResolver - Resolve directory with multiple projects', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/libs/lib1/deno.jsonc': JSON.stringify({
       name: '@test/lib1',
       exports: { '.': './mod.ts' },
@@ -115,7 +115,7 @@ Deno.test('DFSProjectResolver - Resolve directory with multiple projects', async
 });
 
 Deno.test('DFSProjectResolver - Resolve skips node_modules', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/app/deno.jsonc': JSON.stringify({
       name: '@test/app',
       exports: { '.': './mod.ts' },
@@ -134,7 +134,7 @@ Deno.test('DFSProjectResolver - Resolve skips node_modules', async () => {
 });
 
 Deno.test('DFSProjectResolver - Resolve returns empty array for non-existent ref', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/app/deno.jsonc': JSON.stringify({
       name: '@test/app',
       exports: { '.': './mod.ts' },
@@ -148,7 +148,7 @@ Deno.test('DFSProjectResolver - Resolve returns empty array for non-existent ref
 });
 
 Deno.test('DFSProjectResolver - Resolve with includeNameless option', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/named/deno.jsonc': JSON.stringify({
       name: '@test/named',
       exports: { '.': './mod.ts' },
@@ -173,7 +173,7 @@ Deno.test('DFSProjectResolver - Resolve with includeNameless option', async () =
 });
 
 Deno.test('DFSProjectResolver - Resolve detects hasDev correctly', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/with-dev/deno.jsonc': JSON.stringify({
       name: '@test/with-dev',
       exports: { '.': './mod.ts' },
@@ -199,7 +199,7 @@ Deno.test('DFSProjectResolver - Resolve detects hasDev correctly', async () => {
 });
 
 Deno.test('DFSProjectResolver - Resolve handles deno.json (not just jsonc)', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/json-app/deno.json': JSON.stringify({
       name: '@test/json-app',
       exports: { '.': './mod.ts' },
@@ -214,7 +214,7 @@ Deno.test('DFSProjectResolver - Resolve handles deno.json (not just jsonc)', asy
 });
 
 Deno.test('DFSProjectResolver - Resolve populates tasks field', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/with-tasks/deno.jsonc': JSON.stringify({
       name: '@test/with-tasks',
       exports: { '.': './mod.ts' },
@@ -240,7 +240,7 @@ Deno.test('DFSProjectResolver - Resolve populates tasks field', async () => {
 });
 
 Deno.test('DFSProjectResolver - Resolve returns empty tasks for project without tasks', async () => {
-  const dfs = createTestDFS({
+  const dfs = await createTestDFS({
     '/projects/no-tasks/deno.jsonc': JSON.stringify({
       name: '@test/no-tasks',
       exports: { '.': './mod.ts' },

@@ -45,7 +45,11 @@ Deno.test('Build alias generation - Nested paths produce unique aliases', () => 
   const alias1 = generateAlias('projects/check', false);
   const alias2 = generateAlias('projects/publish/check', false);
 
-  assertNotEquals(alias1, alias2, 'projects/check and projects/publish/check should have different aliases');
+  assertNotEquals(
+    alias1,
+    alias2,
+    'projects/check and projects/publish/check should have different aliases',
+  );
   assertEquals(alias1, 'ProjectsCheckCommand');
   assertEquals(alias2, 'ProjectsPublishCheckCommand');
 });
@@ -66,7 +70,9 @@ Deno.test('Build alias generation - Multiple same-named commands all get unique 
   assertEquals(
     aliases.length,
     uniqueAliases.size,
-    `Expected ${aliases.length} unique aliases but got ${uniqueAliases.size}. Duplicates found: ${aliases.filter((a, i) => aliases.indexOf(a) !== i).join(', ')}`,
+    `Expected ${aliases.length} unique aliases but got ${uniqueAliases.size}. Duplicates found: ${
+      aliases.filter((a, i) => aliases.indexOf(a) !== i).join(', ')
+    }`,
   );
 });
 
@@ -94,7 +100,11 @@ Deno.test('Build alias generation - Old logic would have produced duplicates (re
   const oldAlias2 = generateAliasOld('projects/build', false);
 
   // Old logic produced the SAME alias - this was the bug!
-  assertEquals(oldAlias1, oldAlias2, 'Old logic should produce duplicates (this is the bug we fixed)');
+  assertEquals(
+    oldAlias1,
+    oldAlias2,
+    'Old logic should produce duplicates (this is the bug we fixed)',
+  );
   assertEquals(oldAlias1, 'BuildCommand');
 
   // New logic produces DIFFERENT aliases
