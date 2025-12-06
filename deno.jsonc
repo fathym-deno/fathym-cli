@@ -12,7 +12,7 @@
     "exclude": ["!.dist/install.ts"]
   },
   "tasks": {
-    "build": "deno task build:check && deno task ftm:install:scripts && deno task test",
+    "build": "deno task ftm:install:scripts && deno task build:check && deno task test",
     "build:check": "deno task build:fmt && deno task build:lint && deno task publish:check",
     "build:fmt": "deno fmt",
     "build:lint": "deno lint --fix",
