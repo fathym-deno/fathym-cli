@@ -321,14 +321,17 @@ Main
 
 /**
  * Generates the Deno install script for `deno run jsr:@scope/pkg/install`.
+ *
+ * The script uses InstallService from the package itself to avoid duplicating
+ * installation logic. It accepts the same flags as InstallCommand:
+ * - First positional arg or INSTALL_DIR env: install directory
+ * - --target: Override platform auto-detection
  */
 function generateDenoScript(
   binaryName: string,
-  repo: string,
   installDir: string,
   aliases: string[],
   packageName: string,
-  packageVersion: string,
 ): string {
   const aliasesJson = JSON.stringify(aliases);
   return `/**
@@ -338,145 +341,89 @@ function generateDenoScript(
  * Usage:
  *   deno run -A jsr:${packageName}/install
  *   deno run -A jsr:${packageName}/install ~/.local/bin
+ *   deno run -A jsr:${packageName}/install --target=x86_64-apple-darwin
  *
  * Environment variables:
  *   INSTALL_DIR - Override install directory
- *   VERSION - Install specific version (overrides embedded version)
+ *
+ * Flags:
+ *   --to=<dir>     - Install directory (default: ${installDir})
+ *   --target=<t>   - Target platform (auto-detected if not specified)
  */
 
-const REPO = "${repo}";
+import { dirname, fromFileUrl, join } from "jsr:@std/path@1";
+import {
+  consoleLogger,
+  detectTarget,
+  expandHome,
+  findBinary,
+  getBinaryExtension,
+  installBinary,
+} from "${packageName}/utils";
+
 const BINARY_NAME = "${binaryName}";
 const DEFAULT_INSTALL_DIR = "${installDir}";
 const ALIASES: string[] = ${aliasesJson};
-const EMBEDDED_VERSION: string = "${packageVersion}";
 
-interface Target {
-  os: string;
-  arch: string;
-  target: string;
-  ext: string;
-}
+function parseArgs(): { installDir: string; target: string } {
+  let installDir = DEFAULT_INSTALL_DIR;
+  let target: string | undefined;
 
-const TARGETS: Target[] = [
-  { os: "darwin", arch: "x86_64", target: "x86_64-apple-darwin", ext: "" },
-  { os: "darwin", arch: "aarch64", target: "aarch64-apple-darwin", ext: "" },
-  { os: "linux", arch: "x86_64", target: "x86_64-unknown-linux-gnu", ext: "" },
-  { os: "linux", arch: "aarch64", target: "aarch64-unknown-linux-gnu", ext: "" },
-  { os: "windows", arch: "x86_64", target: "x86_64-pc-windows-msvc", ext: ".exe" },
-];
-
-function detectTarget(): Target {
-  const os = Deno.build.os;
-  const arch = Deno.build.arch;
-
-  const target = TARGETS.find((t) => t.os === os && t.arch === arch);
-  if (!target) {
-    throw new Error(\`Unsupported platform: \${os}/\${arch}\`);
-  }
-  return target;
-}
-
-async function getLatestVersion(): Promise<string> {
-  const res = await fetch(\`https://api.github.com/repos/\${REPO}/releases/latest\`);
-  if (!res.ok) {
-    throw new Error(\`Failed to fetch latest release: \${res.status}\`);
-  }
-  const data = await res.json();
-  return data.tag_name;
-}
-
-async function getVersion(): Promise<string> {
-  // 1. Environment variable override takes priority
-  const envVersion = Deno.env.get("VERSION");
-  if (envVersion) {
-    return envVersion;
+  for (const arg of Deno.args) {
+    if (arg.startsWith("--to=")) {
+      installDir = arg.slice(5);
+    } else if (arg.startsWith("--target=")) {
+      target = arg.slice(9);
+    } else if (!arg.startsWith("-")) {
+      // Positional arg is install directory
+      installDir = arg;
+    }
   }
 
-  // 2. Use embedded version if it's a real version (not dev placeholder)
-  if (EMBEDDED_VERSION && EMBEDDED_VERSION !== "0.0.0") {
-    return EMBEDDED_VERSION;
+  // Check environment variable
+  const envDir = Deno.env.get("INSTALL_DIR");
+  if (envDir) {
+    installDir = envDir;
   }
 
-  // 3. Fall back to fetching latest from GitHub
-  return await getLatestVersion();
-}
-
-function expandHome(path: string): string {
-  if (path.startsWith("~")) {
-    const home = Deno.env.get(Deno.build.os === "windows" ? "USERPROFILE" : "HOME");
-    if (!home) throw new Error("Could not determine home directory");
-    return path.replace("~", home);
-  }
-  return path;
+  return {
+    installDir: expandHome(installDir),
+    target: target ?? detectTarget(),
+  };
 }
 
 async function main() {
+  const { installDir, target } = parseArgs();
+  const binaryExt = getBinaryExtension(target);
+  const binaryName = \`\${BINARY_NAME}\${binaryExt}\`;
+
   console.log("🔍 Detecting platform...");
-  const target = detectTarget();
-  console.log(\`   Target: \${target.target}\`);
+  console.log(\`   Target: \${target}\`);
 
-  console.log("📦 Resolving version...");
-  const version = await getVersion();
-  console.log(\`   Version: \${version}\`);
+  // Find the binary bundled in the package
+  // The script is at .dist/install.ts, binaries are at .dist/exe/<target>/
+  const scriptDir = dirname(fromFileUrl(import.meta.url));
+  const distDir = dirname(scriptDir); // Go up from .dist to project root, then back to .dist
 
-  const installDir = expandHome(
-    Deno.args[0] ?? Deno.env.get("INSTALL_DIR") ?? DEFAULT_INSTALL_DIR
-  );
+  console.log(\`📦 Looking for binary in package...\`);
+  const sourcePath = await findBinary({ distDir: scriptDir, target, binaryName });
 
-  console.log(\`📁 Creating install directory: \${installDir}\`);
-  await Deno.mkdir(installDir, { recursive: true });
-
-  const downloadUrl = \`https://github.com/\${REPO}/releases/download/\${version}/\${target.target}-\${BINARY_NAME}\${target.ext}\`;
-  const binaryPath = \`\${installDir}/\${BINARY_NAME}\${target.ext}\`;
-
-  console.log(\`⬇️  Downloading \${BINARY_NAME}...\`);
-  const res = await fetch(downloadUrl);
-  if (!res.ok) {
-    throw new Error(\`Failed to download: \${res.status} from \${downloadUrl}\`);
+  if (!sourcePath) {
+    console.error(\`❌ Could not find binary for target: \${target}\`);
+    console.error(\`   Expected at: \${join(scriptDir, "exe", target, binaryName)}\`);
+    Deno.exit(1);
   }
 
-  const data = new Uint8Array(await res.arrayBuffer());
-  await Deno.writeFile(binaryPath, data);
+  console.log(\`   Found: \${sourcePath}\`);
 
-  if (Deno.build.os !== "windows") {
-    await Deno.chmod(binaryPath, 0o755);
-  }
-  console.log(\`✅ Installed: \${binaryPath}\`);
-
-  // Create aliases
-  for (const alias of ALIASES) {
-    const isWindows = Deno.build.os === "windows";
-    const aliasPath = \`\${installDir}/\${alias}\${isWindows ? ".cmd" : ""}\`;
-    const content = isWindows
-      ? \`@echo off\\r\\n\${BINARY_NAME}.exe %*\`
-      : \`#!/bin/sh\\nexec \${BINARY_NAME} "$@"\`;
-
-    await Deno.writeTextFile(aliasPath, content);
-    if (!isWindows) {
-      await Deno.chmod(aliasPath, 0o755);
-    }
-    console.log(\`🔗 Alias created: \${aliasPath}\`);
-  }
-
-  // PATH guidance
-  const pathEnv = Deno.env.get("PATH") ?? "";
-  const sep = Deno.build.os === "windows" ? ";" : ":";
-  if (!pathEnv.split(sep).includes(installDir)) {
-    console.log("");
-    console.log(\`⚠️  \${installDir} is not in your PATH\`);
-    if (Deno.build.os === "windows") {
-      console.log("👉 Add it to your PATH with:");
-      console.log(\`   setx PATH "%PATH%;\${installDir}"\`);
-    } else {
-      console.log("👉 Add this to your shell profile (~/.bashrc, ~/.zshrc, etc.):");
-      console.log(\`   export PATH="\${installDir}:$PATH"\`);
-    }
-    console.log("");
-  }
-
-  console.log("");
-  console.log("🎉 Installation complete!");
-  console.log(\`   Run '\${BINARY_NAME} --help' to get started.\`);
+  // Install using shared service
+  await installBinary({
+    sourcePath,
+    installDir,
+    binaryName,
+    aliases: ALIASES,
+    log: consoleLogger,
+  });
 }
 
 main().catch((err) => {
@@ -585,18 +532,14 @@ export default Command(
     const binaryName = tokens[0];
     const aliases = tokens.slice(1);
 
-    // Read package name and version from deno.jsonc for the install script
+    // Read package name from deno.jsonc for the install script
     let packageName = `@scope/${binaryName}`; // fallback
-    let packageVersion = '0.0.0'; // fallback - will trigger "fetch latest" behavior
     try {
       const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
       const denoContent = await Deno.readTextFile(denoJsoncPath);
       const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
       if (typeof denoConfig.name === 'string') {
         packageName = denoConfig.name;
-      }
-      if (typeof denoConfig.version === 'string') {
-        packageVersion = denoConfig.version;
       }
     } catch {
       // Try deno.json as fallback
@@ -606,9 +549,6 @@ export default Command(
         const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
         if (typeof denoConfig.name === 'string') {
           packageName = denoConfig.name;
-        }
-        if (typeof denoConfig.version === 'string') {
-          packageVersion = denoConfig.version;
         }
       } catch {
         Log.Warn(
@@ -654,14 +594,12 @@ export default Command(
     await Deno.writeTextFile(psPath, psScript);
     Log.Success(`✅ Generated: ${psPath}`);
 
-    // Generate Deno script
+    // Generate Deno script (uses InstallService from the package)
     const denoScript = generateDenoScript(
       binaryName,
-      repo,
       Params.InstallDir,
       aliases,
       packageName,
-      packageVersion,
     );
     const denoPath = join(outputDir, 'install.ts');
     await Deno.writeTextFile(denoPath, denoScript);

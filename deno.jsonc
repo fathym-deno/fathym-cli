@@ -9,7 +9,7 @@
     "./install": "./.dist/install.ts"
   },
   "publish": {
-    "exclude": ["!.dist/install.ts"]
+    "exclude": ["!.dist/install.ts", "!.dist/exe/**"]
   },
   "tasks": {
     "build": "deno task ftm:install:scripts && deno task build:check && deno task test",

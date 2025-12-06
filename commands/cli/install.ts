@@ -1,7 +1,7 @@
 /**
  * Install command - copies compiled CLI binary to system PATH.
  *
- * The install command takes a compiled CLI binary from `.dist/` and copies
+ * The install command takes a compiled CLI binary from `.dist/exe/` and copies
  * it to a target directory (default: `./.bin` or user home). It also creates
  * shell/batch script aliases for additional tokens defined in `.cli.json`.
  *
@@ -12,7 +12,7 @@
  * │  1. Resolve config DFS and install DFS (project or home)           │
  * │  2. Read .cli.json to get binary name from Tokens[0]               │
  * │  3. Detect target from --target flag or auto-detect from OS/arch   │
- * │  4. Locate binary in .dist/<target>/ or .dist/ (flat structure)    │
+ * │  4. Locate binary in .dist/exe/<target>/ or .dist/exe/             │
  * │  5. Copy binary to install directory                               │
  * │  6. For each alias token, create shell/batch wrapper script        │
  * │  7. Set executable permissions on Unix (chmod 755)                 │
@@ -86,11 +86,16 @@
  * @module
  */
 
-import { dirname, join } from '@std/path';
-import { exists } from '@fathym/common/path';
+import { dirname } from '@std/path';
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
-import { detectTarget, getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
+import {
+  detectTarget,
+  findBinary,
+  getBinaryExtension,
+  installBinary,
+  type InstallLogger,
+} from '../../src/services/InstallService.ts';
 
 /**
  * Zod schema for install command positional arguments.
@@ -164,7 +169,7 @@ export class InstallParams extends CommandParams<
    * Target platform for binary selection.
    *
    * When specified, overrides auto-detection and installs the binary
-   * from the corresponding target folder in `.dist/<target>/`.
+   * from the corresponding target folder in `.dist/exe/<target>/`.
    */
   get Target(): string | undefined {
     return this.Flag('target');
@@ -204,7 +209,6 @@ export default Command(
   })
   .Run(async ({ Log, Services, Params }) => {
     const { ConfigDFS, InstallDFS } = Services;
-    const isWindows = Deno.build.os === 'windows';
 
     const configPath = await ConfigDFS.ResolvePath('.cli.json');
     const configInfo = await ConfigDFS.GetFileInfo('.cli.json');
@@ -229,151 +233,49 @@ export default Command(
     const binaryName = `${tokens[0]}${binaryExt}`;
 
     const configDir = dirname(configPath);
-    const distDir = join(configDir, '.dist');
+    const distDir = `${configDir}/.dist`;
 
-    // Try target folder first (cross-compiled), then flat structure (local compile)
-    const targetDistDir = join(distDir, target);
-    const targetBinaryPath = join(targetDistDir, binaryName);
-    const flatBinaryPath = join(distDir, binaryName);
+    // Find binary using InstallService
+    const sourceBinaryPath = await findBinary({ distDir, target, binaryName });
 
-    let sourceBinaryPath: string;
-    if (await exists(targetBinaryPath)) {
-      sourceBinaryPath = targetBinaryPath;
-      Log.Info(`📦 Found binary for target: ${target}`);
-    } else if (await exists(flatBinaryPath)) {
-      sourceBinaryPath = flatBinaryPath;
-      Log.Info(`📦 Found binary in flat structure`);
-    } else {
+    if (!sourceBinaryPath) {
       Log.Error(`❌ Could not find binary for target: ${target}`);
-      Log.Error(`   Looked in: ${targetBinaryPath}`);
-      Log.Error(`   Also tried: ${flatBinaryPath}`);
+      Log.Error(`   Looked in: ${distDir}/exe/${target}/${binaryName}`);
+      Log.Error(`   Also tried: ${distDir}/exe/${binaryName}`);
+      Log.Error(`   And legacy: ${distDir}/${target}/${binaryName}`);
       Deno.exit(1);
     }
 
-    const installBase = await InstallDFS.ResolvePath(Params.To);
+    Log.Info(`📦 Found binary: ${sourceBinaryPath}`);
 
-    await Deno.mkdir(installBase, { recursive: true });
+    const installDir = await InstallDFS.ResolvePath(Params.To);
 
-    const destBinaryPath = join(installBase, binaryName);
+    // Create logger adapter for InstallService
+    const logger: InstallLogger = {
+      info: (msg) => Log.Info(msg),
+      success: (msg) => Log.Success(msg),
+      warn: (msg) => Log.Warn(msg),
+      error: (msg) => Log.Error(msg),
+    };
 
-    // On Windows, a running executable can be renamed but not overwritten.
-    // If the destination exists and is locked, rename it first.
-    // We use a timestamped suffix to avoid conflicts with previous .old files that may still be locked.
-    const timestamp = Date.now();
-    const oldBinaryPath = `${destBinaryPath}.${timestamp}.old`;
-
-    // Clean up any old .old files from previous installs (best effort)
+    // Install using shared service
     try {
-      for await (const entry of Deno.readDir(installBase)) {
-        if (entry.name.startsWith(`${binaryName}.`) && entry.name.endsWith('.old')) {
-          try {
-            await Deno.remove(join(installBase, entry.name));
-          } catch {
-            // Ignore - file may still be in use
-          }
-        }
-      }
-    } catch {
-      // Ignore directory read errors
-    }
-
-    // Try direct copy first; if locked, try rename-then-copy
-    try {
-      await Deno.copyFile(sourceBinaryPath, destBinaryPath);
+      await installBinary({
+        sourcePath: sourceBinaryPath,
+        installDir,
+        binaryName,
+        aliases: tokens.slice(1),
+        log: logger,
+      });
     } catch (err) {
-      // Check for EBUSY/EACCES error (file in use or access denied)
-      const isBusy = err instanceof Deno.errors.Busy ||
-        err instanceof Deno.errors.PermissionDenied ||
-        (err && typeof err === 'object' && 'code' in err &&
-          (err.code === 'EBUSY' || err.code === 'EACCES'));
-
-      if (isWindows && isBusy) {
-        Log.Info('🔄 Binary in use, using rename workaround...');
-        try {
-          Log.Info(`   Renaming ${destBinaryPath} → ${oldBinaryPath}`);
-          await Deno.rename(destBinaryPath, oldBinaryPath);
-          Log.Info(`   Copying ${sourceBinaryPath} → ${destBinaryPath}`);
-          await Deno.copyFile(sourceBinaryPath, destBinaryPath);
-          Log.Success(`✅ Installed using rename workaround`);
-          // Try to clean up old file (may fail if still in use, that's ok)
-          try {
-            await Deno.remove(oldBinaryPath);
-          } catch {
-            Log.Info(`ℹ️  Old binary will be cleaned up on next install`);
-          }
-        } catch (renameErr) {
-          // Extract a useful error message
-          let errMsg: string;
-          if (renameErr instanceof Error) {
-            errMsg = renameErr.message;
-          } else if (renameErr && typeof renameErr === 'object') {
-            // Try to get code or stringify
-            const code = 'code' in renameErr ? renameErr.code : undefined;
-            const message = 'message' in renameErr ? renameErr.message : undefined;
-            errMsg = message
-              ? String(message)
-              : code
-              ? `Error code: ${code}`
-              : JSON.stringify(renameErr);
-          } else {
-            errMsg = String(renameErr);
-          }
-
-          Log.Error(`❌ Rename workaround failed: ${errMsg}`);
-          Log.Error('');
-          Log.Error('The binary is locked and cannot be replaced.');
-          Log.Error('This usually happens when ftm.exe is still running.');
-          Log.Error('');
-          Log.Error('Try one of these solutions:');
-          Log.Error('  1. Close all terminal windows running ftm');
-          Log.Error('  2. Run the install command in a new terminal:');
-          Log.Error(`     deno task cli:run cli install --useHome --to=.bin`);
-          Log.Error('  3. Manually copy the binary:');
-          Log.Error(`     copy "${sourceBinaryPath}" "${destBinaryPath}"`);
-          Deno.exit(1);
-        }
-      } else {
-        throw err;
+      if (err instanceof Error && err.message === 'Binary locked and cannot be replaced') {
+        Log.Error('');
+        Log.Error('Try one of these solutions:');
+        Log.Error('  1. Close all terminal windows running the CLI');
+        Log.Error('  2. Run the install command in a new terminal:');
+        Log.Error(`     deno task cli:run cli install --useHome --to=.bin`);
+        Deno.exit(1);
       }
+      throw err;
     }
-
-    // Set executable permission on Unix
-    if (!isWindows) {
-      await Deno.chmod(destBinaryPath, 0o755);
-    }
-
-    Log.Success(`✅ Installed: ${destBinaryPath}`);
-
-    for (const alias of tokens.slice(1)) {
-      const aliasName = `${alias}${isWindows ? '.cmd' : ''}`;
-      const aliasPath = join(installBase, aliasName);
-
-      const aliasContent = isWindows
-        ? `@echo off\r\n${binaryName} %*`
-        : `#!/bin/sh\nexec ${binaryName} "$@"`;
-
-      await Deno.writeTextFile(aliasPath, aliasContent);
-      if (!isWindows) {
-        await Deno.chmod(aliasPath, 0o755);
-      }
-
-      Log.Info(`🔗 Alias installed: ${aliasPath}`);
-    }
-
-    const envPath = Deno.env.get('PATH') ?? '';
-    const pathSep = isWindows ? ';' : ':';
-    const inPath = envPath.split(pathSep).includes(installBase);
-
-    if (!inPath) {
-      Log.Warn(`⚠️  Install path (${installBase}) is not in your PATH`);
-      if (isWindows) {
-        Log.Info(`👉 Add to PATH: setx PATH "%PATH%;${installBase}"`);
-      } else {
-        Log.Info(
-          `👉 Add to your shell profile: export PATH="${installBase}:$PATH"`,
-        );
-      }
-    }
-
-    Log.Success('🎉 CLI installed successfully');
   });

@@ -6,7 +6,7 @@ const BINARY_NAME = Deno.build.os === 'windows' ? 'my-cli.exe' : 'my-cli';
 
 const COMPILED_BINARY = join(
   Deno.cwd(),
-  'tests/.temp/my-cli/.dist',
+  'tests/.temp/my-cli/.dist/exe',
   BINARY_NAME,
 );
 

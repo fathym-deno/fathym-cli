@@ -20,17 +20,19 @@
  *
  * ## Output Structure
  *
- * When `--target` is specified (cross-compilation):
+ * When `--target` is specified or `--all` is used:
  * ```
  * .dist/
- * └── x86_64-pc-windows-msvc/
- *     └── my-cli.exe
+ * └── exe/
+ *     └── x86_64-pc-windows-msvc/
+ *         └── my-cli.exe
  * ```
  *
  * When no target (current OS):
  * ```
  * .dist/
- * └── my-cli           # or my-cli.exe on Windows
+ * └── exe/
+ *     └── my-cli           # or my-cli.exe on Windows
  * ```
  *
  * ## Cross-Compilation Targets
@@ -143,7 +145,7 @@ export const CompileFlagsSchema = z
       .string()
       .optional()
       .describe('Path to .cli.json (default: alongside entry)'),
-    output: z.string().optional().describe('Output folder (default: ./.dist)'),
+    output: z.string().optional().describe('Output folder (default: ./.dist/exe)'),
     permissions: z
       .string()
       .optional()
@@ -195,10 +197,10 @@ export class CompileParams extends CommandParams<
 
   /**
    * Output directory for the compiled binary.
-   * Defaults to './.dist'.
+   * Defaults to './.dist/exe'.
    */
   get OutputDir(): string {
-    return this.Flag('output') ?? './.dist';
+    return this.Flag('output') ?? './.dist/exe';
   }
 
   /**
@@ -240,7 +242,7 @@ export class CompileParams extends CommandParams<
    * Whether to compile for all supported targets.
    *
    * When true, compiles binaries for all targets in COMPILE_TARGETS.
-   * Output files are named `<target>-<binary>` for GitHub release compatibility.
+   * Output structure: `.dist/exe/<target>/<binary>`
    */
   get All(): boolean {
     return this.Flag('all') ?? false;
@@ -315,17 +317,13 @@ export default Command('compile', 'Compile the CLI into a native binary')
         ? getBinaryExtension(target)
         : (Deno.build.os === 'windows' ? '.exe' : '');
 
-      // When compiling for all targets, use flat naming: <target>-<binary>
-      // This matches what the install scripts expect for GitHub releases
+      // Always use subdirectory structure: .dist/exe/<target>/<binary>
       let outputBinaryPath: string;
-      if (Params.All && target) {
-        // Flat structure for release: .dist/x86_64-unknown-linux-gnu-ftm
-        outputBinaryPath = join(baseOutputDir, `${target}-${primaryToken}`);
-      } else if (target) {
-        // Subdirectory structure for single cross-compile: .dist/target/ftm
+      if (target) {
+        // Cross-compile (single or all): .dist/exe/x86_64-apple-darwin/ftm
         outputBinaryPath = join(baseOutputDir, target, primaryToken);
       } else {
-        // Local compile: .dist/ftm
+        // Local compile: .dist/exe/ftm
         outputBinaryPath = join(baseOutputDir, primaryToken);
       }
 
