@@ -29,7 +29,7 @@
     "version": "deno run -A jsr:@fathym/common@0.2.299/build/version"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.99-integration",
+    "@fathym/cli": "../../ref-arch/command-line-interface/src/.exports.ts",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.299",
     "@fathym/dfs": "jsr:@fathym/dfs@0.0.78-integration",
