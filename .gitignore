@@ -4,6 +4,8 @@ node_modules/
 .idea/
 .build/
 .dist/
+.bin/
+.dist/
 .temp/
 cov/
 

@@ -9,7 +9,7 @@
     "./install": "./.dist/install.ts"
   },
   "publish": {
-    "exclude": ["!.dist/install.ts", "!.dist/exe/**"]
+    "exclude": ["!.dist/install.ts"]
   },
   "tasks": {
     "build": "deno task ftm:install:scripts && deno task build:check && deno task test",
@@ -41,12 +41,8 @@
   },
   "lint": {
     "rules": {
-      "tags": [
-        "recommended"
-      ],
-      "include": [
-        "ban-untagged-todo"
-      ]
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"]
     }
   },
   "fmt": {

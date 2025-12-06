@@ -49,6 +49,9 @@ jobs:
       - name: Deno Build
         run: deno task build
 
+      - name: Compile CLI binaries for all targets
+        run: deno task ftm:compile
+
       - name: Set Version
         id: version
         uses: paulhatch/semantic-version@v5.0.2
@@ -89,3 +92,27 @@ jobs:
         run: |
           git tag v${{ steps.version.outputs.version }} ${{ steps.commit.outputs.commit }}
           git push origin v${{ steps.version.outputs.version }}
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          # Flatten: .dist/exe/<target>/<binary> -> release-assets/<target>-<binary>
+          for target_dir in .dist/exe/*/; do
+            target=$(basename "$target_dir")
+            for binary in "$target_dir"*; do
+              binary_name=$(basename "$binary")
+              cp "$binary" "release-assets/${target}-${binary_name}"
+            done
+          done
+          # Include install scripts for curl/iwr users
+          cp .dist/install.sh release-assets/
+          cp .dist/install.ps1 release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          files: release-assets/*
+          prerelease: ${{ steps.vars.outputs.currentBranch != env.MainBranch }}
+          generate_release_notes: true

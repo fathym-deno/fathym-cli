@@ -322,7 +322,7 @@ Main
 /**
  * Generates the Deno install script for `deno run jsr:@scope/pkg/install`.
  *
- * The script downloads binaries from the JSR package (via HTTPS) and uses
+ * The script downloads binaries from GitHub Releases and uses
  * InstallService for the actual installation. It accepts the same flags as
  * InstallCommand:
  * - First positional arg or INSTALL_DIR env: install directory
@@ -333,6 +333,8 @@ function generateDenoScript(
   installDir: string,
   aliases: string[],
   packageName: string,
+  repo: string,
+  version: string,
 ): string {
   const aliasesJson = JSON.stringify(aliases);
   return `/**
@@ -364,6 +366,8 @@ import {
 const BINARY_NAME = "${binaryName}";
 const DEFAULT_INSTALL_DIR = "${installDir}";
 const ALIASES: string[] = ${aliasesJson};
+const REPO = "${repo}";
+const VERSION = "${version}";
 
 function parseArgs(): { installDir: string; target: string } {
   let installDir = DEFAULT_INSTALL_DIR;
@@ -393,29 +397,22 @@ function parseArgs(): { installDir: string; target: string } {
 }
 
 /**
- * Downloads a binary from the JSR package via HTTPS.
+ * Downloads a binary from GitHub Releases.
  *
- * import.meta.url gives us something like:
- * - https://jsr.io/@fathym/ftm/0.0.67-integration/.dist/install.ts
- *
- * We construct the binary URL relative to this script's location:
- * - https://jsr.io/@fathym/ftm/0.0.67-integration/.dist/exe/<target>/<binary>
+ * Asset naming matches workflow: <target>-<binary>
+ * URL: https://github.com/{repo}/releases/download/v{version}/{target}-{binary}
  */
-async function downloadBinaryFromPackage(target: string, binaryName: string): Promise<string> {
-  const scriptUrl = import.meta.url;
+async function downloadBinaryFromGitHub(target: string, binaryName: string): Promise<string> {
+  // Asset naming: <target>-<binary> (e.g., x86_64-pc-windows-msvc-ftm.exe)
+  const assetName = \`\${target}-\${binaryName}\`;
+  const url = \`https://github.com/\${REPO}/releases/download/v\${VERSION}/\${assetName}\`;
 
-  // Get the base directory URL (remove "install.ts" from the end)
-  const baseUrl = scriptUrl.replace(/install\\.ts$/, "");
+  console.log(\`📥 Downloading binary from GitHub release...\`);
+  console.log(\`   URL: \${url}\`);
 
-  // Construct URL to the binary: .dist/exe/<target>/<binary>
-  const binaryUrl = \`\${baseUrl}exe/\${target}/\${binaryName}\`;
-
-  console.log(\`📥 Downloading binary from package...\`);
-  console.log(\`   URL: \${binaryUrl}\`);
-
-  const response = await fetch(binaryUrl);
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(\`Failed to download binary: \${response.status} \${response.statusText}\\n   URL: \${binaryUrl}\`);
+    throw new Error(\`Failed to download binary: \${response.status} \${response.statusText}\\n   URL: \${url}\`);
   }
 
   // Save to temp file
@@ -436,8 +433,8 @@ async function main() {
   console.log("🔍 Detecting platform...");
   console.log(\`   Target: \${target}\`);
 
-  // Download binary from JSR package
-  const sourcePath = await downloadBinaryFromPackage(target, binaryName);
+  // Download binary from GitHub release
+  const sourcePath = await downloadBinaryFromGitHub(target, binaryName);
 
   console.log(\`   Downloaded to: \${sourcePath}\`);
 
@@ -627,12 +624,39 @@ export default Command(
     await Deno.writeTextFile(psPath, psScript);
     Log.Success(`✅ Generated: ${psPath}`);
 
-    // Generate Deno script (uses InstallService from the package)
+    // Read version from deno.jsonc for the GitHub release tag
+    let packageVersion = '0.0.0'; // fallback
+    try {
+      const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
+      const denoContent = await Deno.readTextFile(denoJsoncPath);
+      const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
+      if (typeof denoConfig.version === 'string') {
+        packageVersion = denoConfig.version;
+      }
+    } catch {
+      // Try deno.json as fallback
+      try {
+        const denoJsonPath = await DFS.ResolvePath('deno.json');
+        const denoContent = await Deno.readTextFile(denoJsonPath);
+        const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
+        if (typeof denoConfig.version === 'string') {
+          packageVersion = denoConfig.version;
+        }
+      } catch {
+        Log.Warn(
+          `⚠️  Could not read version from deno.json(c), using fallback: ${packageVersion}`,
+        );
+      }
+    }
+
+    // Generate Deno script (downloads from GitHub releases)
     const denoScript = generateDenoScript(
       binaryName,
       Params.InstallDir,
       aliases,
       packageName,
+      repo,
+      packageVersion,
     );
     const denoPath = join(outputDir, 'install.ts');
     await Deno.writeTextFile(denoPath, denoScript);
