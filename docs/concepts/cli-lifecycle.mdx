@@ -44,7 +44,7 @@ Each step can be used independently or chained in pipelines.
 When a command executes, it flows through these phases:
 
 ```txt
-Invocation → Parse → Match → Load Config → Inject Services → Init → Run → Cleanup
+Invocation → Parse → Match → Load Config → Init Command → Inject Services → Init → Run → Cleanup
 ```
 
 ### Phase Details
@@ -55,10 +55,33 @@ Invocation → Parse → Match → Load Config → Inject Services → Init → 
 | **Parse** | Arguments and flags parsed via Zod schemas |
 | **Match** | Command matched from registry by name |
 | **Load Config** | `.cli.json` loaded and validated |
+| **Init Command** | Pre-command hook (if configured in `.cli.init.ts`) |
 | **Inject Services** | IoC container resolves dependencies |
 | **Init** | Command's `Init()` hook runs (if defined) |
 | **Run** | Main command logic executes |
 | **Cleanup** | Command's `Cleanup()` hook runs (if defined) |
+
+### Init Command Phase
+
+The Init Command is an optional hook configured in `.cli.init.ts` that runs before every command execution. For `ftm`, the Init Command:
+
+1. **Checks for updates** - Queries JSR for the latest version
+2. **Warns if newer version available** - Displays upgrade instructions
+3. **Executes the matched command** - Calls `$Command()` to continue
+
+You'll see update warnings like:
+
+```txt
+A newer version is available: 0.0.75
+  Current: 0.0.74
+  Upgrade: ftm upgrade
+```
+
+The Init Command has full control over command execution:
+- It must call `Commands.$Command()` to execute the matched command
+- It can block execution entirely (e.g., for auth gates)
+- It can modify the final exit code
+- It can run logic both before and after the matched command
 
 ## Core Components
 

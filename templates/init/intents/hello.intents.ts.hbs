@@ -9,7 +9,7 @@ CommandIntents('Hello Command Suite', cmd, origin)
   .WithInit(initFn)
   .Intent('Greet default world', (int) =>
     int
-      .Args([undefined])
+      .Args([])
       .Flags({})
       .ExpectLogs('👋 Hello, world')
       .ExpectExit(0),

@@ -146,7 +146,7 @@ get Verbose(): boolean {
 CommandIntents('Command Suite', cmd.Build(), origin)
   .WithInit(initFn)
   .Intent('default behavior', (int) =>
-    int.Args([undefined]).Flags({}).ExpectLogs('...').ExpectExit(0))
+    int.Args([]).Flags({}).ExpectLogs('...').ExpectExit(0))
   .Intent('with argument', (int) =>
     int.Args(['value']).Flags({}).ExpectLogs('...').ExpectExit(0))
   .Intent('with flag', (int) =>

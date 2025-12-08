@@ -9,7 +9,7 @@ CommandIntents('projects:dev Command Suite', cmd, origin)
     'Fails when no project reference provided and no projects found',
     (int) =>
       int
-        .Args([undefined])
+        .Args([])
         .Flags({})
         .ExpectExit(1),
   )

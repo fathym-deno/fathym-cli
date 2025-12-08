@@ -141,24 +141,90 @@ See [ftm cli release](../api/release.mdx) for release workflow.
 
 ## .cli.init.ts
 
-Optional bootstrap hook that runs before any command dispatches:
+Optional bootstrap hook that runs before any command dispatches. The function receives three parameters:
 
 ```typescript
 import type { CLIInitFn } from '@fathym/cli';
 
-export default ((ioc) => {
+export default ((ioc, config, initCommand) => {
   // Register shared services
   ioc.Register(MyService, () => new MyService());
 
   // Configure logging
   ioc.Register('LogLevel', () => 'debug');
-}) satisfies CLIInitFn;
+
+  // Configure Init Command (optional)
+  initCommand
+    .Services(async () => ({
+      VersionChecker: new VersionChecker(),
+    }))
+    .Run(async ({ Services, Log, Commands }) => {
+      // Pre-command logic (version check, auth, etc.)
+      await Services.VersionChecker.warnIfOutdated();
+
+      // Execute the matched command
+      return await Commands.$Command();
+    });
+}) as CLIInitFn;
 ```
 
-Use cases:
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `ioc` | `IoCContainer` | IoC container for service registration |
+| `config` | `CLIConfig` | CLI configuration from `.cli.json` |
+| `initCommand` | `InitCommandBuilder` | Builder for the Init Command hook |
+
+### Use Cases
+
+**IoC Registration:**
 - Inject shared services into IoC container
 - Set logging/debug modes
 - Register dynamic runtime behaviors
+
+**Init Command:**
+- Version update warnings
+- Authentication/authorization gates
+- Command telemetry and logging
+- Pre-flight validation
+
+### Init Command
+
+The `initCommand` parameter is an `InitCommandBuilder` that configures a hook running before every command. Key features:
+
+- **Must call `$Command()`**: Without this, the matched command never executes
+- **Services merge**: Multiple `.Services()` calls are merged together
+- **Exit code control**: The Init Command returns the final exit code
+
+For `ftm`, the Init Command checks for updates and warns users:
+
+```typescript
+initCommand
+  .Services(() => Promise.resolve({
+    VersionResolver: new VersionResolver(),
+    VersionComparator: new VersionComparator(),
+  }))
+  .Run(async ({ Services, Config, Log, Commands }) => {
+    const { VersionResolver, VersionComparator } = Services;
+
+    try {
+      const versions = await VersionResolver.getVersionsByChannel('jsr', '@fathym/ftm');
+      const latest = versions.get('production')?.[0]?.version;
+
+      if (latest && VersionComparator.compare(Config.Version, latest) < 0) {
+        Log.Warn(`A newer version is available: ${latest}`);
+        Log.Warn(`  Current: ${Config.Version}`);
+        Log.Warn(`  Upgrade: ftm upgrade`);
+        Log.Warn('');
+      }
+    } catch {
+      // Silently ignore network errors
+    }
+
+    return await Commands.$Command();
+  });
+```
 
 ## commands/
 
@@ -218,7 +284,7 @@ Local Deno configuration (not used by CLI runtime):
   "name": "@my-org/my-cli",
   "version": "1.0.0",
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.99-integration"
+    "@fathym/cli": "jsr:@fathym/cli@0.0.123-InitCommand"
   },
   "tasks": {
     "build": "deno task fmt && deno task lint && deno task test",

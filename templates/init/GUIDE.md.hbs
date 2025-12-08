@@ -114,7 +114,7 @@ CommandIntents('Greet Command Suite', cmd, origin)
   .WithInit(initFn)
   .Intent('Greet default world', (int) =>
     int
-      .Args([undefined])
+      .Args([])
       .Flags({})
       .ExpectLogs('Hello, World!')
       .ExpectExit(0),

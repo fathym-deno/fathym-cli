@@ -8,7 +8,7 @@ CommandIntents(
 )
   .Intent('Run default CLI test file', (int) =>
     int
-      .Args([undefined]) // defaults to test/my-cli/intents/.intents.ts
+      .Args([]) // defaults to test/my-cli/intents/.intents.ts
       .Flags({
         config: './tests/.temp/my-cli/.cli.json',
       })
@@ -33,7 +33,7 @@ CommandIntents(
       .ExpectExit(0))
   .Intent('Run tests with coverage and no type check', (int) =>
     int
-      .Args([undefined])
+      .Args([])
       .Flags({
         config: './tests/.temp/my-cli/.cli.json',
         coverage: './cov',

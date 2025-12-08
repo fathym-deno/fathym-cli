@@ -5,7 +5,7 @@ const origin = import.meta.resolve('../../.cli.json');
 
 // ✅ Default wave (no args, no flags)
 CommandIntent('waves at default friend', WaveCommand, origin)
-  .Args([undefined])
+  .Args([])
   .Flags({})
   .ExpectLogs('👋 Waving at friend')
   .ExpectExit(0)
