@@ -11,7 +11,7 @@
  * @module
  */
 
-import { join } from '@std/path';
+import { join, normalize } from '@std/path';
 import { exists } from '@fathym/common/path';
 import { detectTarget, getBinaryExtension } from '../config/FathymCLIConfig.ts';
 
@@ -224,7 +224,14 @@ export async function installBinary(options: InstallBinaryOptions): Promise<void
   // Check if install directory is in PATH
   const envPath = Deno.env.get('PATH') ?? '';
   const pathSep = isWindows ? ';' : ':';
-  const inPath = envPath.split(pathSep).includes(installDir);
+  // Normalize paths for comparison - Windows paths may have inconsistent separators/casing
+  // Use case-insensitive comparison on Windows only (Unix filesystems are case-sensitive)
+  const normalizePath = (p: string) => {
+    const normalized = normalize(p);
+    return isWindows ? normalized.toLowerCase() : normalized;
+  };
+  const normalizedInstallDir = normalizePath(installDir);
+  const inPath = envPath.split(pathSep).some((p) => normalizePath(p) === normalizedInstallDir);
 
   if (!inPath) {
     log.warn(`⚠️  Install path (${installDir}) is not in your PATH`);
@@ -242,14 +249,16 @@ export async function installBinary(options: InstallBinaryOptions): Promise<void
  * Expands a tilde (~) path to the user's home directory.
  *
  * @param path - Path that may start with ~
- * @returns Expanded absolute path
+ * @returns Expanded absolute path with normalized separators
  * @throws Error if home directory cannot be determined
  */
 export function expandHome(path: string): string {
   if (path.startsWith('~')) {
     const home = Deno.env.get(Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME');
     if (!home) throw new Error('Could not determine home directory');
-    return path.replace('~', home);
+    // Use normalize to ensure consistent path separators on Windows
+    // Without this, "~/.bin" becomes "C:\Users\Name/.bin" (mixed slashes)
+    return normalize(path.replace('~', home));
   }
   return path;
 }
