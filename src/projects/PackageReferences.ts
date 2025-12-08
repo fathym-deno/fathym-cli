@@ -109,19 +109,23 @@ export async function findPackageReferences(
    * E.g., "G:\projects\app\deno.jsonc" -> "projects/app/deno.jsonc"
    */
   function toRelativePath(absolutePath: string): string {
+    // Normalize all paths to forward slashes for consistent comparison (Windows fix)
+    const normalizedPath = absolutePath.replace(/\\/g, '/');
+    const normalizedRoot = resolvedRoot.replace(/\\/g, '/');
+    const normalizedDfsRoot = rootDir.replace(/\\/g, '/');
+
     let relative: string;
     // Try stripping the resolved root first (handles absolute system paths)
-    if (absolutePath.startsWith(resolvedRoot)) {
-      relative = absolutePath.slice(resolvedRoot.length).replace(/^[/\\]/, '');
-    } else if (absolutePath.startsWith(rootDir)) {
+    if (normalizedPath.startsWith(normalizedRoot)) {
+      relative = normalizedPath.slice(normalizedRoot.length).replace(/^\//, '');
+    } else if (normalizedPath.startsWith(normalizedDfsRoot)) {
       // Fall back to DFS root (handles already-relative paths)
-      relative = absolutePath.slice(rootDir.length).replace(/^[/\\]/, '');
+      relative = normalizedPath.slice(normalizedDfsRoot.length).replace(/^\//, '');
     } else {
-      // Already relative or unknown format
-      relative = absolutePath.replace(/^[./\\]+/, '');
+      // Already relative or unknown format - just normalize slashes
+      relative = normalizedPath.replace(/^\.\//, '');
     }
-    // Normalize to forward slashes for consistent DFS path handling
-    return relative.replace(/\\/g, '/');
+    return relative;
   }
 
   /**
@@ -283,16 +287,21 @@ export async function upgradePackageReferences(
    * Convert an absolute system path back to a DFS relative path.
    */
   function toRelativePath(absolutePath: string): string {
+    // Normalize all paths to forward slashes for consistent comparison (Windows fix)
+    const normalizedPath = absolutePath.replace(/\\/g, '/');
+    const normalizedRoot = resolvedRoot.replace(/\\/g, '/');
+    const normalizedDfsRoot = rootDir.replace(/\\/g, '/');
+
     let relative: string;
-    if (absolutePath.startsWith(resolvedRoot)) {
-      relative = absolutePath.slice(resolvedRoot.length).replace(/^[/\\]/, '');
-    } else if (absolutePath.startsWith(rootDir)) {
-      relative = absolutePath.slice(rootDir.length).replace(/^[/\\]/, '');
+    if (normalizedPath.startsWith(normalizedRoot)) {
+      relative = normalizedPath.slice(normalizedRoot.length).replace(/^\//, '');
+    } else if (normalizedPath.startsWith(normalizedDfsRoot)) {
+      relative = normalizedPath.slice(normalizedDfsRoot.length).replace(/^\//, '');
     } else {
-      relative = absolutePath.replace(/^[./\\]+/, '');
+      // Already relative or unknown format - just normalize slashes
+      relative = normalizedPath.replace(/^\.\//, '');
     }
-    // Normalize to forward slashes for consistent DFS path handling
-    return relative.replace(/\\/g, '/');
+    return relative;
   }
 
   /**
