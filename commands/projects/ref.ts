@@ -40,9 +40,12 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { compile as compileGitignore } from '@cfa/gitignore-parser';
 import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
 import { VersionResolver } from '../../src/deps/VersionResolver.ts';
+import {
+  findPackageReferences,
+  type PackageReference,
+} from '../../src/projects/PackageReferences.ts';
 
 /**
  * Zod schema for ref command flags.
@@ -153,180 +156,6 @@ async function getJsrVersionsByChannel(
   }
 
   return result;
-}
-
-/**
- * A reference to this package found in the workspace.
- * Source indicates where the reference was found:
- * - 'config': deno.json(c) files
- * - 'deps': .deps.ts files
- * - 'template': .hbs template files
- * - 'docs': .md/.mdx documentation files
- * - 'other': other file types
- */
-interface PackageReference {
-  file: string;
-  line: number;
-  currentVersion: string;
-  source: 'config' | 'deps' | 'template' | 'docs' | 'other';
-}
-
-/**
- * File patterns to search for package references.
- * These are in addition to project config files which are always searched.
- */
-const REFERENCE_FILE_PATTERNS = [
-  /\.deps\.ts$/, // Dependency files
-  /\.hbs$/, // Handlebars templates
-  /\.mdx?$/, // Markdown and MDX documentation
-  /\.tsx?$/, // TypeScript source files (may contain inline jsr: imports)
-];
-
-/**
- * Directories to always skip, regardless of .gitignore.
- */
-const ALWAYS_SKIP_DIRS = [
-  '.git',
-  'node_modules',
-  '.deno',
-  'cov',
-  '.coverage',
-];
-
-/**
- * Determine the source type based on file path.
- */
-function getSourceType(filePath: string): PackageReference['source'] {
-  if (/deno\.jsonc?$/.test(filePath)) return 'config';
-  if (/\.deps\.ts$/.test(filePath)) return 'deps';
-  if (/\.hbs$/.test(filePath)) return 'template';
-  if (/\.mdx?$/.test(filePath)) return 'docs';
-  return 'other';
-}
-
-/**
- * Load and compile .gitignore from the workspace root.
- * Returns a function that checks if a path should be ignored.
- */
-async function loadGitignore(
-  rootDir: string,
-): Promise<(path: string) => boolean> {
-  try {
-    const gitignorePath = `${rootDir}/.gitignore`;
-    const content = await Deno.readTextFile(gitignorePath);
-    const matcher = compileGitignore(content);
-    return (path: string) => matcher.denies(path);
-  } catch {
-    // No .gitignore or can't read it - don't ignore anything
-    return () => false;
-  }
-}
-
-/**
- * Find all references to a package in the workspace.
- * Searches config files, .deps.ts files, templates, and documentation.
- * Respects .gitignore and always skips .git directories.
- */
-async function findPackageReferences(
-  packageName: string,
-  resolver: DFSProjectResolver,
-): Promise<PackageReference[]> {
-  const references: PackageReference[] = [];
-  const seenFiles = new Set<string>(); // Avoid duplicate entries
-
-  // Pattern to match: "jsr:@scope/name@version" (with or without quotes)
-  const packagePattern = new RegExp(
-    `jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@([^"'\\s,]+)`,
-  );
-
-  const dfs = resolver.DFS;
-  const rootDir = dfs.Root;
-
-  // Load .gitignore for filtering
-  const isGitignored = await loadGitignore(rootDir);
-
-  /**
-   * Check if a path should be skipped.
-   */
-  function shouldSkip(path: string): boolean {
-    // Always skip certain directories
-    for (const skipDir of ALWAYS_SKIP_DIRS) {
-      if (path.includes(`/${skipDir}/`) || path.includes(`\\${skipDir}\\`)) {
-        return true;
-      }
-      if (path.endsWith(`/${skipDir}`) || path.endsWith(`\\${skipDir}`)) {
-        return true;
-      }
-    }
-
-    // Check .gitignore
-    // Convert to relative path for gitignore matching
-    const relativePath = path.startsWith(rootDir)
-      ? path.slice(rootDir.length).replace(/^[/\\]/, '')
-      : path;
-
-    return isGitignored(relativePath);
-  }
-
-  /**
-   * Search a file for package references.
-   */
-  async function searchFile(filePath: string): Promise<void> {
-    if (seenFiles.has(filePath)) return;
-    seenFiles.add(filePath);
-
-    if (shouldSkip(filePath)) return;
-
-    try {
-      const content = await Deno.readTextFile(filePath);
-      const lines = content.split('\n');
-      const source = getSourceType(filePath);
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const match = line.match(packagePattern);
-
-        if (match) {
-          references.push({
-            file: filePath,
-            line: i + 1, // 1-indexed line numbers
-            currentVersion: match[1], // The version part after @
-            source,
-          });
-        }
-      }
-    } catch {
-      // Skip files that can't be read
-    }
-  }
-
-  try {
-    // 1. Search project config files (these are always relevant)
-    const allProjects = await resolver.Resolve();
-    for (const project of allProjects) {
-      await searchFile(project.configPath);
-    }
-
-    // 2. Walk the workspace for additional file patterns
-    // Build skip patterns for the DFS walk
-    const skipPatterns = ALWAYS_SKIP_DIRS.map((dir) => new RegExp(`${dir}`));
-
-    for await (
-      const entry of dfs.Walk({
-        match: REFERENCE_FILE_PATTERNS,
-        skip: skipPatterns,
-      })
-    ) {
-      if (!entry.isFile) continue;
-
-      const fullPath = dfs.ResolvePath(entry.path);
-      await searchFile(fullPath);
-    }
-  } catch {
-    // Return empty if resolution fails
-  }
-
-  return references;
 }
 
 /**

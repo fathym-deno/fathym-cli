@@ -70,12 +70,37 @@
  * @module
  */
 
+import { join } from '@std/path';
+import { parse as parseJsonc } from '@std/jsonc';
 import { z } from 'zod';
-import { Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import { DEFAULT_TARGETS } from '../../src/config/FathymCLIConfig.ts';
 import BuildCommand from './build.ts';
 import CompileCommand from './compile.ts';
 import ScriptsCommand from './install/scripts.ts';
+
+/**
+ * Attempts to detect the GitHub repository from .git/config.
+ */
+async function detectGitHubRepo(cwd: string): Promise<string | undefined> {
+  try {
+    const gitConfigPath = join(cwd, '.git', 'config');
+    const content = await Deno.readTextFile(gitConfigPath);
+
+    // Match GitHub remote URL patterns
+    const httpsMatch = content.match(
+      /url\s*=\s*https:\/\/github\.com\/([^/]+\/[^/\s]+?)(?:\.git)?$/m,
+    );
+    const sshMatch = content.match(
+      /url\s*=\s*git@github\.com:([^/]+\/[^/\s]+?)(?:\.git)?$/m,
+    );
+
+    const match = httpsMatch || sshMatch;
+    return match ? match[1].replace(/\.git$/, '') : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Zod schema for release command positional arguments.
@@ -146,19 +171,60 @@ export default Command(
   .Args(ReleaseArgsSchema)
   .Flags(ReleaseFlagsSchema)
   .Params(ReleaseParams)
+  .Services(async (ctx, ioc) => {
+    const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
+
+    if (ctx.Params.ConfigPath) {
+      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
+    }
+
+    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
+
+    return { DFS: dfs };
+  })
   .Commands({
     Build: BuildCommand.Build(),
     Compile: CompileCommand.Build(),
     Scripts: ScriptsCommand.Build(),
   })
-  .Run(async ({ Params, Log, Commands, Config }) => {
+  .Run(async ({ Params, Log, Commands, Config, Services }) => {
     const { Build, Compile, Scripts } = Commands!;
+    const { DFS } = Services;
 
-    // // Load config
+    // Load config
     const configPath = Params.ConfigPath || '.cli.json';
 
     const cliName = Config.Tokens?.[0] ?? 'cli';
     const version = Config.Version;
+
+    // Detect GitHub repo
+    let repo = Params.Repo;
+    if (!repo) {
+      repo = await detectGitHubRepo(DFS.Root);
+    }
+
+    // Read package name from deno.jsonc
+    let packageName = `@scope/${cliName}`; // fallback
+    try {
+      const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
+      const denoContent = await Deno.readTextFile(denoJsoncPath);
+      const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
+      if (typeof denoConfig.name === 'string') {
+        packageName = denoConfig.name;
+      }
+    } catch {
+      // Try deno.json as fallback
+      try {
+        const denoJsonPath = await DFS.ResolvePath('deno.json');
+        const denoContent = await Deno.readTextFile(denoJsonPath);
+        const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
+        if (typeof denoConfig.name === 'string') {
+          packageName = denoConfig.name;
+        }
+      } catch {
+        // Use fallback
+      }
+    }
 
     Log.Info(`🚀 Starting release for ${Config.Name} v${version}`);
     Log.Info('');
@@ -225,17 +291,25 @@ export default Command(
     Log.Success('🎉 Release artifacts ready!');
     Log.Info('');
     Log.Info('📤 Next steps:');
-    Log.Info('   1. Create a GitHub release with tag v' + version);
-    Log.Info('   2. Upload all files from .dist/ to the release');
-    Log.Info('   3. Users can then install via:');
     Log.Info('');
-    Log.Info('      # macOS/Linux');
-    Log.Info(
-      '      curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | bash',
-    );
+    Log.Info('   If using CI/CD (recommended):');
+    Log.Info('   - Commit and push to trigger your release workflow');
+    Log.Info('   - CI will publish to JSR and create GitHub releases automatically');
     Log.Info('');
-    Log.Info('      # Windows PowerShell');
-    Log.Info(
-      '      iwr -useb https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex',
-    );
+    Log.Info('   Users can install via:');
+    Log.Info('');
+    Log.Info('      # Deno (recommended, cross-platform)');
+    Log.Info(`      deno run -A jsr:${packageName}/install`);
+    if (repo) {
+      Log.Info('');
+      Log.Info('      # macOS/Linux');
+      Log.Info(
+        `      curl -fsSL https://github.com/${repo}/releases/latest/download/install.sh | bash`,
+      );
+      Log.Info('');
+      Log.Info('      # Windows PowerShell');
+      Log.Info(
+        `      iwr -useb https://github.com/${repo}/releases/latest/download/install.ps1 | iex`,
+      );
+    }
   });
