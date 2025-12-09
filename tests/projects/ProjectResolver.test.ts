@@ -254,3 +254,45 @@ Deno.test('DFSProjectResolver - Resolve returns empty tasks for project without 
   assertExists(projects[0].tasks);
   assertEquals(Object.keys(projects[0].tasks!).length, 0);
 });
+
+// =============================================================================
+// TDD Tests: Relative Path Requirements
+// =============================================================================
+
+Deno.test('DFSProjectResolver - Resolve returns relative dir path', async () => {
+  const dfs = await createTestDFS({
+    '/projects/app/deno.jsonc': JSON.stringify({
+      name: '@test/app',
+      exports: { '.': './mod.ts' },
+    }),
+  });
+
+  const resolver = new DFSProjectResolver(dfs);
+  const projects = await resolver.Resolve('@test/app');
+
+  assertEquals(projects.length, 1);
+  // dir should be relative, not absolute
+  assertEquals(projects[0].dir, 'projects/app');
+  // Should NOT start with drive letter or /
+  assertEquals(projects[0].dir.includes(':'), false);
+  assertEquals(projects[0].dir.startsWith('/'), false);
+});
+
+Deno.test('DFSProjectResolver - Resolve returns relative configPath', async () => {
+  const dfs = await createTestDFS({
+    '/projects/app/deno.jsonc': JSON.stringify({
+      name: '@test/app',
+      exports: { '.': './mod.ts' },
+    }),
+  });
+
+  const resolver = new DFSProjectResolver(dfs);
+  const projects = await resolver.Resolve('@test/app');
+
+  assertEquals(projects.length, 1);
+  // configPath should be relative, not absolute
+  assertEquals(projects[0].configPath, 'projects/app/deno.jsonc');
+  // Should NOT start with drive letter or /
+  assertEquals(projects[0].configPath.includes(':'), false);
+  assertEquals(projects[0].configPath.startsWith('/'), false);
+});

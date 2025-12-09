@@ -263,8 +263,10 @@ export class DFSProjectResolver implements ProjectResolver {
         tasks?: Record<string, unknown>;
       };
 
-      const absoluteConfigPath = this.DFS.ResolvePath(configPath);
-      const dir = dirname(absoluteConfigPath);
+      // Use normalized relative path instead of absolute path
+      // This ensures consistent path handling across platforms
+      const normalizedConfigPath = this.normalizePath(configPath);
+      const dir = dirname(normalizedConfigPath);
       const name = typeof config.name === 'string' ? config.name : undefined;
       const rawTasks = config.tasks ?? {};
       const hasDev = Boolean(rawTasks && Object.hasOwn(rawTasks, 'dev'));
@@ -277,7 +279,7 @@ export class DFSProjectResolver implements ProjectResolver {
         }
       }
 
-      return { name, dir, configPath: absoluteConfigPath, hasDev, tasks };
+      return { name, dir, configPath: normalizedConfigPath, hasDev, tasks };
     } catch {
       return undefined;
     }

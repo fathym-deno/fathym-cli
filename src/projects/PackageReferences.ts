@@ -25,6 +25,8 @@ export interface PackageReference {
   line: number;
   currentVersion: string;
   source: 'config' | 'deps' | 'template' | 'docs' | 'other';
+  /** The name of the project containing this reference (from deno.json(c)) */
+  projectName: string;
 }
 
 /**
@@ -82,6 +84,7 @@ export async function loadGitignore(
  * Find all references to a package in the workspace.
  * Searches config files, .deps.ts files, templates, and documentation.
  * Respects .gitignore and always skips .git directories.
+ * Only includes references from files within resolved projects.
  */
 export async function findPackageReferences(
   packageName: string,
@@ -90,92 +93,107 @@ export async function findPackageReferences(
   const references: PackageReference[] = [];
   const seenFiles = new Set<string>(); // Avoid duplicate entries
 
-  // Pattern to match: "jsr:@scope/name@version" (with or without quotes)
+  // Pattern to match: "jsr:@scope/name@version" with optional subpath (e.g., /build)
+  // Group 1 = version (stops at / or quote/whitespace/comma)
+  // The subpath after version is NOT captured - we only need the version for reporting
   const packagePattern = new RegExp(
-    `jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@([^"'\\s,]+)`,
+    `jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@([^/"'\\s,]+)`,
   );
 
   const dfs = resolver.DFS;
   const rootDir = dfs.Root;
-  // Get the resolved root path for absolute path comparison
-  // ResolvePath converts DFS root to system absolute path (e.g., "/" -> "G:\")
-  const resolvedRoot = dfs.ResolvePath('/');
 
   // Load .gitignore for filtering
   const isGitignored = await loadGitignore(rootDir);
 
-  /**
-   * Convert an absolute system path back to a DFS relative path.
-   * E.g., "G:\projects\app\deno.jsonc" -> "projects/app/deno.jsonc"
-   */
-  function toRelativePath(absolutePath: string): string {
-    // Normalize all paths to forward slashes for consistent comparison (Windows fix)
-    const normalizedPath = absolutePath.replace(/\\/g, '/');
-    const normalizedRoot = resolvedRoot.replace(/\\/g, '/');
-    const normalizedDfsRoot = rootDir.replace(/\\/g, '/');
+  // Resolve all projects and build a map from directory to project info
+  const allProjects = await resolver.Resolve();
+  const projectMap = new Map<string, { name: string; dir: string }>();
 
-    let relative: string;
-    // Try stripping the resolved root first (handles absolute system paths)
-    if (normalizedPath.startsWith(normalizedRoot)) {
-      relative = normalizedPath.slice(normalizedRoot.length).replace(/^\//, '');
-    } else if (normalizedPath.startsWith(normalizedDfsRoot)) {
-      // Fall back to DFS root (handles already-relative paths)
-      relative = normalizedPath.slice(normalizedDfsRoot.length).replace(/^\//, '');
-    } else {
-      // Already relative or unknown format - just normalize slashes
-      relative = normalizedPath.replace(/^\.\//, '');
+  for (const project of allProjects) {
+    if (project.name) {
+      // Normalize the directory path for consistent matching
+      const normalizedDir = project.dir.replace(/\\/g, '/').replace(/^\//, '');
+      projectMap.set(normalizedDir, { name: project.name, dir: normalizedDir });
     }
-    return relative;
+  }
+
+  /**
+   * Normalize a path to use forward slashes and remove leading ./ or /
+   */
+  function normalizePath(path: string): string {
+    let normalized = path.replace(/\\/g, '/');
+    if (normalized.startsWith('./')) {
+      normalized = normalized.slice(2);
+    }
+    if (normalized.startsWith('/')) {
+      normalized = normalized.slice(1);
+    }
+    return normalized;
+  }
+
+  /**
+   * Find the project that contains a given file path.
+   * Returns the project name if found, undefined otherwise.
+   */
+  function findProjectForFile(filePath: string): string | undefined {
+    const normalized = normalizePath(filePath);
+
+    // Find the project whose directory is a prefix of this file path
+    // Sort by directory length descending to find the most specific match
+    const sortedProjects = [...projectMap.entries()]
+      .sort((a, b) => b[1].dir.length - a[1].dir.length);
+
+    for (const [, project] of sortedProjects) {
+      if (normalized.startsWith(project.dir + '/') || normalized === project.dir) {
+        return project.name;
+      }
+    }
+
+    return undefined;
   }
 
   /**
    * Check if a path should be skipped.
+   * Expects relative paths (e.g., "projects/app/deno.jsonc").
    */
   function shouldSkip(path: string): boolean {
+    const normalized = normalizePath(path);
+
     // Always skip certain directories
     for (const skipDir of ALWAYS_SKIP_DIRS) {
-      if (path.includes(`/${skipDir}/`) || path.includes(`\\${skipDir}\\`)) {
+      if (normalized.includes(`/${skipDir}/`) || normalized.startsWith(`${skipDir}/`)) {
         return true;
       }
-      if (path.endsWith(`/${skipDir}`) || path.endsWith(`\\${skipDir}`)) {
+      if (normalized.endsWith(`/${skipDir}`) || normalized === skipDir) {
         return true;
       }
     }
 
     // Check .gitignore
-    const relativePath = toRelativePath(path);
-    return isGitignored(relativePath);
+    return isGitignored(normalized);
   }
 
   /**
-   * Read file content, trying DFS first then falling back to Deno.readTextFile.
-   * This allows the code to work with both MemoryDFSFileHandler (tests) and
-   * LocalDFSFileHandler (production).
+   * Read file content from DFS using relative path.
    */
   async function readFileContent(filePath: string): Promise<string | null> {
-    // Try DFS first (works with MemoryDFSFileHandler in tests)
     try {
-      const relativePath = toRelativePath(filePath);
-      const fileInfo = await dfs.GetFileInfo(relativePath);
+      const fileInfo = await dfs.GetFileInfo(filePath);
       if (fileInfo) {
         return await new Response(fileInfo.Contents).text();
       }
     } catch {
-      // Fall through to try Deno.readTextFile
+      // File not found or read error
     }
-
-    // Try direct file read (works with absolute paths in production)
-    try {
-      return await Deno.readTextFile(filePath);
-    } catch {
-      return null;
-    }
+    return null;
   }
 
   /**
    * Search a file for package references.
+   * Only adds references if the file belongs to a project (has projectName).
    */
-  async function searchFile(filePath: string): Promise<void> {
+  async function searchFile(filePath: string, projectName: string): Promise<void> {
     if (seenFiles.has(filePath)) return;
     seenFiles.add(filePath);
 
@@ -198,6 +216,7 @@ export async function findPackageReferences(
             line: i + 1, // 1-indexed line numbers
             currentVersion: match[1], // The version part after @
             source,
+            projectName,
           });
         }
       }
@@ -208,9 +227,10 @@ export async function findPackageReferences(
 
   try {
     // 1. Search project config files (these are always relevant)
-    const allProjects = await resolver.Resolve();
     for (const project of allProjects) {
-      await searchFile(project.configPath);
+      if (project.name) {
+        await searchFile(project.configPath, project.name);
+      }
     }
 
     // 2. Walk the workspace for additional file patterns
@@ -231,8 +251,13 @@ export async function findPackageReferences(
     ) {
       if (!entry.isFile) continue;
 
-      const fullPath = dfs.ResolvePath(entry.path);
-      await searchFile(fullPath);
+      // entry.path is already relative to DFS root - use directly
+      // This ensures consistent relative paths in PackageReference.file
+      // Only include files that belong to a project
+      const projectName = findProjectForFile(entry.path);
+      if (projectName) {
+        await searchFile(entry.path, projectName);
+      }
     }
   } catch {
     // Return empty if resolution fails
@@ -250,6 +275,8 @@ export interface UpgradeResult {
   oldVersion: string;
   newVersion: string;
   source: PackageReference['source'];
+  /** The name of the project containing this reference (from deno.json(c)) */
+  projectName: string;
   success: boolean;
   error?: string;
 }
@@ -279,63 +306,29 @@ export async function upgradePackageReferences(
   const results: UpgradeResult[] = [];
 
   const dfs = resolver.DFS;
-  const rootDir = dfs.Root;
-  // Get the resolved root path for absolute path comparison
-  const resolvedRoot = dfs.ResolvePath('/');
 
   /**
-   * Convert an absolute system path back to a DFS relative path.
-   */
-  function toRelativePath(absolutePath: string): string {
-    // Normalize all paths to forward slashes for consistent comparison (Windows fix)
-    const normalizedPath = absolutePath.replace(/\\/g, '/');
-    const normalizedRoot = resolvedRoot.replace(/\\/g, '/');
-    const normalizedDfsRoot = rootDir.replace(/\\/g, '/');
-
-    let relative: string;
-    if (normalizedPath.startsWith(normalizedRoot)) {
-      relative = normalizedPath.slice(normalizedRoot.length).replace(/^\//, '');
-    } else if (normalizedPath.startsWith(normalizedDfsRoot)) {
-      relative = normalizedPath.slice(normalizedDfsRoot.length).replace(/^\//, '');
-    } else {
-      // Already relative or unknown format - just normalize slashes
-      relative = normalizedPath.replace(/^\.\//, '');
-    }
-    return relative;
-  }
-
-  /**
-   * Read file content, trying DFS first then falling back to Deno.readTextFile.
+   * Read file content from DFS using the relative file path.
+   * Since findPackageReferences now returns relative paths, we use them directly.
    */
   async function readFileContent(filePath: string): Promise<string | null> {
     try {
-      const relativePath = toRelativePath(filePath);
-      const fileInfo = await dfs.GetFileInfo(relativePath);
+      const fileInfo = await dfs.GetFileInfo(filePath);
       if (fileInfo) {
         return await new Response(fileInfo.Contents).text();
       }
     } catch {
-      // Fall through
+      // File not found or read error
     }
-    try {
-      return await Deno.readTextFile(filePath);
-    } catch {
-      return null;
-    }
+    return null;
   }
 
   /**
-   * Write file content, trying DFS first then falling back to Deno.writeTextFile.
+   * Write file content to DFS using the relative file path.
+   * Since PackageReference.file contains relative paths, we use them directly.
    */
   async function writeFileContent(filePath: string, content: string): Promise<void> {
-    const relativePath = toRelativePath(filePath);
-    try {
-      await dfs.WriteFile(relativePath, content);
-      return;
-    } catch {
-      // Fall through
-    }
-    await Deno.writeTextFile(filePath, content);
+    await dfs.WriteFile(filePath, content);
   }
 
   // Find all references
@@ -354,9 +347,12 @@ export async function upgradePackageReferences(
     refsByFile.set(ref.file, existing);
   }
 
-  // Pattern to match and replace versions
+  // Pattern to match and replace versions, preserving optional subpaths (e.g., /build, /handlers)
+  // Group 1 = prefix (jsr:@scope/name@)
+  // Group 2 = version (stops at / or quote/whitespace/comma)
+  // Group 3 = optional subpath (e.g., /build, /handlers/memory)
   const packagePattern = new RegExp(
-    `(jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@)([^"'\\s,]+)`,
+    `(jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@)([^/"'\\s,]+)(/[^"'\\s,]*)?`,
     'g',
   );
 
@@ -368,8 +364,14 @@ export async function upgradePackageReferences(
         throw new Error(`File not found: ${filePath}`);
       }
 
-      // Replace all occurrences in one pass
-      const updatedContent = content.replace(packagePattern, `$1${version}`);
+      // Replace all occurrences in one pass, preserving subpaths
+      const updatedContent = content.replace(
+        packagePattern,
+        (_match, prefix, _oldVersion, subpath) => {
+          // Preserve the subpath if it exists, otherwise use empty string
+          return `${prefix}${version}${subpath || ''}`;
+        },
+      );
 
       // Record results for each reference
       for (const ref of fileRefs) {
@@ -379,6 +381,7 @@ export async function upgradePackageReferences(
           oldVersion: ref.currentVersion,
           newVersion: version,
           source: ref.source,
+          projectName: ref.projectName,
           success: true,
         });
       }
@@ -396,6 +399,7 @@ export async function upgradePackageReferences(
           oldVersion: ref.currentVersion,
           newVersion: version,
           source: ref.source,
+          projectName: ref.projectName,
           success: false,
           error: error instanceof Error ? error.message : String(error),
         });

@@ -282,7 +282,9 @@ export default Command('projects:ref', 'Display ProjectRef details for a resolve
               other: ' [other]',
             };
             const sourceLabel = sourceLabels[ref.source];
-            Log.Info(`  ${ref.file}:${ref.line} (@${ref.currentVersion})${sourceLabel}`);
+            Log.Info(
+              `  ${ref.projectName} → ${ref.file}:${ref.line} (@${ref.currentVersion})${sourceLabel}`,
+            );
           }
         } else if (project.name) {
           Log.Info('');
