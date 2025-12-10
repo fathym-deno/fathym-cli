@@ -1,20 +1,17 @@
 /**
- * Test command - run project tests with deno test.
+ * Lint command - lint project code with deno lint.
  *
- * The projects:test command provides a unified way to run tests in a project.
- * It can be used standalone or as a building block in pipeline commands.
+ * The projects:[projectRef]:lint command provides a unified way to lint code in a project.
+ * It can be used standalone or as a building block in pipeline commands like build.
  *
  * ## Usage
  *
  * ```bash
- * # Run tests for a project by package name
- * ftm projects test @myorg/my-package
- *
- * # Run with coverage
- * ftm projects test @myorg/my-package --coverage
+ * # Lint a project by package name
+ * ftm projects @myorg/my-package lint
  *
  * # Dry run to see what would execute
- * ftm projects test @myorg/my-package --dry-run
+ * ftm projects @myorg/my-package lint --dry-run
  * ```
  *
  * @module
@@ -23,50 +20,48 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 
 /**
- * Zod schema for test command flags.
+ * Segments schema for the lint command.
  */
-const TestFlagsSchema = z.object({
+const LintSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type LintSegments = z.infer<typeof LintSegmentsSchema>;
+
+/**
+ * Zod schema for lint command flags.
+ */
+const LintFlagsSchema = z.object({
   'dry-run': z.boolean().optional().describe(
     'Show what would run without executing',
   ),
   'verbose': z.boolean().optional().describe(
     'Show detailed output',
   ),
-  'coverage': z.boolean().optional().describe(
-    'Collect coverage information',
-  ),
 });
 
 /**
- * Zod schema for test command positional arguments.
+ * Zod schema for lint command positional arguments.
  */
-const TestArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const LintArgsSchema = z.tuple([]);
 
 /**
- * Typed parameter accessor for the test command.
+ * Typed parameter accessor for the lint command.
  */
-class TestCommandParams extends CommandParams<
-  z.infer<typeof TestArgsSchema>,
-  z.infer<typeof TestFlagsSchema>
+class LintCommandParams extends CommandParams<
+  z.infer<typeof LintArgsSchema>,
+  z.infer<typeof LintFlagsSchema>,
+  LintSegments
 > {
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
     return this.Flag('verbose') ?? false;
-  }
-
-  get Coverage(): boolean {
-    return this.Flag('coverage') ?? false;
   }
 
   override get DryRun(): boolean {
@@ -75,12 +70,13 @@ class TestCommandParams extends CommandParams<
 }
 
 export default Command(
-  'projects:test',
-  'Run project tests with deno test.',
+  'projects:[projectRef]:lint',
+  'Lint project code with deno lint.',
 )
-  .Args(TestArgsSchema)
-  .Flags(TestFlagsSchema)
-  .Params(TestCommandParams)
+  .Args(LintArgsSchema)
+  .Flags(LintFlagsSchema)
+  .Segments(LintSegmentsSchema)
+  .Params(LintCommandParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
     const dfs = await dfsCtx.GetExecutionDFS();
@@ -91,6 +87,11 @@ export default Command(
   })
   .Run(async ({ Params, Log, Services }) => {
     const resolver = Services.ProjectResolver;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       const projects = await resolver.Resolve(Params.ProjectRef);
@@ -112,19 +113,10 @@ export default Command(
       const projectName = project.name ?? project.dir;
 
       if (Params.Verbose) {
-        Log.Info(`Running tests for ${projectName}...`);
+        Log.Info(`Linting ${projectName}...`);
       }
 
-      // Build test command args
-      const args = ['test', '-A'];
-
-      // Look for common test file patterns
-      // Most projects use tests/tests.ts or tests/.tests.ts
-      args.push('tests/');
-
-      if (Params.Coverage) {
-        args.push('--coverage=cov');
-      }
+      const args = ['lint'];
 
       if (Params.DryRun) {
         Log.Info(
@@ -144,7 +136,7 @@ export default Command(
       const { code } = await cmd.output();
 
       if (Params.Verbose && code === 0) {
-        Log.Info(`Tests complete.`);
+        Log.Info(`Linting complete.`);
       }
 
       return code;

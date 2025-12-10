@@ -1,7 +1,7 @@
 /**
  * Ref command - display ProjectRef details for a resolved project.
  *
- * The projects:ref command provides a unified way to inspect project
+ * The projects:[projectRef]:ref command provides a unified way to inspect project
  * configuration details including git state and JSR version info.
  * This command is particularly useful for the release cascade workflow
  * and general debugging of project configurations.
@@ -10,10 +10,10 @@
  *
  * ```bash
  * # Get project details by package name
- * ftm projects ref @fathym/dfs
+ * ftm projects @fathym/dfs ref
  *
  * # Output as JSON for programmatic consumption
- * ftm projects ref @fathym/dfs --json
+ * ftm projects @fathym/dfs ref --json
  * ```
  *
  * ## Output
@@ -26,12 +26,12 @@
  *
  * @example Get project details
  * ```bash
- * ftm projects ref @fathym/dfs
+ * ftm projects @fathym/dfs ref
  * ```
  *
  * @example Get JSON output for scripting
  * ```bash
- * ftm projects ref @fathym/dfs --json
+ * ftm projects @fathym/dfs ref --json
  * ```
  *
  * @module
@@ -40,12 +40,22 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
-import { VersionResolver } from '../../src/deps/VersionResolver.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
+import { VersionResolver } from '../../../src/deps/VersionResolver.ts';
 import {
   findPackageReferences,
   type PackageReference,
-} from '../../src/projects/PackageReferences.ts';
+} from '../../../src/projects/PackageReferences.ts';
+
+/**
+ * Segments schema for the ref command.
+ * Receives the project reference from the dynamic [projectRef] segment.
+ */
+const RefSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type RefSegments = z.infer<typeof RefSegmentsSchema>;
 
 /**
  * Zod schema for ref command flags.
@@ -56,24 +66,21 @@ const RefFlagsSchema = z.object({
 
 /**
  * Zod schema for ref command positional arguments.
+ * No positional args - project comes from dynamic segment.
  */
-const RefArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const RefArgsSchema = z.tuple([]);
 
 /**
  * Typed parameter accessor for the ref command.
  */
 class RefCommandParams extends CommandParams<
   z.infer<typeof RefArgsSchema>,
-  z.infer<typeof RefFlagsSchema>
+  z.infer<typeof RefFlagsSchema>,
+  RefSegments
 > {
-  /** Project reference from first positional argument */
+  /** Project reference from dynamic segment */
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   /** Whether to output as JSON */
@@ -172,9 +179,10 @@ interface RefOutput {
   referencedBy: PackageReference[];
 }
 
-export default Command('projects:ref', 'Display ProjectRef details for a resolved project.')
+export default Command('projects:[projectRef]:ref', 'Display ProjectRef details for a resolved project.')
   .Args(RefArgsSchema)
   .Flags(RefFlagsSchema)
+  .Segments(RefSegmentsSchema)
   .Params(RefCommandParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
@@ -187,6 +195,11 @@ export default Command('projects:ref', 'Display ProjectRef details for a resolve
   })
   .Run(async ({ Params, Log, Services }) => {
     const { ProjectResolver, VersionResolver } = Services;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       const projects = await ProjectResolver.Resolve(Params.ProjectRef);

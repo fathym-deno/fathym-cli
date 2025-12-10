@@ -81,6 +81,65 @@ my-cli/
 └── templates/          # Scaffolding templates (optional)
 ```
 
+## Project Resolution
+
+The CLI supports flexible project reference resolution for commands that operate on workspace projects.
+
+### Reference Types
+
+| Input | Resolution |
+| ----- | ---------- |
+| `@scope/pkg` | Resolve by package name |
+| `./path/deno.jsonc` | Direct config file path |
+| `./packages/app` | Directory with deno.json(c) |
+| `@pkg/a,@pkg/b` | Multiple comma-separated refs |
+
+### Multi-Project Operations
+
+Use comma-separated refs to operate on multiple projects:
+
+```bash
+# Build multiple packages
+ftm projects @pkg/core,@pkg/utils build --all
+
+# Test specific projects
+ftm projects @fathym/cli,@fathym/common test --all
+
+# Use --first to run on first match only
+ftm projects ./packages/ build --first
+```
+
+### Resolution Options
+
+Commands using the `DFSProjectResolver` support these options:
+
+| Option | Description |
+| ------ | ----------- |
+| `--all` | Run on all matched projects |
+| `--first` | Run on first matched project only |
+| `singleOnly` | (API) Throw if multiple projects found |
+| `useFirst` | (API) Return only first match |
+
+### API Usage
+
+```typescript
+import { DFSProjectResolver, parseRefs } from '@fathym/ftm/projects';
+
+const resolver = new DFSProjectResolver(dfsHandler);
+
+// Resolve multiple refs
+const projects = await resolver.Resolve('@pkg/a,@pkg/b');
+
+// Ensure single project (throws if multiple)
+const [single] = await resolver.Resolve('@pkg', { singleOnly: true });
+
+// Get first match only
+const [first] = await resolver.Resolve('./packages/', { useFirst: true });
+
+// Parse refs manually
+const refs = parseRefs('@a, @b, @c'); // ['@a', '@b', '@c']
+```
+
 ## Status
 
 - **Version**: 0.0.0 (pre-release)

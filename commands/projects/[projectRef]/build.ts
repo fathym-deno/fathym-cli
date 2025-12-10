@@ -1,14 +1,14 @@
 /**
  * Build command - build a project with cascading task overrides.
  *
- * The projects:build command runs a multi-step build pipeline that supports
+ * The projects:[projectRef]:build command runs a multi-step build pipeline that supports
  * cascading overrides. Each step checks for a project-defined task before
  * falling back to CLI defaults.
  *
  * ## Cascade Resolution
  *
  * ```
- * ftm projects build @fathym/cli
+ * ftm projects @fathym/cli build
  *      │
  *      ├─► Check: project has 'build' task?
  *      │   └─► YES: delegate entirely (full override)
@@ -24,19 +24,19 @@
  *
  * ```bash
  * # Build with cascading overrides
- * ftm projects build @myorg/my-package
+ * ftm projects @myorg/my-package build
  *
  * # See what would run (dry run)
- * ftm projects build @myorg/my-package --dry-run
+ * ftm projects @myorg/my-package build --dry-run
  *
  * # Show detailed cascade resolution
- * ftm projects build @myorg/my-package --verbose
+ * ftm projects @myorg/my-package build --verbose
  *
  * # Show pipeline structure and override status
- * ftm projects build @myorg/my-package --explain
+ * ftm projects @myorg/my-package build --explain
  *
  * # Continue on failure (ignore faults)
- * ftm projects build @myorg/my-package --ignore-faults
+ * ftm projects @myorg/my-package build --ignore-faults
  * ```
  *
  * ## Overriding Steps
@@ -68,10 +68,10 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
-import { CascadeRunner } from '../../src/pipelines/CascadeRunner.ts';
-import type { CascadeStepDef, CommandInvoker } from '../../src/pipelines/CascadeTypes.ts';
-import TaskCommand from '../task.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
+import { CascadeRunner } from '../../../src/pipelines/CascadeRunner.ts';
+import type { CascadeStepDef, CommandInvoker } from '../../../src/pipelines/CascadeTypes.ts';
+import TaskCommand from '../../task.ts';
 import FmtCommand from './fmt.ts';
 import LintCommand from './lint.ts';
 import CheckCommand from './check.ts';
@@ -114,6 +114,15 @@ const BUILD_STEPS: CascadeStepDef[] = [
 ];
 
 /**
+ * Segments schema for the build command.
+ */
+const BuildSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type BuildSegments = z.infer<typeof BuildSegmentsSchema>;
+
+/**
  * Zod schema for build command flags.
  */
 const BuildFlagsSchema = z.object({
@@ -134,22 +143,18 @@ const BuildFlagsSchema = z.object({
 /**
  * Zod schema for build command positional arguments.
  */
-const BuildArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const BuildArgsSchema = z.tuple([]);
 
 /**
  * Typed parameter accessor for the build command.
  */
 class BuildCommandParams extends CommandParams<
   z.infer<typeof BuildArgsSchema>,
-  z.infer<typeof BuildFlagsSchema>
+  z.infer<typeof BuildFlagsSchema>,
+  BuildSegments
 > {
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
@@ -170,11 +175,12 @@ class BuildCommandParams extends CommandParams<
 }
 
 export default Command(
-  'projects:build',
+  'projects:[projectRef]:build',
   'Build a project with cascading task overrides.',
 )
   .Args(BuildArgsSchema)
   .Flags(BuildFlagsSchema)
+  .Segments(BuildSegmentsSchema)
   .Params(BuildCommandParams)
   .Commands({
     Task: TaskCommand.Build(),

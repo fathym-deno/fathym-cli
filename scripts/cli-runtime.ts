@@ -1,5 +1,5 @@
-import { CLI } from '@fathym/cli';
+import { CLIRuntime } from '@fathym/cli';
 
-const cli = new CLI();
-
-await cli.RunFromArgs(Deno.args);
+await CLIRuntime()
+  .FromArgs(Deno.args)
+  .Execute();

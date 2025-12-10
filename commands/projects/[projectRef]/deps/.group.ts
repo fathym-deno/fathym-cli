@@ -7,9 +7,7 @@
  * @module
  */
 
-import type { CommandModuleMetadata } from '@fathym/cli';
+import { Group } from '@fathym/cli';
 
-export default {
-  Name: 'deps',
-  Description: 'Commands for managing project dependencies',
-} as CommandModuleMetadata;
+export default Group('deps')
+  .Description('Commands for managing project dependencies');

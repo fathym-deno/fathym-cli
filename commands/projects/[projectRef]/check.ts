@@ -1,20 +1,17 @@
 /**
- * Lint command - lint project code with deno lint.
+ * Check command - type check project code with deno check.
  *
- * The projects:lint command provides a unified way to lint code in a project.
+ * The projects:[projectRef]:check command provides a unified way to type check code in a project.
  * It can be used standalone or as a building block in pipeline commands like build.
  *
  * ## Usage
  *
  * ```bash
- * # Lint a project by package name
- * ftm projects lint @myorg/my-package
- *
- * # Lint and auto-fix issues
- * ftm projects lint @myorg/my-package --fix
+ * # Type check a project by package name
+ * ftm projects @myorg/my-package check
  *
  * # Dry run to see what would execute
- * ftm projects lint @myorg/my-package --dry-run
+ * ftm projects @myorg/my-package check --dry-run
  * ```
  *
  * @module
@@ -23,50 +20,55 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 
 /**
- * Zod schema for lint command flags.
+ * Segments schema for the check command.
  */
-const LintFlagsSchema = z.object({
+const CheckSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type CheckSegments = z.infer<typeof CheckSegmentsSchema>;
+
+/**
+ * Zod schema for check command flags.
+ */
+const CheckFlagsSchema = z.object({
   'dry-run': z.boolean().optional().describe(
     'Show what would run without executing',
   ),
   'verbose': z.boolean().optional().describe(
     'Show detailed output',
   ),
-  'fix': z.boolean().optional().describe(
-    'Automatically fix lint issues where possible',
+  'all': z.boolean().optional().describe(
+    'Type-check all code, including remote modules and npm packages',
   ),
 });
 
 /**
- * Zod schema for lint command positional arguments.
+ * Zod schema for check command positional arguments.
  */
-const LintArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const CheckArgsSchema = z.tuple([]);
 
 /**
- * Typed parameter accessor for the lint command.
+ * Typed parameter accessor for the check command.
  */
-class LintCommandParams extends CommandParams<
-  z.infer<typeof LintArgsSchema>,
-  z.infer<typeof LintFlagsSchema>
+class CheckCommandParams extends CommandParams<
+  z.infer<typeof CheckArgsSchema>,
+  z.infer<typeof CheckFlagsSchema>,
+  CheckSegments
 > {
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
     return this.Flag('verbose') ?? false;
   }
 
-  get Fix(): boolean {
-    return this.Flag('fix') ?? false;
+  get All(): boolean {
+    return this.Flag('all') ?? false;
   }
 
   override get DryRun(): boolean {
@@ -75,12 +77,13 @@ class LintCommandParams extends CommandParams<
 }
 
 export default Command(
-  'projects:lint',
-  'Lint project code with deno lint.',
+  'projects:[projectRef]:check',
+  'Type check project code with deno check.',
 )
-  .Args(LintArgsSchema)
-  .Flags(LintFlagsSchema)
-  .Params(LintCommandParams)
+  .Args(CheckArgsSchema)
+  .Flags(CheckFlagsSchema)
+  .Segments(CheckSegmentsSchema)
+  .Params(CheckCommandParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
     const dfs = await dfsCtx.GetExecutionDFS();
@@ -91,6 +94,11 @@ export default Command(
   })
   .Run(async ({ Params, Log, Services }) => {
     const resolver = Services.ProjectResolver;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       const projects = await resolver.Resolve(Params.ProjectRef);
@@ -112,13 +120,15 @@ export default Command(
       const projectName = project.name ?? project.dir;
 
       if (Params.Verbose) {
-        Log.Info(`Linting ${projectName}...`);
+        Log.Info(`Type checking ${projectName}...`);
       }
 
-      const args = ['lint'];
-      if (Params.Fix) {
-        args.push('--fix');
+      // Build check args - use mod.ts or main entry if available
+      const args = ['check'];
+      if (Params.All) {
+        args.push('--all');
       }
+      args.push('**/*.ts');
 
       if (Params.DryRun) {
         Log.Info(
@@ -138,7 +148,7 @@ export default Command(
       const { code } = await cmd.output();
 
       if (Params.Verbose && code === 0) {
-        Log.Info(`Linting complete.`);
+        Log.Info(`Type checking complete.`);
       }
 
       return code;

@@ -299,7 +299,7 @@ async function collectTemplates(
  *
  * Scans the commands directory for `.ts` files, generates import aliases
  * using PascalCase naming, and builds the command entry registry. Handles
- * both command files and `.metadata.ts` group files.
+ * both command files and `.group.ts` group files.
  *
  * @param commandsDir - Directory containing command modules
  * @param dfs - DFS handler for file operations
@@ -335,7 +335,7 @@ async function collectCommandMetadata(
 
   for (const path of entries) {
     const rel = path.replace(`${commandsDir}/`, '').replace(/\\/g, '/');
-    const isMeta = rel.endsWith('.metadata.ts');
+    const isMeta = rel.endsWith('.group.ts');
     const key = isMeta ? rel.replace(/\/\.metadata\.ts$/, '') : rel.replace(/\.ts$/, '');
     const group = key.split('/')[0];
 

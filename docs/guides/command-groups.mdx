@@ -47,11 +47,11 @@ Groups are created using directories in your `commands/` folder. Each subdirecto
 ```
 commands/
 ├── deploy/                    # Group: deploy
-│   ├── .metadata.ts          # Group metadata (optional)
+│   ├── .group.ts          # Group metadata (optional)
 │   ├── staging.ts            # Command: deploy staging
 │   └── production.ts         # Command: deploy production
 ├── scaffold/                  # Group: scaffold
-│   ├── .metadata.ts          # Group metadata
+│   ├── .group.ts          # Group metadata
 │   ├── component.ts          # Command: scaffold component
 │   └── service.ts            # Command: scaffold service
 └── init.ts                    # Root command: init
@@ -72,10 +72,10 @@ mycli scaffold service
 
 ## Group Metadata
 
-Create a `.metadata.ts` file in the group directory to define group information:
+Create a `.group.ts` file in the group directory to define group information:
 
 ```typescript
-// commands/scaffold/.metadata.ts
+// commands/scaffold/.group.ts
 export default {
   Name: 'scaffold',
   Description: 'Code generation and scaffolding commands',
@@ -99,7 +99,7 @@ export default {
 
 ### Without Metadata
 
-Groups work without `.metadata.ts`, but help output will be minimal:
+Groups work without `.group.ts`, but help output will be minimal:
 
 ```bash
 $ mycli scaffold --help
@@ -133,14 +133,14 @@ Groups can be nested to any depth:
 ```
 commands/
 └── db/                        # Group: db
-    ├── .metadata.ts
+    ├── .group.ts
     ├── migrate/               # Subgroup: db migrate
-    │   ├── .metadata.ts
+    │   ├── .group.ts
     │   ├── up.ts             # Command: db migrate up
     │   ├── down.ts           # Command: db migrate down
     │   └── status.ts         # Command: db migrate status
     └── seed/                  # Subgroup: db seed
-        ├── .metadata.ts
+        ├── .group.ts
         ├── run.ts            # Command: db seed run
         └── reset.ts          # Command: db seed reset
 ```
@@ -180,7 +180,7 @@ A group can have its own command that runs when called without subcommands:
 ```
 commands/
 └── scaffold/
-    ├── .metadata.ts
+    ├── .group.ts
     ├── scaffold.ts           # Runs for: mycli scaffold
     ├── component.ts          # Runs for: mycli scaffold component
     └── service.ts            # Runs for: mycli scaffold service
@@ -222,7 +222,7 @@ my-cli/
 │   └── build.ts             # mycli build
 └── plugins/
     └── analytics/
-        ├── .metadata.ts
+        ├── .group.ts
         └── track.ts         # mycli plugins analytics track
 ```
 
@@ -316,10 +316,10 @@ mycli cloud aws ec2 instance create --name foo
 
 ### 3. Provide Group Metadata
 
-Always create `.metadata.ts` for groups:
+Always create `.group.ts` for groups:
 
 ```typescript
-// commands/deploy/.metadata.ts
+// commands/deploy/.group.ts
 export default {
   Name: 'deploy',
   Description: 'Deploy applications to various environments',
@@ -365,24 +365,24 @@ my-cli/
 │   ├── init.ts
 │   ├── build.ts
 │   ├── deploy/
-│   │   ├── .metadata.ts
+│   │   ├── .group.ts
 │   │   ├── staging.ts
 │   │   ├── production.ts
 │   │   └── preview.ts
 │   ├── scaffold/
-│   │   ├── .metadata.ts
+│   │   ├── .group.ts
 │   │   ├── component.ts
 │   │   ├── service.ts
 │   │   └── hook.ts
 │   └── db/
-│       ├── .metadata.ts
+│       ├── .group.ts
 │       ├── migrate/
-│       │   ├── .metadata.ts
+│       │   ├── .group.ts
 │       │   ├── up.ts
 │       │   ├── down.ts
 │       │   └── status.ts
 │       └── seed/
-│           ├── .metadata.ts
+│           ├── .group.ts
 │           ├── run.ts
 │           └── reset.ts
 └── deno.jsonc

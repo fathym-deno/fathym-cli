@@ -1,7 +1,7 @@
 /**
  * UpgradeDeps command - upgrade dependencies in deno.jsonc and .deps.ts files.
  *
- * The projects:deps:upgrade command provides comprehensive dependency upgrading
+ * The projects:[projectRef]:deps:upgrade command provides comprehensive dependency upgrading
  * for both import maps and direct specifier files. It supports multiple modes,
  * channel targeting, and package filtering.
  *
@@ -18,19 +18,19 @@
  *
  * ```bash
  * # Upgrade all deps to latest production versions
- * ftm projects deps:upgrade ./deno.jsonc
+ * ftm projects @fathym/cli deps upgrade
  *
  * # Upgrade to integration channel
- * ftm projects deps:upgrade @fathym/* --channel=integration
+ * ftm projects @fathym/cli deps upgrade --channel=integration
  *
  * # Upgrade only JSR packages
- * ftm projects deps:upgrade ./deno.jsonc --mode=jsr
+ * ftm projects @fathym/cli deps upgrade --mode=jsr
  *
  * # Upgrade specific packages
- * ftm projects deps:upgrade ./deno.jsonc --package=@fathym/eac*
+ * ftm projects @fathym/cli deps upgrade --package=@fathym/eac*
  *
  * # Preview changes without applying
- * ftm projects deps:upgrade ./deno.jsonc --dry-run
+ * ftm projects @fathym/cli deps upgrade --dry-run
  * ```
  *
  * @module
@@ -41,13 +41,22 @@ import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { dirname, relative } from '@std/path';
 import { parse as parseJsonc } from '@std/jsonc';
-import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
-import { DepsFileParser, type DepsReference } from '../../../src/deps/DepsFileParser.ts';
-import { VersionComparator } from '../../../src/deps/VersionComparator.ts';
-import { VersionResolver } from '../../../src/deps/VersionResolver.ts';
+import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
+import { DepsFileParser, type DepsReference } from '../../../../src/deps/DepsFileParser.ts';
+import { VersionComparator } from '../../../../src/deps/VersionComparator.ts';
+import { VersionResolver } from '../../../../src/deps/VersionResolver.ts';
 
 /** Upgrade mode options */
 type UpgradeMode = 'all' | 'jsr' | 'npm' | 'local-only';
+
+/**
+ * Segments schema for the deps:upgrade command.
+ */
+const UpgradeSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
 
 /**
  * Zod schema for deps:upgrade command flags.
@@ -77,22 +86,18 @@ const UpgradeFlagsSchema = z.object({
 /**
  * Zod schema for deps:upgrade command positional arguments.
  */
-const UpgradeArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const UpgradeArgsSchema = z.tuple([]);
 
 /**
  * Typed parameter accessor for the deps:upgrade command.
  */
 class UpgradeParams extends CommandParams<
   z.infer<typeof UpgradeArgsSchema>,
-  z.infer<typeof UpgradeFlagsSchema>
+  z.infer<typeof UpgradeFlagsSchema>,
+  UpgradeSegments
 > {
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
@@ -133,11 +138,12 @@ interface PendingUpgrade {
 }
 
 export default Command(
-  'projects:deps:upgrade',
+  'projects:[projectRef]:deps:upgrade',
   'Upgrade dependencies in deno.jsonc and .deps.ts files.',
 )
   .Args(UpgradeArgsSchema)
   .Flags(UpgradeFlagsSchema)
+  .Segments(UpgradeSegmentsSchema)
   .Params(UpgradeParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
@@ -153,6 +159,11 @@ export default Command(
   })
   .Run(async ({ Params, Log, Services }) => {
     const { ProjectResolver, DFS, DepsParser, VersionComparator, VersionResolver } = Services;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       // Resolve target projects

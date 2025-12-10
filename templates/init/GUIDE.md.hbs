@@ -388,23 +388,23 @@ For larger CLIs, organize related commands into groups using directories.
 commands/
 ├── hello.ts                   # Root command: hello
 ├── deploy/                    # Group: deploy
-│   ├── .metadata.ts          # Group metadata (optional)
+│   ├── .group.ts          # Group metadata (optional)
 │   ├── staging.ts            # Command: deploy staging
 │   └── production.ts         # Command: deploy production
 └── db/
-    ├── .metadata.ts
+    ├── .group.ts
     └── migrate/               # Nested group: db migrate
-        ├── .metadata.ts
+        ├── .group.ts
         ├── up.ts             # Command: db migrate up
         └── down.ts           # Command: db migrate down
 ```
 
 ### Group Metadata
 
-Create `.metadata.ts` to describe the group:
+Create `.group.ts` to describe the group:
 
 ```typescript
-// commands/deploy/.metadata.ts
+// commands/deploy/.group.ts
 export default {
   Name: 'deploy',
   Description: 'Deployment commands',

@@ -1,7 +1,7 @@
 /**
  * Sync command - synchronizes import mappings between local and remote modes.
  *
- * The projects:imports:sync command manages deno.jsonc import maps to enable
+ * The projects:[projectRef]:imports:sync command manages deno.jsonc import maps to enable
  * seamless switching between local development (workspace paths) and production
  * (JSR registry) dependencies.
  *
@@ -44,17 +44,12 @@
  *
  * @example Sync local imports for a package
  * ```bash
- * ftm projects:imports:sync --mode=local --target=@myorg/my-app
- * ```
- *
- * @example Sync local imports for a directory
- * ```bash
- * ftm projects:imports:sync --mode=local --target=./packages/apps
+ * ftm projects @myorg/my-app imports sync --mode=local
  * ```
  *
  * @example Restore remote imports
  * ```bash
- * ftm projects:imports:sync --mode=remote --target=@myorg/my-app
+ * ftm projects @myorg/my-app imports sync --mode=remote
  * ```
  *
  * @module
@@ -63,8 +58,17 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
-import { type ImportsSyncMode, syncImports } from '../../../src/projects/ImportsSync.ts';
+import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
+import { type ImportsSyncMode, syncImports } from '../../../../src/projects/ImportsSync.ts';
+
+/**
+ * Segments schema for the imports:sync command.
+ */
+const SyncSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type SyncSegments = z.infer<typeof SyncSegmentsSchema>;
 
 /**
  * Zod schema for sync command positional arguments.
@@ -77,7 +81,6 @@ const SyncArgsSchema = z.tuple([]);
  * Zod schema for sync command flags.
  *
  * @property mode - Sync direction: 'local' for workspace paths, 'remote' for JSR
- * @property target - Package name, config path, or directory to sync
  */
 const SyncFlagsSchema = z.object({
   mode: z
@@ -85,39 +88,36 @@ const SyncFlagsSchema = z.object({
     .describe(
       "Either 'local' (enable local overrides) or 'remote' (restore jsr imports).",
     ),
-  target: z
-    .string()
-    .describe(
-      'Path to a deno.jsonc file, a directory (walked for deno.jsonc files), or a local package name.',
-    ),
 });
 
 /**
  * Typed parameter accessor for the sync command.
  *
- * Provides getters for mode and target flags.
+ * Provides getters for mode and target from segment.
  */
 class SyncParams extends CommandParams<
   z.infer<typeof SyncArgsSchema>,
-  z.infer<typeof SyncFlagsSchema>
+  z.infer<typeof SyncFlagsSchema>,
+  SyncSegments
 > {
   /** Sync mode: 'local' or 'remote' */
   get Mode(): ImportsSyncMode {
     return this.Flag('mode') as ImportsSyncMode;
   }
 
-  /** Target package name, config path, or directory */
+  /** Target from dynamic segment */
   get Target(): string {
-    return this.Flag('target') as string;
+    return this.Segment('projectRef') ?? '';
   }
 }
 
 export default Command(
-  'projects:imports:sync',
+  'projects:[projectRef]:imports:sync',
   'Sync deno.jsonc imports between jsr and local workspace overrides.',
 )
   .Args(SyncArgsSchema)
   .Flags(SyncFlagsSchema)
+  .Segments(SyncSegmentsSchema)
   .Params(SyncParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
@@ -130,6 +130,11 @@ export default Command(
     };
   })
   .Run(async ({ Params, Log, Services }) => {
+    if (!Params.Target) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
+
     try {
       const result = await syncImports({
         mode: Params.Mode,

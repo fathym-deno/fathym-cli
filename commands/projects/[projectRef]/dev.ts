@@ -1,20 +1,9 @@
 /**
  * Dev command - runs a project's `deno task dev` by name or path.
  *
- * The projects:dev command provides a unified way to start development servers
+ * The projects:[projectRef]:dev command provides a unified way to start development servers
  * for projects in a workspace. It uses the ProjectResolver to locate projects
  * by package name, config path, or directory path.
- *
- * ## Resolution Logic
- *
- * ```
- * ┌─────────────────────────────────────────────────────────────────────┐
- * │  1. No argument → discover all projects, fail if multiple found    │
- * │  2. deno.json(c) path → load single project from config            │
- * │  3. Directory path → look for deno.json(c) in directory            │
- * │  4. Package name → search discovered projects for matching name    │
- * └─────────────────────────────────────────────────────────────────────┘
- * ```
  *
  * ## Project Requirements
  *
@@ -29,24 +18,19 @@
  * }
  * ```
  *
- * @example Run dev task for single project in workspace
- * ```bash
- * ftm projects:dev
- * ```
- *
  * @example Run dev task by package name
  * ```bash
- * ftm projects:dev @myorg/my-package
+ * ftm projects @myorg/my-package dev
  * ```
  *
  * @example Run dev task by directory path
  * ```bash
- * ftm projects:dev ./packages/my-package
+ * ftm projects ./packages/my-package dev
  * ```
  *
  * @example Dry run to see what would execute
  * ```bash
- * ftm projects:dev @myorg/my-package --dry-run
+ * ftm projects @myorg/my-package dev --dry-run
  * ```
  *
  * @module
@@ -55,7 +39,16 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
+
+/**
+ * Segments schema for the dev command.
+ */
+const DevSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type DevSegments = z.infer<typeof DevSegmentsSchema>;
 
 /**
  * Zod schema for dev command flags.
@@ -70,21 +63,8 @@ const DevFlagsSchema = z.object({
 
 /**
  * Zod schema for dev command positional arguments.
- *
- * Accepts an optional project reference which can be:
- * - Package name (e.g., `@myorg/my-package`)
- * - Path to deno.json(c) (e.g., `./packages/my-package/deno.jsonc`)
- * - Directory path (e.g., `./packages/my-package`)
  */
-const DevArgsSchema = z.tuple([
-  z
-    .string()
-    .optional()
-    .describe(
-      'Project name, path to deno.json(c), or directory to find projects',
-    )
-    .meta({ argName: 'project' }),
-]);
+const DevArgsSchema = z.tuple([]);
 
 /**
  * Typed parameter accessor for the dev command.
@@ -93,11 +73,12 @@ const DevArgsSchema = z.tuple([
  */
 class DevCommandParams extends CommandParams<
   z.infer<typeof DevArgsSchema>,
-  z.infer<typeof DevFlagsSchema>
+  z.infer<typeof DevFlagsSchema>,
+  DevSegments
 > {
-  /** Project reference from first positional argument */
-  get ProjectRef(): string | undefined {
-    return this.Arg(0);
+  /** Project reference from dynamic segment */
+  get ProjectRef(): string {
+    return this.Segment('projectRef') ?? '';
   }
 
   /** Whether to preview without executing */
@@ -107,11 +88,12 @@ class DevCommandParams extends CommandParams<
 }
 
 export default Command(
-  'projects:dev',
+  'projects:[projectRef]:dev',
   "Run a project's `deno task dev` by project name or path.",
 )
   .Args(DevArgsSchema)
   .Flags(DevFlagsSchema)
+  .Segments(DevSegmentsSchema)
   .Params(DevCommandParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
@@ -126,15 +108,16 @@ export default Command(
   .Run(async ({ Params, Log, Services }) => {
     const resolver = Services.ProjectResolver;
 
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
+
     try {
       const projects = await resolver.Resolve(Params.ProjectRef);
 
       if (projects.length === 0) {
-        Log.Error(
-          Params.ProjectRef
-            ? `No projects found matching '${Params.ProjectRef}'.`
-            : 'No projects found in workspace.',
-        );
+        Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
         return 1;
       }
 

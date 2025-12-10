@@ -1,20 +1,20 @@
 /**
- * Check command - type check project code with deno check.
+ * PublishCheck command - validate a package is ready for publishing.
  *
- * The projects:check command provides a unified way to type check code in a project.
- * It can be used standalone or as a building block in pipeline commands like build.
+ * The projects:[projectRef]:publish:check command runs `deno publish --dry-run --allow-dirty`
+ * to validate that a package can be published without actually publishing it.
  *
  * ## Usage
  *
  * ```bash
- * # Type check a project by package name
- * ftm projects check @myorg/my-package
+ * # Check if a package is ready to publish
+ * ftm projects @myorg/my-package publish check
  *
- * # Check all TypeScript files
- * ftm projects check @myorg/my-package --all
+ * # Preview the command that would be run
+ * ftm projects @myorg/my-package publish check --dry-run
  *
- * # Dry run to see what would execute
- * ftm projects check @myorg/my-package --dry-run
+ * # Show detailed output
+ * ftm projects @myorg/my-package publish check --verbose
  * ```
  *
  * @module
@@ -23,50 +23,48 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
 
 /**
- * Zod schema for check command flags.
+ * Segments schema for the publish:check command.
  */
-const CheckFlagsSchema = z.object({
+const PublishCheckSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type PublishCheckSegments = z.infer<typeof PublishCheckSegmentsSchema>;
+
+/**
+ * Zod schema for publish:check command flags.
+ */
+const PublishCheckFlagsSchema = z.object({
   'dry-run': z.boolean().optional().describe(
     'Show what would run without executing',
   ),
   'verbose': z.boolean().optional().describe(
     'Show detailed output',
   ),
-  'all': z.boolean().optional().describe(
-    'Check all TypeScript files (not just entry points)',
-  ),
 });
 
 /**
- * Zod schema for check command positional arguments.
+ * Zod schema for publish:check command positional arguments.
  */
-const CheckArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const PublishCheckArgsSchema = z.tuple([]);
 
 /**
- * Typed parameter accessor for the check command.
+ * Typed parameter accessor for the publish:check command.
  */
-class CheckCommandParams extends CommandParams<
-  z.infer<typeof CheckArgsSchema>,
-  z.infer<typeof CheckFlagsSchema>
+class PublishCheckParams extends CommandParams<
+  z.infer<typeof PublishCheckArgsSchema>,
+  z.infer<typeof PublishCheckFlagsSchema>,
+  PublishCheckSegments
 > {
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
     return this.Flag('verbose') ?? false;
-  }
-
-  get All(): boolean {
-    return this.Flag('all') ?? false;
   }
 
   override get DryRun(): boolean {
@@ -75,12 +73,13 @@ class CheckCommandParams extends CommandParams<
 }
 
 export default Command(
-  'projects:check',
-  'Type check project code with deno check.',
+  'projects:[projectRef]:publish:check',
+  'Validate a package is ready for publishing (dry-run publish).',
 )
-  .Args(CheckArgsSchema)
-  .Flags(CheckFlagsSchema)
-  .Params(CheckCommandParams)
+  .Args(PublishCheckArgsSchema)
+  .Flags(PublishCheckFlagsSchema)
+  .Segments(PublishCheckSegmentsSchema)
+  .Params(PublishCheckParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
     const dfs = await dfsCtx.GetExecutionDFS();
@@ -91,6 +90,11 @@ export default Command(
   })
   .Run(async ({ Params, Log, Services }) => {
     const resolver = Services.ProjectResolver;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       const projects = await resolver.Resolve(Params.ProjectRef);
@@ -111,24 +115,18 @@ export default Command(
       const project = projects[0];
       const projectName = project.name ?? project.dir;
 
-      if (Params.Verbose) {
-        Log.Info(`Type checking ${projectName}...`);
-      }
-
-      // Default to checking all .ts files if --all, otherwise check common entry points
-      const args = ['check'];
-      if (Params.All) {
-        args.push('**/*.ts');
-      } else {
-        // Check common entry points - mod.ts, main.ts, or src/**/*.ts
-        args.push('**/*.ts');
-      }
+      const args = ['publish', '--dry-run', '--allow-dirty'];
 
       if (Params.DryRun) {
         Log.Info(
           `[DRY RUN] Would run: deno ${args.join(' ')} in ${project.dir}`,
         );
         return 0;
+      }
+
+      if (Params.Verbose) {
+        Log.Info(`Checking publish readiness for ${projectName}...`);
+        Log.Info(`Running: deno ${args.join(' ')}`);
       }
 
       const cmd = new Deno.Command('deno', {
@@ -142,7 +140,7 @@ export default Command(
       const { code } = await cmd.output();
 
       if (Params.Verbose && code === 0) {
-        Log.Info(`Type check complete.`);
+        Log.Info(`Publish check passed for ${projectName}.`);
       }
 
       return code;

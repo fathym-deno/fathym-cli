@@ -1,7 +1,7 @@
 /**
  * Upgrade command - upgrade all references to a package across the workspace.
  *
- * The projects:upgrade command finds all references to a package in the workspace
+ * The projects:[projectRef]:upgrade command finds all references to a package in the workspace
  * and upgrades them to a specified version. This is useful for cascading version
  * updates after publishing a new package version.
  *
@@ -9,16 +9,16 @@
  *
  * ```bash
  * # Upgrade all references to a package
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release
  *
  * # Preview changes without writing (dry-run)
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release --dry-run
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --dry-run
  *
  * # Filter by source type
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release --filter=config
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=config
  *
  * # Output as JSON for programmatic consumption
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release --json
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --json
  * ```
  *
  * ## File Types
@@ -32,17 +32,17 @@
  *
  * @example Upgrade all references
  * ```bash
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release
  * ```
  *
  * @example Dry-run to preview changes
  * ```bash
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release --dry-run
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --dry-run
  * ```
  *
  * @example Upgrade only config files
  * ```bash
- * ftm projects upgrade @fathym/dfs 0.0.81-dfs-release --filter=config
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=config
  * ```
  *
  * @module
@@ -51,18 +51,27 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import {
   type PackageReference,
   upgradePackageReferences,
   type UpgradeResult,
-} from '../../src/projects/PackageReferences.ts';
+} from '../../../src/projects/PackageReferences.ts';
 
 /**
  * Valid source types for filtering.
  */
 const SOURCE_TYPES = ['config', 'deps', 'template', 'docs', 'other', 'all'] as const;
 type SourceFilter = (typeof SOURCE_TYPES)[number];
+
+/**
+ * Segments schema for the upgrade command.
+ */
+const UpgradeSegmentsSchema = z.object({
+  projectRef: z.string().describe('Package name to upgrade references for'),
+});
+
+type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
 
 /**
  * Zod schema for upgrade command flags.
@@ -80,10 +89,6 @@ const UpgradeFlagsSchema = z.object({
  * Zod schema for upgrade command positional arguments.
  */
 const UpgradeArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Package name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
   z.string().describe('Target version to upgrade to').meta({ argName: 'version' }),
 ]);
 
@@ -92,16 +97,17 @@ const UpgradeArgsSchema = z.tuple([
  */
 class UpgradeCommandParams extends CommandParams<
   z.infer<typeof UpgradeArgsSchema>,
-  z.infer<typeof UpgradeFlagsSchema>
+  z.infer<typeof UpgradeFlagsSchema>,
+  UpgradeSegments
 > {
-  /** Project reference from first positional argument */
+  /** Project reference from dynamic segment */
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
-  /** Target version from second positional argument */
+  /** Target version from positional argument */
   get Version(): string {
-    return this.Arg(1)!;
+    return this.Arg(0)!;
   }
 
   /** Filter by source type */
@@ -132,11 +138,12 @@ interface UpgradeOutput {
 }
 
 export default Command(
-  'projects:upgrade',
+  'projects:[projectRef]:upgrade',
   'Upgrade all references to a package across the workspace.',
 )
   .Args(UpgradeArgsSchema)
   .Flags(UpgradeFlagsSchema)
+  .Segments(UpgradeSegmentsSchema)
   .Params(UpgradeCommandParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
@@ -148,6 +155,11 @@ export default Command(
   })
   .Run(async ({ Params, Log, Services }) => {
     const { ProjectResolver } = Services;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       // Resolve the package to get its name

@@ -1,6 +1,10 @@
-import { assertEquals, assertExists } from '@std/assert';
+import { assertEquals, assertExists, assertRejects } from '@std/assert';
 import { MemoryDFSFileHandler } from '@fathym/dfs/handlers';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import {
+  DFSProjectResolver,
+  MultipleProjectsError,
+  parseRefs,
+} from '../../src/projects/ProjectResolver.ts';
 
 /**
  * Test helper to create a memory DFS with project files
@@ -253,6 +257,406 @@ Deno.test('DFSProjectResolver - Resolve returns empty tasks for project without 
   assertEquals(projects.length, 1);
   assertExists(projects[0].tasks);
   assertEquals(Object.keys(projects[0].tasks!).length, 0);
+});
+
+// =============================================================================
+// parseRefs() Tests
+// =============================================================================
+
+Deno.test('parseRefs - parses comma-separated refs', async (t) => {
+  await t.step('single ref unchanged', () => {
+    assertEquals(parseRefs('@fathym/cli'), ['@fathym/cli']);
+  });
+
+  await t.step('two refs split correctly', () => {
+    assertEquals(parseRefs('@a,@b'), ['@a', '@b']);
+  });
+
+  await t.step('three refs', () => {
+    assertEquals(parseRefs('@a,@b,@c'), ['@a', '@b', '@c']);
+  });
+
+  await t.step('whitespace before comma trimmed', () => {
+    assertEquals(parseRefs('@a ,@b'), ['@a', '@b']);
+  });
+
+  await t.step('whitespace after comma trimmed', () => {
+    assertEquals(parseRefs('@a, @b'), ['@a', '@b']);
+  });
+
+  await t.step('whitespace both sides trimmed', () => {
+    assertEquals(parseRefs('@a , @b'), ['@a', '@b']);
+  });
+
+  await t.step('multiple spaces trimmed', () => {
+    assertEquals(parseRefs('@a   ,   @b'), ['@a', '@b']);
+  });
+
+  await t.step('empty segment filtered (double comma)', () => {
+    assertEquals(parseRefs('@a,,@b'), ['@a', '@b']);
+  });
+
+  await t.step('multiple empty segments filtered', () => {
+    assertEquals(parseRefs('@a,,,@b'), ['@a', '@b']);
+  });
+
+  await t.step('leading comma filtered', () => {
+    assertEquals(parseRefs(',@a,@b'), ['@a', '@b']);
+  });
+
+  await t.step('trailing comma filtered', () => {
+    assertEquals(parseRefs('@a,@b,'), ['@a', '@b']);
+  });
+
+  await t.step('only commas returns empty', () => {
+    assertEquals(parseRefs(',,,'), []);
+  });
+
+  await t.step('empty string returns empty', () => {
+    assertEquals(parseRefs(''), []);
+  });
+
+  await t.step('whitespace only returns empty', () => {
+    assertEquals(parseRefs('   '), []);
+  });
+
+  await t.step('mixed whitespace and commas returns empty', () => {
+    assertEquals(parseRefs('  ,  ,  '), []);
+  });
+});
+
+// =============================================================================
+// Comma-Separated Resolution Tests
+// =============================================================================
+
+Deno.test('DFSProjectResolver - comma-separated resolution', async (t) => {
+  await t.step('resolves comma-separated package names', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+      '/projects/app3/deno.jsonc': JSON.stringify({ name: '@test/app3' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/app2');
+
+    assertEquals(projects.length, 2);
+    const names = projects.map((p) => p.name).sort();
+    assertEquals(names, ['@test/app1', '@test/app2']);
+  });
+
+  await t.step('resolves three comma-separated packages', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+      '/projects/app3/deno.jsonc': JSON.stringify({ name: '@test/app3' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/app2,@test/app3');
+
+    assertEquals(projects.length, 3);
+  });
+
+  await t.step('preserves order of comma-separated refs', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app2,@test/app1');
+
+    assertEquals(projects.length, 2);
+    assertEquals(projects[0].name, '@test/app2');
+    assertEquals(projects[1].name, '@test/app1');
+  });
+
+  await t.step('deduplicates same project referenced twice', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/app1');
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app1');
+  });
+
+  await t.step('partial match returns found only', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/nonexistent');
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app1');
+  });
+
+  await t.step('all non-existent returns empty', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@nope1,@nope2');
+
+    assertEquals(projects.length, 0);
+  });
+});
+
+// =============================================================================
+// singleOnly Option Tests
+// =============================================================================
+
+Deno.test('DFSProjectResolver - singleOnly option', async (t) => {
+  await t.step('with zero results returns empty', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@nonexistent', { singleOnly: true });
+
+    assertEquals(projects.length, 0);
+  });
+
+  await t.step('with one result succeeds', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1', { singleOnly: true });
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app1');
+  });
+
+  await t.step('with two results throws MultipleProjectsError', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+
+    await assertRejects(
+      async () => await resolver.Resolve('@test/app1,@test/app2', { singleOnly: true }),
+      MultipleProjectsError,
+      'Expected single project but found 2',
+    );
+  });
+
+  await t.step('error includes count', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+      '/projects/app3/deno.jsonc': JSON.stringify({ name: '@test/app3' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+
+    try {
+      await resolver.Resolve('@test/app1,@test/app2,@test/app3', { singleOnly: true });
+    } catch (e) {
+      if (e instanceof MultipleProjectsError) {
+        assertEquals(e.count, 3);
+        return;
+      }
+      throw e;
+    }
+    throw new Error('Expected MultipleProjectsError');
+  });
+
+  await t.step('error includes original ref', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+
+    try {
+      await resolver.Resolve('@test/app1,@test/app2', { singleOnly: true });
+    } catch (e) {
+      if (e instanceof MultipleProjectsError) {
+        assertEquals(e.ref, '@test/app1,@test/app2');
+        return;
+      }
+      throw e;
+    }
+    throw new Error('Expected MultipleProjectsError');
+  });
+
+  await t.step('with directory walk throws if multi', async () => {
+    const dfs = await createTestDFS({
+      '/projects/libs/lib1/deno.jsonc': JSON.stringify({ name: '@test/lib1' }),
+      '/projects/libs/lib2/deno.jsonc': JSON.stringify({ name: '@test/lib2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+
+    await assertRejects(
+      async () => await resolver.Resolve('/projects/libs', { singleOnly: true }),
+      MultipleProjectsError,
+    );
+  });
+
+  await t.step('false allows multiple', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/app2', { singleOnly: false });
+
+    assertEquals(projects.length, 2);
+  });
+});
+
+// =============================================================================
+// useFirst Option Tests
+// =============================================================================
+
+Deno.test('DFSProjectResolver - useFirst option', async (t) => {
+  await t.step('with zero results returns empty', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@nonexistent', { useFirst: true });
+
+    assertEquals(projects.length, 0);
+  });
+
+  await t.step('with one result returns it', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1', { useFirst: true });
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app1');
+  });
+
+  await t.step('with multiple returns first only', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+      '/projects/app3/deno.jsonc': JSON.stringify({ name: '@test/app3' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/app2,@test/app3', { useFirst: true });
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app1');
+  });
+
+  await t.step('preserves resolution order', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app2,@test/app1', { useFirst: true });
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app2');
+  });
+
+  await t.step('with directory returns first found', async () => {
+    const dfs = await createTestDFS({
+      '/projects/libs/lib1/deno.jsonc': JSON.stringify({ name: '@test/lib1' }),
+      '/projects/libs/lib2/deno.jsonc': JSON.stringify({ name: '@test/lib2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('/projects/libs', { useFirst: true });
+
+    assertEquals(projects.length, 1);
+    assertExists(projects[0].name);
+  });
+
+  await t.step('with undefined returns first project', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve(undefined, { useFirst: true });
+
+    assertEquals(projects.length, 1);
+    assertExists(projects[0].name);
+  });
+
+  await t.step('takes precedence over singleOnly', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    // Both options true - useFirst wins, no error thrown
+    const projects = await resolver.Resolve('@test/app1,@test/app2', {
+      useFirst: true,
+      singleOnly: true,
+    });
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app1');
+  });
+});
+
+// =============================================================================
+// Combined Options & Backward Compatibility Tests
+// =============================================================================
+
+Deno.test('DFSProjectResolver - backward compatibility', async (t) => {
+  await t.step('options object is optional', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app/deno.jsonc': JSON.stringify({ name: '@test/app' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app');
+
+    assertEquals(projects.length, 1);
+  });
+
+  await t.step('empty options object uses defaults', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app1/deno.jsonc': JSON.stringify({ name: '@test/app1' }),
+      '/projects/app2/deno.jsonc': JSON.stringify({ name: '@test/app2' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app1,@test/app2', {});
+
+    assertEquals(projects.length, 2);
+  });
+
+  await t.step('single ref works same as before', async () => {
+    const dfs = await createTestDFS({
+      '/projects/app/deno.jsonc': JSON.stringify({ name: '@test/app' }),
+    });
+
+    const resolver = new DFSProjectResolver(dfs);
+    const projects = await resolver.Resolve('@test/app');
+
+    assertEquals(projects.length, 1);
+    assertEquals(projects[0].name, '@test/app');
+  });
 });
 
 // =============================================================================

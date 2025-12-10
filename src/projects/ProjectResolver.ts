@@ -17,6 +17,7 @@
  * │  deno.json(c) path        │  Load single project from config       │
  * │  Directory path           │  Walk directory for all projects       │
  * │  Package name             │  Search discovered projects by name    │
+ * │  Comma-separated refs     │  Resolve each ref, deduplicate         │
  * └─────────────────────────────────────────────────────────────────────┘
  * ```
  *
@@ -35,6 +36,15 @@
  *
  * // Resolve by directory
  * const projects = await resolver.Resolve('./packages/apps');
+ *
+ * // Resolve multiple comma-separated refs
+ * const multiProjects = await resolver.Resolve('@pkg/a,@pkg/b');
+ *
+ * // Ensure single result (throws if multiple)
+ * const [single] = await resolver.Resolve('@pkg', { singleOnly: true });
+ *
+ * // Get first match only
+ * const [first] = await resolver.Resolve('./packages/', { useFirst: true });
  * ```
  *
  * @module
@@ -60,6 +70,43 @@ export interface ProjectResolveOptions {
    * @default true
    */
   includeNameless?: boolean;
+
+  /**
+   * Require exactly one project to be resolved.
+   *
+   * When true, throws an error if the resolution returns more than one project.
+   * Useful for commands that operate on a single project only.
+   *
+   * Note: `useFirst` takes precedence - if both are true, useFirst wins (no error).
+   *
+   * @default false
+   */
+  singleOnly?: boolean;
+
+  /**
+   * Return only the first matched project.
+   *
+   * When true, stops resolution early and returns only the first project found.
+   * Takes precedence over singleOnly (no error thrown for multiple matches).
+   *
+   * @default false
+   */
+  useFirst?: boolean;
+}
+
+/**
+ * Error thrown when singleOnly option is violated.
+ */
+export class MultipleProjectsError extends Error {
+  constructor(
+    public readonly ref: string | undefined,
+    public readonly count: number,
+  ) {
+    super(
+      `Expected single project but found ${count} for ref: ${ref ?? '(all)'}`,
+    );
+    this.name = 'MultipleProjectsError';
+  }
 }
 
 /**
@@ -97,12 +144,32 @@ export interface ProjectResolver {
    * - deno.json(c) path → [single project]
    * - directory path → walk directory, return [all projects found]
    * - package name → search discovered projects for match
+   * - comma-separated → resolve each, deduplicate by configPath
    *
-   * @param ref - Project name, path to deno.json(c), or directory path
+   * @param ref - Project name, path to deno.json(c), directory path, or comma-separated list
    * @param options - Resolution options
    * @returns Array of 0 to many ProjectRef entries
+   * @throws {MultipleProjectsError} When singleOnly is true and multiple projects found
    */
   Resolve(ref?: string, options?: ProjectResolveOptions): Promise<ProjectRef[]>;
+}
+
+/**
+ * Parse a comma-separated ref string into individual refs.
+ *
+ * Handles edge cases:
+ * - Trims whitespace around each ref
+ * - Filters out empty segments (from double commas, leading/trailing commas)
+ * - Returns empty array for whitespace-only input
+ *
+ * @param ref - The ref string to parse
+ * @returns Array of individual refs
+ */
+export function parseRefs(ref: string): string[] {
+  return ref
+    .split(',')
+    .map((r) => r.trim())
+    .filter((r) => r.length > 0);
 }
 
 /**
@@ -134,12 +201,64 @@ export class DFSProjectResolver implements ProjectResolver {
     options?: ProjectResolveOptions,
   ): Promise<ProjectRef[]> {
     const includeNameless = options?.includeNameless ?? true;
+    const singleOnly = options?.singleOnly ?? false;
+    const useFirst = options?.useFirst ?? false;
+
+    let results: ProjectRef[];
 
     // No ref provided - discover all projects
     if (!ref) {
-      return await this.discoverProjects(includeNameless);
+      results = await this.discoverProjects(includeNameless, useFirst);
+    } else {
+      // Parse comma-separated refs
+      const refs = parseRefs(ref);
+
+      if (refs.length === 0) {
+        // Input was whitespace/commas only
+        results = [];
+      } else if (refs.length === 1) {
+        // Single ref - use existing logic
+        results = await this.resolveSingleRef(refs[0], includeNameless, useFirst);
+      } else {
+        // Multiple refs - resolve each and deduplicate
+        results = await this.resolveMultipleRefs(refs, includeNameless, useFirst);
+      }
     }
 
+    // Apply result options
+    return this.applyResultOptions(results, ref, singleOnly, useFirst);
+  }
+
+  /**
+   * Apply singleOnly and useFirst options to results.
+   */
+  private applyResultOptions(
+    results: ProjectRef[],
+    ref: string | undefined,
+    singleOnly: boolean,
+    useFirst: boolean,
+  ): ProjectRef[] {
+    // useFirst takes precedence - return first only (no error)
+    if (useFirst) {
+      return results.length > 0 ? [results[0]] : [];
+    }
+
+    // singleOnly - throw if multiple
+    if (singleOnly && results.length > 1) {
+      throw new MultipleProjectsError(ref, results.length);
+    }
+
+    return results;
+  }
+
+  /**
+   * Resolve a single ref (not comma-separated).
+   */
+  private async resolveSingleRef(
+    ref: string,
+    includeNameless: boolean,
+    useFirst: boolean,
+  ): Promise<ProjectRef[]> {
     // Check if ref is a direct path to a deno.json(c) file
     if (this.isDenoConfig(ref)) {
       const project = await this.loadProjectFromPath(ref);
@@ -169,15 +288,52 @@ export class DFSProjectResolver implements ProjectResolver {
     // Check if ref is a directory to walk for multiple projects
     const isDirectory = await this.isDirectory(ref);
     if (isDirectory) {
-      return await this.walkDirectory(ref, includeNameless);
+      return await this.walkDirectory(ref, includeNameless, useFirst);
     }
 
     // Try to resolve by project name - search all discovered projects
-    return await this.resolveByName(ref, includeNameless);
+    return await this.resolveByName(ref, includeNameless, useFirst);
+  }
+
+  /**
+   * Resolve multiple refs and deduplicate by configPath.
+   */
+  private async resolveMultipleRefs(
+    refs: string[],
+    includeNameless: boolean,
+    useFirst: boolean,
+  ): Promise<ProjectRef[]> {
+    const results: ProjectRef[] = [];
+    const seen = new Set<string>();
+
+    for (const ref of refs) {
+      // Early exit if useFirst and we have a result
+      if (useFirst && results.length > 0) {
+        break;
+      }
+
+      const projects = await this.resolveSingleRef(ref, includeNameless, false);
+
+      for (const project of projects) {
+        // Deduplicate by configPath
+        if (!seen.has(project.configPath)) {
+          seen.add(project.configPath);
+          results.push(project);
+
+          // Early exit if useFirst
+          if (useFirst) {
+            break;
+          }
+        }
+      }
+    }
+
+    return results;
   }
 
   private async discoverProjects(
     includeNameless: boolean,
+    useFirst: boolean,
   ): Promise<ProjectRef[]> {
     const projects: ProjectRef[] = [];
 
@@ -194,6 +350,11 @@ export class DFSProjectResolver implements ProjectResolver {
       if (!project.name && !includeNameless) continue;
 
       projects.push(project);
+
+      // Early exit if useFirst
+      if (useFirst) {
+        break;
+      }
     }
 
     return projects;
@@ -202,6 +363,7 @@ export class DFSProjectResolver implements ProjectResolver {
   private async walkDirectory(
     dirPath: string,
     includeNameless: boolean,
+    useFirst: boolean,
   ): Promise<ProjectRef[]> {
     const projects: ProjectRef[] = [];
     // Normalize: remove leading ./ or ensure consistent format, add trailing /
@@ -228,6 +390,11 @@ export class DFSProjectResolver implements ProjectResolver {
       if (!project.name && !includeNameless) continue;
 
       projects.push(project);
+
+      // Early exit if useFirst
+      if (useFirst) {
+        break;
+      }
     }
 
     return projects;
@@ -236,14 +403,20 @@ export class DFSProjectResolver implements ProjectResolver {
   private async resolveByName(
     ref: string,
     includeNameless: boolean,
+    useFirst: boolean,
   ): Promise<ProjectRef[]> {
-    const projects = await this.discoverProjects(true);
+    const projects = await this.discoverProjects(true, false);
     const matches: ProjectRef[] = [];
 
     for (const project of projects) {
       if (project.name === ref) {
         if (!project.name && !includeNameless) continue;
         matches.push(project);
+
+        // Early exit if useFirst
+        if (useFirst) {
+          break;
+        }
       }
     }
 

@@ -1,20 +1,20 @@
 /**
- * Fmt command - format project code with deno fmt.
+ * Test command - run tests for a project with deno test.
  *
- * The projects:fmt command provides a unified way to format code in a project.
+ * The projects:[projectRef]:test command provides a unified way to run tests in a project.
  * It can be used standalone or as a building block in pipeline commands like build.
  *
  * ## Usage
  *
  * ```bash
- * # Format a project by package name
- * ftm projects fmt @myorg/my-package
+ * # Run tests for a project by package name
+ * ftm projects @myorg/my-package test
  *
- * # Check formatting without modifying (for CI)
- * ftm projects fmt @myorg/my-package --check
+ * # Run tests with watch mode
+ * ftm projects @myorg/my-package test --watch
  *
  * # Dry run to see what would execute
- * ftm projects fmt @myorg/my-package --dry-run
+ * ftm projects @myorg/my-package test --dry-run
  * ```
  *
  * @module
@@ -23,50 +23,62 @@
 import { z } from 'zod';
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../src/projects/ProjectResolver.ts';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 
 /**
- * Zod schema for fmt command flags.
+ * Segments schema for the test command.
  */
-const FmtFlagsSchema = z.object({
+const TestSegmentsSchema = z.object({
+  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+});
+
+type TestSegments = z.infer<typeof TestSegmentsSchema>;
+
+/**
+ * Zod schema for test command flags.
+ */
+const TestFlagsSchema = z.object({
   'dry-run': z.boolean().optional().describe(
     'Show what would run without executing',
   ),
   'verbose': z.boolean().optional().describe(
     'Show detailed output',
   ),
-  'check': z.boolean().optional().describe(
-    'Check formatting without modifying files',
+  'watch': z.boolean().optional().describe(
+    'Run in watch mode',
+  ),
+  'filter': z.string().optional().describe(
+    'Filter tests by name pattern',
   ),
 });
 
 /**
- * Zod schema for fmt command positional arguments.
+ * Zod schema for test command positional arguments.
  */
-const FmtArgsSchema = z.tuple([
-  z
-    .string()
-    .describe('Project name, path to deno.json(c), or directory')
-    .meta({ argName: 'project' }),
-]);
+const TestArgsSchema = z.tuple([]);
 
 /**
- * Typed parameter accessor for the fmt command.
+ * Typed parameter accessor for the test command.
  */
-class FmtCommandParams extends CommandParams<
-  z.infer<typeof FmtArgsSchema>,
-  z.infer<typeof FmtFlagsSchema>
+class TestCommandParams extends CommandParams<
+  z.infer<typeof TestArgsSchema>,
+  z.infer<typeof TestFlagsSchema>,
+  TestSegments
 > {
   get ProjectRef(): string {
-    return this.Arg(0)!;
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
     return this.Flag('verbose') ?? false;
   }
 
-  get Check(): boolean {
-    return this.Flag('check') ?? false;
+  get Watch(): boolean {
+    return this.Flag('watch') ?? false;
+  }
+
+  get Filter(): string | undefined {
+    return this.Flag('filter');
   }
 
   override get DryRun(): boolean {
@@ -75,12 +87,13 @@ class FmtCommandParams extends CommandParams<
 }
 
 export default Command(
-  'projects:fmt',
-  'Format project code with deno fmt.',
+  'projects:[projectRef]:test',
+  'Run tests for a project with deno test.',
 )
-  .Args(FmtArgsSchema)
-  .Flags(FmtFlagsSchema)
-  .Params(FmtCommandParams)
+  .Args(TestArgsSchema)
+  .Flags(TestFlagsSchema)
+  .Segments(TestSegmentsSchema)
+  .Params(TestCommandParams)
   .Services(async (_, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
     const dfs = await dfsCtx.GetExecutionDFS();
@@ -91,6 +104,11 @@ export default Command(
   })
   .Run(async ({ Params, Log, Services }) => {
     const resolver = Services.ProjectResolver;
+
+    if (!Params.ProjectRef) {
+      Log.Error('No project reference provided.');
+      return 1;
+    }
 
     try {
       const projects = await resolver.Resolve(Params.ProjectRef);
@@ -112,12 +130,15 @@ export default Command(
       const projectName = project.name ?? project.dir;
 
       if (Params.Verbose) {
-        Log.Info(`Formatting ${projectName}...`);
+        Log.Info(`Running tests for ${projectName}...`);
       }
 
-      const args = ['fmt'];
-      if (Params.Check) {
-        args.push('--check');
+      const args = ['test', '-A'];
+      if (Params.Watch) {
+        args.push('--watch');
+      }
+      if (Params.Filter) {
+        args.push('--filter', Params.Filter);
       }
 
       if (Params.DryRun) {
@@ -138,7 +159,7 @@ export default Command(
       const { code } = await cmd.output();
 
       if (Params.Verbose && code === 0) {
-        Log.Info(`Formatting complete.`);
+        Log.Info(`Tests complete.`);
       }
 
       return code;
