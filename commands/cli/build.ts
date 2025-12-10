@@ -15,7 +15,7 @@
  * │  4. Collect command metadata from commands/ directory              │
  * │  5. Write embedded-templates.json and embedded-command-entries.json│
  * │  6. Scaffold cli-build-static template with embedded artifacts     │
- * │  7. Output static entry point to .build/cli.ts                     │
+ * │  7. Output static entry point to .build/main.ts                    │
  * └─────────────────────────────────────────────────────────────────────┘
  * ```
  *

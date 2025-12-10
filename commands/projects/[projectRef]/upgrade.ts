@@ -17,9 +17,24 @@
  * # Filter by source type
  * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=config
  *
+ * # Filter by target project (only upgrade refs in @fathym/eac)
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=@fathym/eac
+ *
+ * # Combine source type and project filters
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=config,@fathym/eac
+ *
+ * # Filter by multiple projects (comma-separated)
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=@fathym/eac,@fathym/common
+ *
  * # Output as JSON for programmatic consumption
  * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --json
  * ```
+ *
+ * ## Filter Values
+ *
+ * The --filter flag accepts comma-separated values:
+ * - Source types: config, deps, template, docs, other
+ * - Project refs: package names (@scope/pkg), paths (./path), directories
  *
  * ## File Types
  *
@@ -45,6 +60,11 @@
  * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=config
  * ```
  *
+ * @example Upgrade only in specific project
+ * ```bash
+ * ftm projects @fathym/dfs upgrade 0.0.81-dfs-release --filter=@fathym/eac
+ * ```
+ *
  * @module
  */
 
@@ -65,6 +85,58 @@ const SOURCE_TYPES = ['config', 'deps', 'template', 'docs', 'other', 'all'] as c
 type SourceFilter = (typeof SOURCE_TYPES)[number];
 
 /**
+ * Check if a filter value is a source type.
+ */
+function isSourceType(value: string): value is SourceFilter {
+  return (SOURCE_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Parsed filter result containing source types and project refs.
+ */
+interface ParsedFilters {
+  sourceTypes: SourceFilter[];
+  projectRefs: string[];
+}
+
+/**
+ * Parse comma-separated filter values into source types and project refs.
+ *
+ * Filter values are classified as:
+ * - Source types: config, deps, template, docs, other, all
+ * - Project refs: everything else (package names, paths, directories)
+ *
+ * @example
+ * parseFilters('config,deps') => { sourceTypes: ['config', 'deps'], projectRefs: [] }
+ * parseFilters('@fathym/eac') => { sourceTypes: ['all'], projectRefs: ['@fathym/eac'] }
+ * parseFilters('config,@fathym/eac') => { sourceTypes: ['config'], projectRefs: ['@fathym/eac'] }
+ */
+function parseFilters(filter?: string): ParsedFilters {
+  if (!filter) {
+    return { sourceTypes: ['all'], projectRefs: [] };
+  }
+
+  const parts = filter.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
+  const sourceTypes: SourceFilter[] = [];
+  const projectRefs: string[] = [];
+
+  for (const part of parts) {
+    if (isSourceType(part)) {
+      sourceTypes.push(part);
+    } else {
+      projectRefs.push(part);
+    }
+  }
+
+  // Default to 'all' source types if none specified
+  if (sourceTypes.length === 0) {
+    sourceTypes.push('all');
+  }
+
+  return { sourceTypes, projectRefs };
+}
+
+/**
  * Segments schema for the upgrade command.
  */
 const UpgradeSegmentsSchema = z.object({
@@ -79,9 +151,9 @@ type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
 const UpgradeFlagsSchema = z.object({
   'dry-run': z.boolean().optional().describe('Preview changes without writing'),
   filter: z
-    .enum(SOURCE_TYPES)
+    .string()
     .optional()
-    .describe('Filter by source type (config, deps, template, docs, other, all)'),
+    .describe('Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)'),
   json: z.boolean().optional().describe('Output as JSON for programmatic consumption'),
 });
 
@@ -110,9 +182,9 @@ class UpgradeCommandParams extends CommandParams<
     return this.Arg(0)!;
   }
 
-  /** Filter by source type */
-  get Filter(): SourceFilter {
-    return (this.Flag('filter') as SourceFilter) ?? 'all';
+  /** Raw filter string (comma-separated source types and/or project refs) */
+  get Filter(): string | undefined {
+    return this.Flag('filter');
   }
 
   /** Whether to output as JSON */
@@ -128,7 +200,10 @@ interface UpgradeOutput {
   packageName: string;
   targetVersion: string;
   dryRun: boolean;
-  filter: SourceFilter;
+  filter: {
+    sourceTypes: SourceFilter[];
+    projectRefs: string[];
+  };
   results: UpgradeResult[];
   summary: {
     total: number;
@@ -186,11 +261,21 @@ export default Command(
         return 1;
       }
 
+      // Parse filter into source types and project refs
+      const parsedFilters = parseFilters(Params.Filter);
+
+      // Convert source types for the API
+      // 'all' is special - it means no source filter
+      const sourceFilterForApi = parsedFilters.sourceTypes.includes('all')
+        ? 'all' as const
+        : parsedFilters.sourceTypes.filter((t): t is PackageReference['source'] => t !== 'all');
+
       // Perform the upgrade
       const results = await upgradePackageReferences(packageName, ProjectResolver, {
         version: Params.Version,
         dryRun: Params.DryRun,
-        filter: Params.Filter === 'all' ? 'all' : (Params.Filter as PackageReference['source']),
+        sourceFilter: sourceFilterForApi,
+        projectFilter: parsedFilters.projectRefs,
       });
 
       // Calculate summary
@@ -202,7 +287,7 @@ export default Command(
         packageName,
         targetVersion: Params.Version,
         dryRun: Params.DryRun,
-        filter: Params.Filter,
+        filter: parsedFilters,
         results,
         summary: {
           total: results.length,

@@ -81,17 +81,51 @@ export async function loadGitignore(
 }
 
 /**
+ * Options for finding package references.
+ */
+export interface FindReferencesOptions {
+  /** Filter by source type(s) - single type, array of types, or 'all' (default) */
+  sourceFilter?: PackageReference['source'] | PackageReference['source'][] | 'all';
+  /** Filter by project refs - only include references from projects matching these refs */
+  projectFilter?: string[];
+}
+
+/**
  * Find all references to a package in the workspace.
  * Searches config files, .deps.ts files, templates, and documentation.
  * Respects .gitignore and always skips .git directories.
  * Only includes references from files within resolved projects.
+ *
+ * @param packageName - The package name to search for (e.g., '@fathym/dfs')
+ * @param resolver - Project resolver for discovering projects
+ * @param options - Optional filtering options
  */
 export async function findPackageReferences(
   packageName: string,
   resolver: DFSProjectResolver,
+  options?: FindReferencesOptions,
 ): Promise<PackageReference[]> {
   const references: PackageReference[] = [];
   const seenFiles = new Set<string>(); // Avoid duplicate entries
+
+  // Parse filter options
+  const sourceFilter = options?.sourceFilter ?? 'all';
+  const projectFilter = options?.projectFilter ?? [];
+
+  // Normalize source filter to array for easier checking
+  const sourceTypes: PackageReference['source'][] | 'all' = sourceFilter === 'all'
+    ? 'all'
+    : Array.isArray(sourceFilter)
+    ? sourceFilter
+    : [sourceFilter];
+
+  /**
+   * Check if a source type passes the filter.
+   */
+  function matchesSourceFilter(source: PackageReference['source']): boolean {
+    if (sourceTypes === 'all') return true;
+    return sourceTypes.includes(source);
+  }
 
   // Pattern to match: "jsr:@scope/name@version" with optional subpath (e.g., /build)
   // Group 1 = version (stops at / or quote/whitespace/comma)
@@ -116,6 +150,28 @@ export async function findPackageReferences(
       const normalizedDir = project.dir.replace(/\\/g, '/').replace(/^\//, '');
       projectMap.set(normalizedDir, { name: project.name, dir: normalizedDir });
     }
+  }
+
+  // Resolve project filter refs to a set of allowed project names
+  let allowedProjects: Set<string> | null = null;
+  if (projectFilter.length > 0) {
+    allowedProjects = new Set<string>();
+    for (const ref of projectFilter) {
+      const resolved = await resolver.Resolve(ref);
+      for (const project of resolved) {
+        if (project.name) {
+          allowedProjects.add(project.name);
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if a project name passes the project filter.
+   */
+  function matchesProjectFilter(projectName: string): boolean {
+    if (!allowedProjects) return true; // No filter = allow all
+    return allowedProjects.has(projectName);
   }
 
   /**
@@ -191,7 +247,8 @@ export async function findPackageReferences(
 
   /**
    * Search a file for package references.
-   * Only adds references if the file belongs to a project (has projectName).
+   * Only adds references if the file belongs to a project (has projectName)
+   * and passes both source and project filters.
    */
   async function searchFile(filePath: string, projectName: string): Promise<void> {
     if (seenFiles.has(filePath)) return;
@@ -199,12 +256,18 @@ export async function findPackageReferences(
 
     if (shouldSkip(filePath)) return;
 
+    // Check project filter
+    if (!matchesProjectFilter(projectName)) return;
+
+    // Check source filter
+    const source = getSourceType(filePath);
+    if (!matchesSourceFilter(source)) return;
+
     try {
       const content = await readFileContent(filePath);
       if (!content) return;
 
       const lines = content.split('\n');
-      const source = getSourceType(filePath);
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -289,8 +352,10 @@ export interface UpgradeOptions {
   version: string;
   /** If true, don't write changes */
   dryRun?: boolean;
-  /** Filter by source type */
-  filter?: PackageReference['source'] | 'all';
+  /** Filter by source type(s) - single type, array of types, or 'all' (default) */
+  sourceFilter?: PackageReference['source'] | PackageReference['source'][] | 'all';
+  /** Filter by project refs - only upgrade references in projects matching these refs */
+  projectFilter?: string[];
 }
 
 /**
@@ -302,7 +367,7 @@ export async function upgradePackageReferences(
   resolver: DFSProjectResolver,
   options: UpgradeOptions,
 ): Promise<UpgradeResult[]> {
-  const { version, dryRun = false, filter = 'all' } = options;
+  const { version, dryRun = false, sourceFilter = 'all', projectFilter = [] } = options;
   const results: UpgradeResult[] = [];
 
   const dfs = resolver.DFS;
@@ -331,13 +396,11 @@ export async function upgradePackageReferences(
     await dfs.WriteFile(filePath, content);
   }
 
-  // Find all references
-  const references = await findPackageReferences(packageName, resolver);
-
-  // Filter by source type if specified
-  const filteredRefs = filter === 'all'
-    ? references
-    : references.filter((ref) => ref.source === filter);
+  // Find all references with filters applied
+  const filteredRefs = await findPackageReferences(packageName, resolver, {
+    sourceFilter,
+    projectFilter,
+  });
 
   // Group references by file for efficient batch updates
   const refsByFile = new Map<string, PackageReference[]>();

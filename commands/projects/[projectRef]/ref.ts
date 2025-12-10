@@ -14,6 +14,15 @@
  *
  * # Output as JSON for programmatic consumption
  * ftm projects @fathym/dfs ref --json
+ *
+ * # Filter references by source type
+ * ftm projects @fathym/dfs ref --filter=config
+ *
+ * # Filter references by target project
+ * ftm projects @fathym/dfs ref --filter=@fathym/eac
+ *
+ * # Combine filters
+ * ftm projects @fathym/dfs ref --filter=config,@fathym/eac
  * ```
  *
  * ## Output
@@ -23,6 +32,13 @@
  * - Git remote and current branch
  * - Available tasks and whether build task exists
  * - JSR versions grouped by channel (production, integration, feature branches)
+ * - Files that reference this package (can be filtered)
+ *
+ * ## Filter Values
+ *
+ * The --filter flag accepts comma-separated values:
+ * - Source types: config, deps, template, docs, other
+ * - Project refs: package names (@scope/pkg), paths (./path), directories
  *
  * @example Get project details
  * ```bash
@@ -32,6 +48,11 @@
  * @example Get JSON output for scripting
  * ```bash
  * ftm projects @fathym/dfs ref --json
+ * ```
+ *
+ * @example Filter references to config files only
+ * ```bash
+ * ftm projects @fathym/dfs ref --filter=config
  * ```
  *
  * @module
@@ -48,6 +69,55 @@ import {
 } from '../../../src/projects/PackageReferences.ts';
 
 /**
+ * Valid source types for filtering.
+ */
+const SOURCE_TYPES = ['config', 'deps', 'template', 'docs', 'other', 'all'] as const;
+type SourceFilter = (typeof SOURCE_TYPES)[number];
+
+/**
+ * Check if a filter value is a source type.
+ */
+function isSourceType(value: string): value is SourceFilter {
+  return (SOURCE_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Parsed filter result containing source types and project refs.
+ */
+interface ParsedFilters {
+  sourceTypes: SourceFilter[];
+  projectRefs: string[];
+}
+
+/**
+ * Parse comma-separated filter values into source types and project refs.
+ */
+function parseFilters(filter?: string): ParsedFilters {
+  if (!filter) {
+    return { sourceTypes: ['all'], projectRefs: [] };
+  }
+
+  const parts = filter.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
+  const sourceTypes: SourceFilter[] = [];
+  const projectRefs: string[] = [];
+
+  for (const part of parts) {
+    if (isSourceType(part)) {
+      sourceTypes.push(part);
+    } else {
+      projectRefs.push(part);
+    }
+  }
+
+  // Default to 'all' source types if none specified
+  if (sourceTypes.length === 0) {
+    sourceTypes.push('all');
+  }
+
+  return { sourceTypes, projectRefs };
+}
+
+/**
  * Segments schema for the ref command.
  * Receives the project reference from the dynamic [projectRef] segment.
  */
@@ -62,6 +132,10 @@ type RefSegments = z.infer<typeof RefSegmentsSchema>;
  */
 const RefFlagsSchema = z.object({
   json: z.boolean().optional().describe('Output as JSON for programmatic consumption'),
+  filter: z
+    .string()
+    .optional()
+    .describe('Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)'),
 });
 
 /**
@@ -86,6 +160,11 @@ class RefCommandParams extends CommandParams<
   /** Whether to output as JSON */
   get Json(): boolean {
     return this.Flag('json') ?? false;
+  }
+
+  /** Raw filter string (comma-separated source types and/or project refs) */
+  get Filter(): string | undefined {
+    return this.Flag('filter');
   }
 }
 
@@ -179,7 +258,10 @@ interface RefOutput {
   referencedBy: PackageReference[];
 }
 
-export default Command('projects:[projectRef]:ref', 'Display ProjectRef details for a resolved project.')
+export default Command(
+  'projects:[projectRef]:ref',
+  'Display ProjectRef details for a resolved project.',
+)
   .Args(RefArgsSchema)
   .Flags(RefFlagsSchema)
   .Segments(RefSegmentsSchema)
@@ -231,9 +313,20 @@ export default Command('projects:[projectRef]:ref', 'Display ProjectRef details 
       const hasBuild = project.tasks ? Object.hasOwn(project.tasks, 'build') : false;
       const tasks = project.tasks ? Object.keys(project.tasks) : [];
 
+      // Parse filter for reference lookup
+      const parsedFilters = parseFilters(Params.Filter);
+
+      // Convert source types for the API
+      const sourceFilterForApi = parsedFilters.sourceTypes.includes('all')
+        ? 'all' as const
+        : parsedFilters.sourceTypes.filter((t): t is PackageReference['source'] => t !== 'all');
+
       // Find all references to this package in the workspace
       const referencedBy = project.name
-        ? await findPackageReferences(project.name, ProjectResolver)
+        ? await findPackageReferences(project.name, ProjectResolver, {
+            sourceFilter: sourceFilterForApi,
+            projectFilter: parsedFilters.projectRefs,
+          })
         : [];
 
       // Build output

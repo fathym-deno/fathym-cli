@@ -7,9 +7,7 @@
  * @module
  */
 
-import type { CommandModuleMetadata } from '@fathym/cli';
+import { Group } from '@fathym/cli';
 
-export default {
-  Name: 'install',
-  Description: 'Installation commands and utilities',
-} as CommandModuleMetadata;
+export default Group('install')
+  .Description('Installation commands and utilities');

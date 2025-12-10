@@ -12,7 +12,8 @@ export default CLI(
 )
   .Commands(['./commands', 'jsr:@fathym/ftm@0/commands'])
   .ConfigDFS('.ftm')
-  .Plugins(['jsr:@fathym/cli-mcp-server/plugin'])
+  // NOTE: .Plugins() not yet implemented in CLIModuleBuilder
+  // .Plugins(['jsr:@fathym/cli-mcp-server/plugin'])
   .Templates('./templates')
   .InitCommand((cmd) =>
     cmd

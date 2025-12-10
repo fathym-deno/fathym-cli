@@ -87,12 +87,12 @@ The CLI supports flexible project reference resolution for commands that operate
 
 ### Reference Types
 
-| Input | Resolution |
-| ----- | ---------- |
-| `@scope/pkg` | Resolve by package name |
-| `./path/deno.jsonc` | Direct config file path |
-| `./packages/app` | Directory with deno.json(c) |
-| `@pkg/a,@pkg/b` | Multiple comma-separated refs |
+| Input               | Resolution                    |
+| ------------------- | ----------------------------- |
+| `@scope/pkg`        | Resolve by package name       |
+| `./path/deno.jsonc` | Direct config file path       |
+| `./packages/app`    | Directory with deno.json(c)   |
+| `@pkg/a,@pkg/b`     | Multiple comma-separated refs |
 
 ### Multi-Project Operations
 
@@ -113,12 +113,12 @@ ftm projects ./packages/ build --first
 
 Commands using the `DFSProjectResolver` support these options:
 
-| Option | Description |
-| ------ | ----------- |
-| `--all` | Run on all matched projects |
-| `--first` | Run on first matched project only |
+| Option       | Description                            |
+| ------------ | -------------------------------------- |
+| `--all`      | Run on all matched projects            |
+| `--first`    | Run on first matched project only      |
 | `singleOnly` | (API) Throw if multiple projects found |
-| `useFirst` | (API) Return only first match |
+| `useFirst`   | (API) Return only first match          |
 
 ### API Usage
 
