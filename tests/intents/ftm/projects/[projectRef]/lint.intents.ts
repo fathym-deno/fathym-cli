@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import LintCommand from '../../../../../commands/projects/[projectRef]/lint.ts';
 
 const cmd = LintCommand.Build();
-const origin = import.meta.resolve('../../../../../.cli.json');
+const origin = import.meta.resolve('../../../../../.cli.ts');
 
 CommandIntents('projects:[projectRef]:lint Command Suite', cmd, origin)
   .Intent('Fails when project not found', (int) =>

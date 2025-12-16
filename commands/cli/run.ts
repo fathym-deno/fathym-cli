@@ -10,9 +10,9 @@
  * ```
  * ┌─────────────────────────────────────────────────────────────────────┐
  * │  1. Resolve DFS context (execution dir or --config path)           │
- * │  2. Scaffold cli-run template to .temp/cli-runner.ts               │
- * │  3. Build CLI args: .cli.json path + forwarded args + flags        │
- * │  4. Execute `deno run -A .temp/cli-runner.ts [args]`               │
+ * │  2. Scaffold cli-run template to .temp/dev.ts                      │
+ * │  3. Build CLI args: .cli.ts path + forwarded args + flags        │
+ * │  4. Execute `deno run -A .temp/dev.ts [args]`                      │
  * │  5. Forward exit code from CLI process                             │
  * └─────────────────────────────────────────────────────────────────────┘
  * ```
@@ -23,7 +23,7 @@
  * (except `--config`) are forwarded to the target command:
  *
  * ```bash
- * ftm run hello world --loud --config=./my-cli/.cli.json
+ * ftm run hello world --loud --config=./my-cli/.cli.ts
  *          ↓     ↓      ↓           ↓
  *      command  arg   flag    (not forwarded)
  * ```
@@ -53,7 +53,7 @@
  *
  * @example Run command from a specific project
  * ```bash
- * ftm run hello --config=./my-cli/.cli.json
+ * ftm run hello --config=./my-cli/.cli.ts
  * ```
  *
  * @module
@@ -85,7 +85,7 @@ const RunArgsSchema = z
  * Uses `.passthrough()` to allow any additional flags, which
  * are forwarded to the target command.
  *
- * @property config - Path to .cli.json (not forwarded to target)
+ * @property config - Path to .cli.ts (not forwarded to target)
  */
 const RunFlagsSchema = z
   .object({
@@ -104,7 +104,7 @@ class RunParams extends CommandParams<
   z.infer<typeof RunFlagsSchema>
 > {
   /**
-   * Override path to .cli.json configuration.
+   * Override path to .cli.ts configuration.
    * This flag is consumed by run and not forwarded to target.
    */
   get ConfigPath(): string | undefined {
@@ -170,9 +170,9 @@ export default Command('run', 'Run a specific command in a CLI project')
     };
   })
   .Run(async ({ Params, Log, Services }) => {
-    const outputFile = './.temp/cli-runner.ts';
+    const outputFile = './.temp/dev.ts';
 
-    Log.Info(`📦 Scaffolding runner script → ${outputFile}`);
+    Log.Info(`📦 Scaffolding dev runner → ${outputFile}`);
 
     await Services.Scaffolder.Scaffold({
       templateName: 'cli-run',
@@ -180,7 +180,7 @@ export default Command('run', 'Run a specific command in a CLI project')
     });
 
     const cliArgs = [
-      await Services.CLIDFS.ResolvePath('./.cli.json'),
+      await Services.CLIDFS.ResolvePath('./.cli.ts'),
       ...Params.ForwardedArgs,
       ...Params.ForwardedFlags,
     ];

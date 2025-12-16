@@ -68,7 +68,7 @@ export const ScriptsArgsSchema = z.tuple([]);
 /**
  * Zod schema for scripts command flags.
  *
- * @property config - Path to .cli.json configuration
+ * @property config - Path to .cli.ts configuration
  * @property repo - GitHub repository (owner/repo format)
  * @property output - Output directory for scripts
  * @property installDir - Default install directory in generated scripts
@@ -78,7 +78,7 @@ export const ScriptsFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.json (default: ./.cli.json)'),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     repo: z
       .string()
       .optional()

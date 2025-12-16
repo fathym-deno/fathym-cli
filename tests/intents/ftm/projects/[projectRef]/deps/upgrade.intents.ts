@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import UpgradeCommand from '../../../../../../commands/projects/[projectRef]/deps/upgrade.ts';
 
 const cmd = UpgradeCommand.Build();
-const origin = import.meta.resolve('../../../../../../.cli.json');
+const origin = import.meta.resolve('../../../../../../.cli.ts');
 
 // Note: The deps:upgrade command requires network access to query registries,
 // so most tests use dry-run mode to verify command structure without making

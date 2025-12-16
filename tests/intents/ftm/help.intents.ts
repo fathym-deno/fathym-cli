@@ -1,20 +1,15 @@
-import { CommandIntents } from '@fathym/cli';
-import RunCommand from '../../../commands/cli/run.ts';
+import { CLIIntents } from '@fathym/cli';
 
 // Help intent suite validates root and command-level help output
 // for the scaffolded tests/.temp/my-cli project.
-CommandIntents(
-  'Help Command Suite',
-  RunCommand.Build(),
-  import.meta.resolve('../../../.cli.json'),
-)
+// Path is relative to cwd (project root) since that's where tests run from
+CLIIntents('Help Command Suite', './tests/.temp/my-cli/.cli.ts')
   // Root help - verify groups appear
   .Intent('Show root help', (int) =>
     int
       .Args(['--help'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
-        'My CLI', // CLI name from .cli.json
+        'My CLI', // CLI name from .cli.ts
         'Usage:',
         'Available Commands',
         'hello - hello - Prints a friendly greeting.',
@@ -28,7 +23,6 @@ CommandIntents(
   .Intent("Show 'hello' command help", (int) =>
     int
       .Args(['hello', '--help'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Prints a friendly greeting.',
         'Args:',
@@ -42,7 +36,6 @@ CommandIntents(
   .Intent("Show 'secondary' group help", (int) =>
     int
       .Args(['secondary', '--help'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Group: secondary',
         'Secondary commands for additional functionality',
@@ -54,7 +47,6 @@ CommandIntents(
   .Intent("Show 'secondary/wave' command help", (int) =>
     int
       .Args(['secondary/wave', '--help'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'Waves at a friend with optional excitement.',
         'Args:',
@@ -69,7 +61,6 @@ CommandIntents(
   .Intent("Show 'manage' command+group help (same-named)", (int) =>
     int
       .Args(['manage', '--help'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         // Command section
         'Show management status and options.',
@@ -85,7 +76,6 @@ CommandIntents(
   .Intent("Show 'manage/users' command help", (int) =>
     int
       .Args(['manage/users', '--help'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
       .ExpectLogs(
         'List and manage users.',
         'Flags:',
@@ -93,44 +83,4 @@ CommandIntents(
         '--dry-run - Show what would be done without doing it',
       )
       .ExpectExit(0))
-  // // === Schema-driven help validation ===
-  // // These intents validate help output against actual Zod schemas
-  // .Intent("Schema-validate 'hello' help args and flags", (int) =>
-  //   int
-  //     .Args(['hello', '--help'])
-  //     .Flags({ config: './tests/.temp/my-cli/.cli.json' })
-  //     .ExpectLogs(
-  //       'Args:',
-  //       ...helloArgs.map(formatArgHelpLine),
-  //       'Flags:',
-  //       ...helloFlags.map(formatFlagHelpLine)
-  //     )
-  //     .ExpectExit(0)
-  // )
-  // .Intent("Schema-validate 'wave' help args and flags", (int) =>
-  //   int
-  //     .Args(['wave', '--help'])
-  //     .Flags({ config: './tests/.temp/my-cli/.cli.json' })
-  //     .ExpectLogs(
-  //       'Args:',
-  //       ...waveArgs.map(formatArgHelpLine),
-  //       'Flags:',
-  //       ...waveFlags.map(formatFlagHelpLine)
-  //     )
-  //     .ExpectExit(0)
-  // )
   .Run();
-
-// import {
-//   HelloArgsSchema,
-//   HelloFlagsSchema,
-// } from '../../.temp/my-cli/commands/hello.ts';
-// import {
-//   WaveArgsSchema,
-//   WaveFlagsSchema,
-// } from '../../.temp/my-cli/commands/wave.ts';
-// // Extract schema metadata for validation
-// const helloArgs = extractArgMeta(HelloArgsSchema);
-// const helloFlags = extractFlagMeta(HelloFlagsSchema);
-// const waveArgs = extractArgMeta(WaveArgsSchema);
-// const waveFlags = extractFlagMeta(WaveFlagsSchema);

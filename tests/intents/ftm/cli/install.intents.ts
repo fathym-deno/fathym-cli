@@ -4,13 +4,13 @@ import InstallCommand from '../../../../commands/cli/install.ts';
 CommandIntents(
   'Install Command Suite',
   InstallCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Install CLI binary to system path', (int) =>
     int
       .Args([])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
       })
       .ExpectLogs(
         '📦 Found binary', // binary location detection

@@ -1,7 +1,7 @@
 import { CommandIntent } from '@fathym/cli';
 import UsersCommand from '../../commands/manage/users.ts';
 
-const origin = import.meta.resolve('../../.cli.json');
+const origin = import.meta.resolve('../../.cli.ts');
 
 // ✅ Default users list (no flags)
 CommandIntent('lists users by default', UsersCommand, origin)

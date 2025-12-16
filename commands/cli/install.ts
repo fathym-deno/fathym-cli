@@ -3,14 +3,14 @@
  *
  * The install command takes a compiled CLI binary from `.dist/exe/` and copies
  * it to a target directory (default: `./.bin` or user home). It also creates
- * shell/batch script aliases for additional tokens defined in `.cli.json`.
+ * shell/batch script aliases for additional tokens defined in `.cli.ts`.
  *
  * ## Execution Flow
  *
  * ```
  * ┌─────────────────────────────────────────────────────────────────────┐
  * │  1. Resolve config DFS and install DFS (project or home)           │
- * │  2. Read .cli.json to get binary name from Tokens[0]               │
+ * │  2. Read .cli.ts to get binary name from Tokens[0]               │
  * │  3. Detect target from --target flag or auto-detect from OS/arch   │
  * │  4. Locate binary in .dist/exe/<target>/ or .dist/exe/             │
  * │  5. Copy binary to install directory                               │
@@ -42,7 +42,7 @@
  *
  * ## Alias Scripts
  *
- * When `.cli.json` defines multiple tokens (e.g., `["my-cli", "mc"]`),
+ * When `.cli.ts` defines multiple tokens (e.g., `["my-cli", "mc"]`),
  * the first token becomes the binary name and subsequent tokens get
  * wrapper scripts:
  *
@@ -75,7 +75,7 @@
  *
  * @example Install from specific project
  * ```bash
- * ftm cli install --config=./my-cli/.cli.json
+ * ftm cli install --config=./my-cli/.cli.ts
  * ```
  *
  * @example Install specific target (override auto-detection)
@@ -87,8 +87,9 @@
  */
 
 import { dirname } from '@std/path';
+import { toFileUrl } from '@std/path/to-file-url';
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, CLIModuleBuilder, Command, CommandParams } from '@fathym/cli';
 import {
   detectTarget,
   findBinary,
@@ -107,7 +108,7 @@ export const InstallArgsSchema = z.tuple([]);
  * Zod schema for install command flags.
  *
  * @property to - Target installation directory
- * @property config - Path to .cli.json configuration
+ * @property config - Path to .cli.ts configuration
  * @property useHome - Use user home directory as DFS root
  * @property target - Override target auto-detection
  */
@@ -117,7 +118,7 @@ export const InstallFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.json (default: ./.cli.json)'),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     useHome: z
       .boolean()
       .optional()
@@ -148,7 +149,7 @@ export class InstallParams extends CommandParams<
   }
 
   /**
-   * Override path to .cli.json configuration.
+   * Override path to .cli.ts configuration.
    * Used to locate the compiled binary in .dist/.
    */
   get ConfigPath(): string | undefined {
@@ -210,16 +211,22 @@ export default Command(
   .Run(async ({ Log, Services, Params }) => {
     const { ConfigDFS, InstallDFS } = Services;
 
-    const configPath = await ConfigDFS.ResolvePath('.cli.json');
-    const configInfo = await ConfigDFS.GetFileInfo('.cli.json');
+    const configPath = await ConfigDFS.ResolvePath('.cli.ts');
+    const configInfo = await ConfigDFS.GetFileInfo('.cli.ts');
 
     if (!configInfo) {
       Log.Error(`❌ Could not find CLI config at: ${configPath}`);
       Deno.exit(1);
     }
 
-    const configRaw = await new Response(configInfo.Contents).text();
-    const config = JSON.parse(configRaw);
+    // Import CLI module to get config
+    const cliModuleUrl = toFileUrl(configPath).href;
+    let cliModule = (await import(cliModuleUrl)).default;
+    // Build the module if it's a builder
+    if (cliModule instanceof CLIModuleBuilder) {
+      cliModule = cliModule.Build();
+    }
+    const config = cliModule.Config ?? {};
     const tokens: string[] = config.Tokens ?? ['cli'];
 
     if (!tokens.length) {

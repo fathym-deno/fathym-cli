@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import BuildCommand from '../../../../../commands/projects/[projectRef]/build.ts';
 
 const cmd = BuildCommand.Build();
-const origin = import.meta.resolve('../../../../../.cli.json');
+const origin = import.meta.resolve('../../../../../.cli.ts');
 
 // Note: The fathym-cli project has a 'build' task defined, so tests run against
 // it will trigger full override mode (delegating to the project's build task).

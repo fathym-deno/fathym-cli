@@ -4,19 +4,19 @@ import BuildCommand from '../../../../commands/cli/build.ts';
 CommandIntents(
   'Build Command Suite',
   BuildCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Build CLI from scaffolded config', (int) =>
     int
       .Args([])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
       })
       .ExpectLogs(
         '📦 Embedded templates →',
         '📘 Embedded command entries →',
         '🧩 Scaffolder rendered build-static template to ./.build',
-        'Build complete! Run `ftm compile` on .build/cli.ts to finalize.',
+        'Build complete! Run `ftm compile` on .build/main.ts to finalize.',
       )
       .ExpectExit(0))
   .Run();

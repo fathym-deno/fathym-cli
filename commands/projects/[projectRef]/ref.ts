@@ -135,7 +135,9 @@ const RefFlagsSchema = z.object({
   filter: z
     .string()
     .optional()
-    .describe('Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)'),
+    .describe(
+      'Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)',
+    ),
 });
 
 /**
@@ -324,9 +326,9 @@ export default Command(
       // Find all references to this package in the workspace
       const referencedBy = project.name
         ? await findPackageReferences(project.name, ProjectResolver, {
-            sourceFilter: sourceFilterForApi,
-            projectFilter: parsedFilters.projectRefs,
-          })
+          sourceFilter: sourceFilterForApi,
+          projectFilter: parsedFilters.projectRefs,
+        })
         : [];
 
       // Build output

@@ -348,7 +348,7 @@ Deno.test('upgradePackageReferences - filters by source type', async () => {
   const configResults = await upgradePackageReferences(TEST_PKG, resolver, {
     version: TEST_PKG_V2,
     dryRun: true,
-    filter: 'config',
+    sourceFilter: 'config',
   });
 
   assertEquals(configResults.length, 1);
@@ -358,7 +358,7 @@ Deno.test('upgradePackageReferences - filters by source type', async () => {
   const depsResults = await upgradePackageReferences(TEST_PKG, resolver, {
     version: TEST_PKG_V2,
     dryRun: true,
-    filter: 'deps',
+    sourceFilter: 'deps',
   });
 
   assertEquals(depsResults.length, 1);

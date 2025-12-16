@@ -29,7 +29,7 @@ export default CLI(
       // ═══════════════════════════════════════════════════════════════════
       // Run logic: check for updates, then execute matched command
       // ═══════════════════════════════════════════════════════════════════
-      .Run(async ({ Services, Config, Log, Commands }) => {
+      .Run(async ({ Services, Config, Log, Commands, Params }) => {
         const { VersionResolver, VersionComparator } = Services;
 
         // Check for updates (silently ignore network errors)
@@ -56,9 +56,7 @@ export default CLI(
           // Silently ignore network errors - don't block command execution
         }
 
-        // Execute the matched command
-        // If we don't call this, the command never runs!
-        return await Commands!.$Command();
+        // Execute the matched command with original args and flags
+        return await Commands!.$Command(Params.Flags.args, Params.Flags.flags);
       })
-  )
-  .Build();
+  );

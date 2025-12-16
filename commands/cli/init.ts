@@ -21,8 +21,7 @@
  *
  * ```
  * <project-name>/
- * ├── .cli.json           # CLI identity (Name, Tokens, Version)
- * ├── .cli.init.ts        # IoC initialization hook
+ * ├── .cli.ts             # CLI configuration (fluent API)
  * ├── deno.jsonc          # Deno configuration and tasks
  * ├── .gitignore          # Standard ignores (.build/, .dist/, etc.)
  * ├── .vscode/

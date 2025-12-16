@@ -11,7 +11,7 @@
  * ┌─────────────────────────────────────────────────────────────────────┐
  * │  1. Resolve DFS context (execution dir or --config path)           │
  * │  2. Collect all templates from templates/ into JSON                │
- * │  3. Read .cli.json configuration                                   │
+ * │  3. Import .cli.ts module for configuration                        │
  * │  4. Collect command metadata from commands/ directory              │
  * │  5. Write embedded-templates.json and embedded-command-entries.json│
  * │  6. Scaffold cli-build-static template with embedded artifacts     │
@@ -23,7 +23,7 @@
  *
  * ```
  * .build/
- * ├── cli.ts                        # Static CLI entry point
+ * ├── main.ts                       # Static CLI entry point (production)
  * ├── EmbeddedCommandModules.ts     # Command module registry
  * ├── EmbeddedCLIFileSystemHooks.ts # Filesystem abstraction for embedded CLI
  * ├── embedded-templates.json       # All templates as JSON
@@ -46,7 +46,7 @@
  *
  * @example Build CLI with custom config path
  * ```bash
- * ftm build --config=./my-cli/.cli.json
+ * ftm build --config=./my-cli/.cli.ts
  * ```
  *
  * @example Build with custom templates directory
@@ -58,12 +58,14 @@
  */
 
 import { join } from '@std/path/join';
+import { toFileUrl } from '@std/path/to-file-url';
 import { pascalCase } from '@luca/cases';
 import { z } from 'zod';
 import { DFSFileHandler } from '@fathym/dfs';
 import {
   CLICommandEntry,
   CLIDFSContextManager,
+  CLIModuleBuilder,
   Command,
   CommandLog,
   CommandParams,
@@ -80,7 +82,7 @@ export const BuildArgsSchema = z.tuple([]);
 /**
  * Zod schema for build command flags.
  *
- * @property config - Path to .cli.json configuration file
+ * @property config - Path to .cli.ts configuration file
  * @property templates - Path to templates directory for embedding
  */
 export const BuildFlagsSchema = z
@@ -88,7 +90,7 @@ export const BuildFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.json (default: ./.cli.json)'),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     templates: z
       .string()
       .optional()
@@ -122,8 +124,8 @@ export class BuildParams extends CommandParams<
   }
 
   /**
-   * Override path to .cli.json configuration.
-   * When undefined, uses './.cli.json' in current directory.
+   * Override path to .cli.ts configuration.
+   * When undefined, uses './.cli.ts' in current directory.
    */
   get ConfigOverride(): string | undefined {
     return this.Flag('config');
@@ -167,7 +169,7 @@ export default Command('build', 'Prepare static CLI build folder')
     };
   })
   .Run(async ({ Log, Services }) => {
-    const { configPath, outDir, templatesDir } = Services.Details;
+    const { outDir, templatesDir } = Services.Details;
     const { BuildDFS, Scaffolder } = Services;
 
     const embeddedTemplatesPath = await collectTemplates(
@@ -178,10 +180,15 @@ export default Command('build', 'Prepare static CLI build folder')
       Log,
     );
 
-    const configInfo = await BuildDFS.GetFileInfo('.cli.json');
-    if (!configInfo) throw new Error(`❌ Could not read ${configPath}`);
-    const configText = await new Response(configInfo.Contents).text();
-    const config = JSON.parse(configText);
+    // Import CLI module to get config
+    const cliModulePath = await BuildDFS.ResolvePath('.cli.ts');
+    const cliModuleUrl = toFileUrl(cliModulePath).href;
+    let cliModule = (await import(cliModuleUrl)).default;
+    // Build the module if it's a builder
+    if (cliModule instanceof CLIModuleBuilder) {
+      cliModule = cliModule.Build();
+    }
+    const config = cliModule.Config ?? {};
 
     const commandsDir = config.Commands ?? './commands';
 
@@ -197,9 +204,6 @@ export default Command('build', 'Prepare static CLI build folder')
       Log,
     );
 
-    const hasInit = await BuildDFS.GetFileInfo('.cli.init.ts');
-    const importInit = hasInit ? '../.cli.init.ts' : undefined;
-
     await Scaffolder.Scaffold({
       templateName: 'cli-build-static',
       outputDir: outDir,
@@ -208,26 +212,25 @@ export default Command('build', 'Prepare static CLI build folder')
         embeddedEntriesPath,
         imports,
         modules,
-        importInitFn: importInit,
       },
     });
 
     Log.Info(`🧩 Scaffolder rendered build-static template to ${outDir}`);
     Log.Success(
-      `Build complete! Run \`ftm compile\` on .build/cli.ts to finalize.`,
+      `Build complete! Run \`ftm compile\` on .build/main.ts to finalize.`,
     );
   });
 
 /**
  * Resolves configuration paths and output directories for the build.
  *
- * Validates that .cli.json exists and computes paths for config,
+ * Validates that .cli.ts exists and computes paths for config,
  * output directory, and templates directory.
  *
  * @param params - Build command parameters
  * @param dfs - DFS handler for file operations
  * @returns Object with resolved paths
- * @throws Error if .cli.json cannot be found
+ * @throws Error if .cli.ts cannot be found
  */
 async function resolveConfigAndOutDir(
   params: BuildParams,
@@ -238,10 +241,10 @@ async function resolveConfigAndOutDir(
   configDir: string;
   templatesDir: string;
 }> {
-  const configPath = params.ConfigOverride ?? './.cli.json';
-  const exists = await dfs.GetFileInfo('./.cli.json');
+  const configPath = params.ConfigOverride ?? './.cli.ts';
+  const exists = await dfs.GetFileInfo('./.cli.ts');
   if (!exists) {
-    throw new Error(`❌ Cannot find .cli.json at: ${configPath}`);
+    throw new Error(`❌ Cannot find .cli.ts at: ${configPath}`);
   }
 
   const configDir = dfs.Root;
@@ -336,14 +339,19 @@ async function collectCommandMetadata(
   for (const path of entries) {
     const rel = path.replace(`${commandsDir}/`, '').replace(/\\/g, '/');
     const isMeta = rel.endsWith('.group.ts');
-    const key = isMeta ? rel.replace(/\/\.metadata\.ts$/, '') : rel.replace(/\.ts$/, '');
+    const key = isMeta ? rel.replace(/\/\.group\.ts$/, '') : rel.replace(/\.ts$/, '');
     const group = key.split('/')[0];
 
     // Use full path to generate unique alias - avoids collisions when
     // commands have the same filename in different directories
     // Replace slashes with dashes before pascalCase to ensure valid JS identifiers
-    // e.g., "cli/build" → "cli-build" → "CliBuild" → "CliBuildCommand"
-    const baseName = pascalCase(key.replace(/\//g, '-'));
+    // Also sanitize brackets from dynamic segments like [projectRef] → ProjectRef
+    // e.g., "projects/[projectRef]/build" → "projects-projectRef-build" → "ProjectsProjectRefBuild"
+    const sanitized = key
+      .replace(/\//g, '-')
+      .replace(/\[/g, '')
+      .replace(/\]/g, '');
+    const baseName = pascalCase(sanitized);
     const alias = isMeta ? `${baseName}Group` : `${baseName}Command`;
 
     // Use different module keys for command vs group when both exist

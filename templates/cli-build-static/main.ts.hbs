@@ -1,8 +1,13 @@
-import { CLI, CLICommandResolver } from "@fathym/cli";
+import { IoCContainer } from "@fathym/ioc";
+import { Runner, CLICommandResolver } from "@fathym/cli";
 import { EmbeddedCLIFileSystemHooks } from "./EmbeddedCLIFileSystemHooks.ts";
 
-const cli = new CLI({
-  resolver: new CLICommandResolver(new EmbeddedCLIFileSystemHooks()),
-});
+// Create IoC with embedded filesystem hooks
+const ioc = new IoCContainer();
+const embeddedHooks = new EmbeddedCLIFileSystemHooks();
+ioc.Register(CLICommandResolver, () => new CLICommandResolver(embeddedHooks));
 
-cli.RunFromArgs(Deno.args);
+await Runner()
+  .FromArgs(Deno.args)
+  .WithIoC(ioc)
+  .Execute();

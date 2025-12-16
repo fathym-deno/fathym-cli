@@ -153,7 +153,9 @@ const UpgradeFlagsSchema = z.object({
   filter: z
     .string()
     .optional()
-    .describe('Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)'),
+    .describe(
+      'Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)',
+    ),
   json: z.boolean().optional().describe('Output as JSON for programmatic consumption'),
 });
 

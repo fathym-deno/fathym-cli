@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import UpgradeCommand from '../../../../../commands/projects/[projectRef]/upgrade.ts';
 
 const cmd = UpgradeCommand.Build();
-const origin = import.meta.resolve('../../../../../.cli.json');
+const origin = import.meta.resolve('../../../../../.cli.ts');
 
 // Note: The upgrade command modifies files in the workspace.
 // Tests use --dry-run to avoid actual file modifications.
@@ -17,7 +17,7 @@ CommandIntents('projects:[projectRef]:upgrade Command Suite', cmd, origin)
       .Segments({ projectRef: './tests/fixtures/ref-workspace/lib-a/deno.jsonc' })
       .Args(['0.3.0'])
       .Flags({ 'dry-run': true })
-      .ExpectLogs('Upgrading', '@fathym/common', '0.3.0', 'app-b')
+      .ExpectLogs('Upgrading', '@fathym/test-lib-a', '0.3.0', 'app-b')
       .ExpectExit(0))
   .Intent('JSON output for dry run', (int) =>
     int
@@ -58,15 +58,15 @@ CommandIntents('projects:[projectRef]:upgrade Command Suite', cmd, origin)
     int
       .Segments({ projectRef: './tests/fixtures/ref-workspace/lib-a/deno.jsonc' })
       .Args(['0.3.0'])
-      .Flags({ 'dry-run': true, filter: '@fathym/test-app-no-dependents' })
+      .Flags({ 'dry-run': true, filter: '@fathym/test-app-b' })
       // Should only show references from the filtered project
-      .ExpectLogs('Upgrading', '@fathym/common', '0.3.0')
+      .ExpectLogs('Upgrading', '@fathym/test-lib-a', '0.3.0')
       .ExpectExit(0))
   .Intent('Filter by combined source type and project ref', (int) =>
     int
       .Segments({ projectRef: './tests/fixtures/ref-workspace/lib-a/deno.jsonc' })
       .Args(['0.3.0'])
-      .Flags({ 'dry-run': true, filter: 'config,@fathym/test-app-no-dependents' })
+      .Flags({ 'dry-run': true, filter: 'config,@fathym/test-app-b' })
       // Should only show config files from the filtered project
       .ExpectLogs('Upgrading', 'deno.jsonc')
       .ExpectExit(0))

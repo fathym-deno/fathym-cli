@@ -11,7 +11,7 @@
  * ┌─────────────────────────────────────────────────────────────────────┐
  * │  1. Register project DFS using entry point path                    │
  * │  2. Resolve entry point, output directory, and permissions         │
- * │  3. Read .cli.json to get binary name from Tokens[0]               │
+ * │  3. Import .cli.ts module to get binary name from Tokens[0]        │
  * │  4. Invoke Build sub-command to prepare static artifacts           │
  * │  5. Execute `deno compile` with permissions and output path        │
  * │  6. Output binary to .dist/<target>/<token-name> or .dist/<token>  │
@@ -76,7 +76,7 @@
  *
  * @example Compile with custom entry point
  * ```bash
- * ftm cli compile --entry=./my-cli/.build/cli.ts
+ * ftm cli compile --entry=./my-cli/.build/main.ts
  * ```
  *
  * @example Cross-compile for Windows
@@ -103,8 +103,15 @@
  */
 
 import { join } from '@std/path/join';
+import { toFileUrl } from '@std/path/to-file-url';
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams, runCommandWithLogs } from '@fathym/cli';
+import {
+  CLIDFSContextManager,
+  CLIModuleBuilder,
+  Command,
+  CommandParams,
+  runCommandWithLogs,
+} from '@fathym/cli';
 import BuildCommand from './build.ts';
 import { getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
 
@@ -129,7 +136,7 @@ export const COMPILE_TARGETS = [
  * Zod schema for compile command flags.
  *
  * @property entry - Entry point file (output of build command)
- * @property config - Path to .cli.json configuration
+ * @property config - Path to .cli.ts configuration
  * @property output - Output directory for compiled binary
  * @property permissions - Space-separated Deno permission flags
  * @property target - Cross-compilation target (Deno compile target triple)
@@ -140,11 +147,11 @@ export const CompileFlagsSchema = z
     entry: z
       .string()
       .optional()
-      .describe('Entry point file (default: ./.build/cli.ts)'),
+      .describe('Entry point file (default: ./.build/main.ts)'),
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.json (default: alongside entry)'),
+      .describe('Path to .cli.ts (default: alongside entry)'),
     output: z.string().optional().describe('Output folder (default: ./.dist/exe)'),
     permissions: z
       .string()
@@ -170,7 +177,7 @@ export const CompileFlagsSchema = z
  *
  * @example
  * ```typescript
- * const entry = Params.Entry;           // './.build/cli.ts' or custom
+ * const entry = Params.Entry;           // './.build/main.ts' or custom
  * const perms = Params.Permissions;     // ['--allow-read', '--allow-env', ...]
  * const target = Params.Target;         // 'x86_64-pc-windows-msvc' or undefined
  * ```
@@ -181,15 +188,15 @@ export class CompileParams extends CommandParams<
 > {
   /**
    * Entry point file for compilation.
-   * Defaults to './.build/cli.ts' (output of build command).
+   * Defaults to './.build/main.ts' (output of build command).
    */
   get Entry(): string {
-    return this.Flag('entry') ?? './.build/cli.ts';
+    return this.Flag('entry') ?? './.build/main.ts';
   }
 
   /**
-   * Override path to .cli.json configuration.
-   * When undefined, looks for .cli.json alongside the entry point.
+   * Override path to .cli.ts configuration.
+   * When undefined, looks for .cli.ts alongside the entry point.
    */
   get ConfigPath(): string | undefined {
     return this.Flag('config');
@@ -253,7 +260,7 @@ export class CompileParams extends CommandParams<
  * Compile command - creates native binary from CLI build.
  *
  * Invokes Build as a sub-command, then runs `deno compile` to generate
- * a standalone executable. Binary name is derived from .cli.json Tokens[0].
+ * a standalone executable. Binary name is derived from .cli.ts Tokens[0].
  * Supports cross-compilation via the `--target` flag.
  */
 export default Command('compile', 'Compile the CLI into a native binary')
@@ -283,14 +290,21 @@ export default Command('compile', 'Compile the CLI into a native binary')
     const baseOutputDir = await CLIDFS.ResolvePath(Params.OutputDir);
     const permissions = Params.Permissions;
 
-    const configInfo = await CLIDFS.GetFileInfo('./.cli.json');
-    if (!configInfo) {
-      Log.Error(`❌ Could not find CLI config at: ${'./.cli.json'}`);
+    // Import CLI module to get config
+    const cliModulePath = await CLIDFS.ResolvePath('.cli.ts');
+    const cliModuleInfo = await CLIDFS.GetFileInfo('./.cli.ts');
+    if (!cliModuleInfo) {
+      Log.Error(`❌ Could not find CLI config at: ./.cli.ts`);
       Deno.exit(1);
     }
 
-    const configRaw = await new Response(configInfo.Contents).text();
-    const config = JSON.parse(configRaw);
+    const cliModuleUrl = toFileUrl(cliModulePath).href;
+    let cliModule = (await import(cliModuleUrl)).default;
+    // Build the module if it's a builder
+    if (cliModule instanceof CLIModuleBuilder) {
+      cliModule = cliModule.Build();
+    }
+    const config = cliModule.Config ?? {};
     const tokens: string[] = config.Tokens ?? ['cli'];
 
     if (!tokens.length) {
@@ -302,7 +316,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
 
     // Run build once before compilation
     const { Build } = Commands!;
-    await Build([], { config: join(Services.CLIRoot, configInfo.Path) });
+    await Build([], { config: join(Services.CLIRoot, cliModuleInfo.Path) });
 
     // Determine which targets to compile
     const targets: (string | undefined)[] = Params.All ? [...COMPILE_TARGETS] : [Params.Target];

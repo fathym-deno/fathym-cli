@@ -88,7 +88,7 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
   .Run(async ({ Params, Log, Services, Config }) => {
     const { VersionResolver, VersionComparator } = Services;
 
-    // Get current version directly from Config (embedded in .cli.json at compile time)
+    // Get current version directly from Config (embedded in .cli.ts at compile time)
     const currentVersion = Config.Version;
 
     // Fetch available versions from JSR

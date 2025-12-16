@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Command, CommandParams } from '@fathym/cli';
-import type { SayHello } from '../.cli.init.ts';
+import type { SayHello } from '../.cli.ts';
 
 const HelloFlagsSchema = z.object({
   loud: z.boolean().optional().describe('Shout the greeting'),

@@ -1,5 +1,5 @@
-import { CLIRuntime } from '@fathym/cli';
+import { Runner } from '@fathym/cli';
 
-await CLIRuntime()
+await Runner()
   .FromArgs(Deno.args)
   .Execute();

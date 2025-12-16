@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import DevCommand from '../../../../../commands/projects/[projectRef]/dev.ts';
 
 const cmd = DevCommand.Build();
-const origin = import.meta.resolve('../../../../../.cli.json');
+const origin = import.meta.resolve('../../../../../.cli.ts');
 
 CommandIntents('projects:[projectRef]:dev Command Suite', cmd, origin)
   .Intent(

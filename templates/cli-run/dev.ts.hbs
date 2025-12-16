@@ -1,4 +1,3 @@
-import { CLI } from "@fathym/cli";
+import { Runner } from "@fathym/cli";
 
-const cli = new CLI({});
-await cli.RunFromArgs(Deno.args);
+await Runner().FromArgs(Deno.args).Execute();

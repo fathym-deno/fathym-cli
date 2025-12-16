@@ -1,5 +1,5 @@
 {
-  "name": "@fathym/common",
-  "version": "0.2.299",
+  "name": "@fathym/test-lib-a",
+  "version": "0.2.0",
   "exports": "./mod.ts"
 }

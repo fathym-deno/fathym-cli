@@ -6,7 +6,7 @@ const TEMP_CLI_PATH = './tests/.temp/my-cli';
 CommandIntents(
   'Init Command Suite',
   InitCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(async () => {
     await Deno.remove(TEMP_CLI_PATH, { recursive: true }).catch(() => {});

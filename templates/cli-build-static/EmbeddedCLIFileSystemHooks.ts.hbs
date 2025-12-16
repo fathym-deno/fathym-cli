@@ -1,25 +1,20 @@
 import { fromFileUrl } from "@std/path";
 import type {
   CLIFileSystemHooks,
-  CLIInitFn,
   CLICommandEntry,
   CLICommandSource,
   CommandModule,
-  CLIConfig,
+  CLIModule,
   TemplateLocator,
 } from "@fathym/cli";
-import { CommandModuleBuilder, EmbeddedTemplateLocator } from "@fathym/cli";
+import { CommandModuleBuilder, GroupModuleBuilder, EmbeddedTemplateLocator } from "@fathym/cli";
 import type { DFSFileHandler } from '@fathym/dfs';
 
-import embeddedConfig from "../.cli.json" with { type: "json" };
+import embeddedCLIModule from "../.cli.ts";
 import embeddedTemplates from "./embedded-templates.json" with { type: "json" };
 import embeddedCommandEntries from "./embedded-command-entries.json" with { type: "json" };
 
 import { EmbeddedCommandModules } from "./EmbeddedCommandModules.ts";
-
-{{#if importInitFn}}
-import embeddedInit from "{{importInitFn}}";
-{{/if}}
 
 export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
   async ResolveCommandEntryPaths(
@@ -31,34 +26,24 @@ export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
     return map;
   }
 
-  async ResolveConfig(args: string[]): Promise<{
-    config: CLIConfig;
+  async ResolveCLI(args: string[]): Promise<{
+    cliModule: CLIModule;
     resolvedPath: string;
     remainingArgs: string[];
   }> {
-    const remainingArgs = args[0]?.endsWith(".json") ? args.slice(1) : args;
+    // Skip first arg if it's a config path (for backwards compatibility)
+    const remainingArgs = args[0]?.endsWith(".ts") || args[0]?.endsWith(".json")
+      ? args.slice(1)
+      : args;
+
+    // Build the CLI module from the builder
+    const cliModule: CLIModule = embeddedCLIModule.Build();
 
     return {
-      config: embeddedConfig,
-      resolvedPath: fromFileUrl(import.meta.resolve('../.cli.json')),
+      cliModule,
+      resolvedPath: fromFileUrl(import.meta.resolve('../.cli.ts')),
       remainingArgs,
     };
-  }
-
-  async LoadInitFn(
-    initPath: string
-  ): Promise<{ initFn: CLIInitFn | undefined; resolvedInitPath: string }> {
-    {{#if importInitFn}}
-    return {
-      initFn: embeddedInit,
-      resolvedInitPath: fromFileUrl(import.meta.resolve("{{importInitFn}}")),
-    };
-    {{else}}
-    return {
-      initFn: undefined,
-      resolvedInitPath: fromFileUrl(import.meta.resolve(initPath)),
-    };
-    {{/if}}
   }
 
   async LoadCommandModule(path: string): Promise<CommandModule> {
@@ -85,6 +70,7 @@ export class EmbeddedCLIFileSystemHooks implements CLIFileSystemHooks {
     }
 
     if (mod instanceof CommandModuleBuilder) mod = mod.Build();
+    if (mod instanceof GroupModuleBuilder) mod = mod.Build();
     return mod as CommandModule;
   }
 

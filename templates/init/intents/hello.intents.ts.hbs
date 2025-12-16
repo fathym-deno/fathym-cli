@@ -1,12 +1,10 @@
 import { CommandIntents } from '@fathym/cli';
 import HelloCommand from '../commands/hello.ts';
-import initFn from '../.cli.init.ts';
 
 const cmd = HelloCommand.Build();
-const origin = import.meta.resolve('../.cli.json');
+const origin = import.meta.resolve('../.cli.ts');
 
 CommandIntents('Hello Command Suite', cmd, origin)
-  .WithInit(initFn)
   .Intent('Greet default world', (int) =>
     int
       .Args([])

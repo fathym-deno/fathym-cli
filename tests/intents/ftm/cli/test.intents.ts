@@ -4,13 +4,13 @@ import TestCommand from '../../../../commands/cli/test.ts';
 CommandIntents(
   'Test Command Suite',
   TestCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Run default CLI test file', (int) =>
     int
       .Args([]) // defaults to test/my-cli/intents/.intents.ts
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
       })
       .ExpectLogs(
         '🧪 Running tests from:',
@@ -22,7 +22,7 @@ CommandIntents(
     int
       .Args(['./intents/.intents.ts'])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
         filter: 'hello',
       })
       .ExpectLogs(
@@ -35,7 +35,7 @@ CommandIntents(
     int
       .Args([])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
         coverage: './cov',
         'no-check': true,
       })

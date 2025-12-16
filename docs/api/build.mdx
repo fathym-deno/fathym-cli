@@ -56,7 +56,7 @@ The build command creates the `.build/` directory with:
 
 ```
 .build/
-├── cli.ts                        # Static CLI entry point
+├── main.ts                       # Static CLI entry point (production)
 ├── EmbeddedCommandModules.ts     # Command module registry
 ├── EmbeddedCLIFileSystemHooks.ts # Filesystem abstraction
 ├── embedded-templates.json       # All templates as JSON
@@ -71,7 +71,7 @@ The build command creates the `.build/` directory with:
 4. Collect command metadata from `commands/` directory
 5. Write `embedded-templates.json` and `embedded-command-entries.json`
 6. Scaffold `cli-build-static` template with embedded artifacts
-7. Output static entry point to `.build/cli.ts`
+7. Output static entry point to `.build/main.ts`
 
 ## Embedding Process
 

@@ -106,7 +106,7 @@ export const TestArgsSchema = z.tuple([
  * @property watch - Re-run tests on file changes
  * @property doc - Run JSDoc example tests
  * @property shuffle - Randomize test order
- * @property config - Path to .cli.json (not forwarded)
+ * @property config - Path to .cli.ts (not forwarded)
  */
 export const TestFlagsSchema = z
   .object({
@@ -122,7 +122,7 @@ export const TestFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.json (default: ./.cli.json)'),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
   })
   .passthrough();
 
@@ -168,7 +168,7 @@ export class TestParams extends CommandParams<
   }
 
   /**
-   * Override path to .cli.json configuration.
+   * Override path to .cli.ts configuration.
    * Used to locate the project root for test execution.
    */
   get ConfigPath(): string | undefined {

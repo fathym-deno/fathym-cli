@@ -2,7 +2,7 @@ import { CommandIntents } from '@fathym/cli';
 import PublishCheckCommand from '../../../../../../commands/projects/[projectRef]/publish/check.ts';
 
 const cmd = PublishCheckCommand.Build();
-const origin = import.meta.resolve('../../../../../../.cli.json');
+const origin = import.meta.resolve('../../../../../../.cli.ts');
 
 CommandIntents('projects:[projectRef]:publish:check Command Suite', cmd, origin)
   .Intent('Fails when project not found', (int) =>

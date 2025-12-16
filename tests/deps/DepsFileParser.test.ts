@@ -8,7 +8,7 @@ const parser = new DepsFileParser();
 // =============================================================================
 
 Deno.test('DepsFileParser.parse - Parses JSR scoped package', () => {
-  const content = `export { merge } from 'jsr:@fathym/common@0.2.299/merge';`;
+  const content = `export { merge } from 'jsr:@fathym/common@0.2.307-common-release/merge';`;
   const refs = parser.parse(content);
 
   assertEquals(refs.length, 1);
@@ -16,20 +16,20 @@ Deno.test('DepsFileParser.parse - Parses JSR scoped package', () => {
   assertEquals(refs[0].scope, '@fathym');
   assertEquals(refs[0].name, 'common');
   assertEquals(refs[0].fullName, '@fathym/common');
-  assertEquals(refs[0].version, '0.2.299');
+  assertEquals(refs[0].version, '0.2.307-common-release');
   assertEquals(refs[0].subpath, '/merge');
-  assertEquals(refs[0].fullSpecifier, 'jsr:@fathym/common@0.2.299/merge');
+  assertEquals(refs[0].fullSpecifier, 'jsr:@fathym/common@0.2.307-common-release/merge');
   assertEquals(refs[0].line, 1);
 });
 
 Deno.test('DepsFileParser.parse - Parses JSR package with channel version', () => {
-  const content = `export { type EverythingAsCode } from "jsr:@fathym/eac@0.2.208-hmis";`;
+  const content = `export { type EverythingAsCode } from "jsr:@fathym/eac@0.2.217-hmis";`;
   const refs = parser.parse(content);
 
   assertEquals(refs.length, 1);
   assertEquals(refs[0].registry, 'jsr');
   assertEquals(refs[0].fullName, '@fathym/eac');
-  assertEquals(refs[0].version, '0.2.196-hmis');
+  assertEquals(refs[0].version, '0.2.217-hmis');
   assertEquals(refs[0].subpath, undefined);
 });
 
@@ -69,8 +69,8 @@ Deno.test('DepsFileParser.parse - Parses multiple packages on same line', () => 
 
 Deno.test('DepsFileParser.parse - Handles multiple lines', () => {
   const content = `
-export { merge } from 'jsr:@fathym/common@0.2.299/merge';
-export { telemetryFor } from 'jsr:@fathym/common@0.2.299/telemetry';
+export { merge } from 'jsr:@fathym/common@0.2.307-common-release/merge';
+export { telemetryFor } from 'jsr:@fathym/common@0.2.307-common-release/telemetry';
 export { z } from 'npm:zod@4.1.13';
 `;
   const refs = parser.parse(content);
@@ -88,7 +88,7 @@ Deno.test('DepsFileParser.parse - Ignores non-specifier imports', () => {
   const content = `
 import { something } from './local.ts';
 import type { Foo } from '../types.ts';
-export { merge } from 'jsr:@fathym/common@0.2.299/merge';
+export { merge } from 'jsr:@fathym/common@0.2.307-common-release/merge';
 `;
   const refs = parser.parse(content);
 
@@ -101,11 +101,11 @@ export { merge } from 'jsr:@fathym/common@0.2.299/merge';
 // =============================================================================
 
 Deno.test('DepsFileParser.parseSpecifier - Parses valid JSR specifier', () => {
-  const result = parser.parseSpecifier('jsr:@fathym/common@0.2.299/merge');
+  const result = parser.parseSpecifier('jsr:@fathym/common@0.2.307-common-release/merge');
 
   assertEquals(result?.registry, 'jsr');
   assertEquals(result?.fullName, '@fathym/common');
-  assertEquals(result?.version, '0.2.299');
+  assertEquals(result?.version, '0.2.307-common-release');
   assertEquals(result?.subpath, '/merge');
 });
 
@@ -129,7 +129,7 @@ Deno.test('DepsFileParser.parseSpecifier - Returns null for invalid specifier', 
 // =============================================================================
 
 Deno.test('DepsFileParser.update - Updates single package version', () => {
-  const content = `export { merge } from 'jsr:@fathym/common@0.2.299/merge';`;
+  const content = `export { merge } from 'jsr:@fathym/common@0.2.307-common-release/merge';`;
   const updates = new Map([['@fathym/common', '0.2.300']]);
 
   const result = parser.update(content, updates);
@@ -139,8 +139,8 @@ Deno.test('DepsFileParser.update - Updates single package version', () => {
 
 Deno.test('DepsFileParser.update - Updates multiple occurrences of same package', () => {
   const content = `
-export { merge } from 'jsr:@fathym/common@0.2.299/merge';
-export { telemetryFor } from 'jsr:@fathym/common@0.2.299/telemetry';
+export { merge } from 'jsr:@fathym/common@0.2.307-common-release/merge';
+export { telemetryFor } from 'jsr:@fathym/common@0.2.307-common-release/telemetry';
 `;
   const updates = new Map([['@fathym/common', '0.2.300-integration']]);
 
@@ -204,8 +204,8 @@ Deno.test('DepsFileParser.update - Empty updates returns original content', () =
 
 Deno.test('DepsFileParser.getUniquePackages - Deduplicates same package', () => {
   const content = `
-export { merge } from 'jsr:@fathym/common@0.2.299/merge';
-export { telemetryFor } from 'jsr:@fathym/common@0.2.299/telemetry';
+export { merge } from 'jsr:@fathym/common@0.2.307-common-release/merge';
+export { telemetryFor } from 'jsr:@fathym/common@0.2.307-common-release/telemetry';
 `;
   const refs = parser.parse(content);
   const unique = parser.getUniquePackages(refs);
@@ -259,8 +259,8 @@ export { b } from 'npm:b@1.0.0';
 
 Deno.test('DepsFileParser.filterByPattern - Exact match', () => {
   const content = `
-export { a } from 'jsr:@fathym/common@1.0.0';
-export { b } from 'jsr:@fathym/eac@0.2.208-hmis';
+export { a } from 'jsr:@fathym/common@0.2.307-common-release';
+export { b } from 'jsr:@fathym/eac@0.2.217-hmis';
 `;
   const refs = parser.parse(content);
   const filtered = parser.filterByPattern(refs, '@fathym/common');
@@ -271,9 +271,9 @@ export { b } from 'jsr:@fathym/eac@0.2.208-hmis';
 
 Deno.test('DepsFileParser.filterByPattern - Wildcard suffix match', () => {
   const content = `
-export { a } from 'jsr:@fathym/eac@0.2.208-hmis';
-export { b } from 'jsr:@fathym/eac-identity@0.0.58-eac-cascade';
-export { c } from 'jsr:@fathym/common@1.0.0';
+export { a } from 'jsr:@fathym/eac@0.2.217-hmis';
+export { b } from 'jsr:@fathym/eac-identity@0.0.66-eac-cascade';
+export { c } from 'jsr:@fathym/common@0.2.307-common-release';
 `;
   const refs = parser.parse(content);
   const filtered = parser.filterByPattern(refs, '@fathym/eac*');
@@ -285,8 +285,8 @@ export { c } from 'jsr:@fathym/common@1.0.0';
 
 Deno.test('DepsFileParser.filterByPattern - Wildcard scope match', () => {
   const content = `
-export { a } from 'jsr:@fathym/common@1.0.0';
-export { b } from 'jsr:@fathym/eac@0.2.208-hmis';
+export { a } from 'jsr:@fathym/common@0.2.307-common-release';
+export { b } from 'jsr:@fathym/eac@0.2.217-hmis';
 export { c } from 'jsr:@std/path@1.0.0';
 `;
   const refs = parser.parse(content);

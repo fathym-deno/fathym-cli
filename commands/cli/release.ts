@@ -9,7 +9,7 @@
  *
  * ```
  * ┌─────────────────────────────────────────────────────────────────────┐
- * │  1. Load .cli.json and determine targets                           │
+ * │  1. Load .cli.ts and determine targets                           │
  * │  2. Run `ftm cli build` to prepare static artifacts                │
  * │  3. For each target, run `ftm cli compile --target=<target>`       │
  * │  4. Run `ftm cli install scripts` to generate install scripts      │
@@ -37,7 +37,7 @@
  *
  * ## Target Configuration
  *
- * Targets can be specified in `.cli.json`:
+ * Targets can be specified in `.cli.ts`:
  *
  * ```json
  * {
@@ -110,7 +110,7 @@ export const ReleaseArgsSchema = z.tuple([]);
 /**
  * Zod schema for release command flags.
  *
- * @property config - Path to .cli.json configuration
+ * @property config - Path to .cli.ts configuration
  * @property targets - Comma-separated list of targets (overrides config)
  * @property skip-scripts - Skip install scripts generation
  * @property repo - GitHub repository for install scripts
@@ -120,7 +120,7 @@ export const ReleaseFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.json (default: ./.cli.json)'),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     targets: z
       .string()
       .optional()
@@ -192,7 +192,7 @@ export default Command(
     const { DFS } = Services;
 
     // Load config
-    const configPath = Params.ConfigPath || '.cli.json';
+    const configPath = Params.ConfigPath || '.cli.ts';
 
     const cliName = Config.Tokens?.[0] ?? 'cli';
     const version = Config.Version;

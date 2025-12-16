@@ -36,7 +36,7 @@ The compile command takes no positional arguments.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--entry` | string | `./.build/cli.ts` | Entry point file (build output) |
+| `--entry` | string | `./.build/main.ts` | Entry point file (build output) |
 | `--config` | string | (alongside entry) | Path to `.cli.json` |
 | `--output` | string | `./.dist` | Output directory for binary |
 | `--permissions` | string | (full access) | Space-separated Deno permission flags |
@@ -55,7 +55,7 @@ ftm compile --target=x86_64-pc-windows-msvc
 ftm compile --target=aarch64-apple-darwin
 
 # Compile with custom entry point
-ftm compile --entry=./my-cli/.build/cli.ts
+ftm compile --entry=./my-cli/.build/main.ts
 
 # Compile with restricted permissions
 ftm compile --permissions="--allow-read --allow-env"

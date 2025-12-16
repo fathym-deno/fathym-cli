@@ -82,9 +82,9 @@ This is faster than the full build/compile cycle for development.
 ## How It Works
 
 1. Resolve DFS context (execution directory or `--config` path)
-2. Scaffold `cli-run` template to `.temp/cli-runner.ts`
+2. Scaffold `cli-run` template to `.temp/dev.ts`
 3. Build CLI args: `.cli.json` path + forwarded args + flags
-4. Execute `deno run -A .temp/cli-runner.ts [args]`
+4. Execute `deno run -A .temp/dev.ts [args]`
 5. Forward exit code from CLI process
 
 ## Source

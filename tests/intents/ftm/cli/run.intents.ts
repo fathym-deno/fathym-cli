@@ -4,13 +4,13 @@ import RunCommand from '../../../../commands/cli/run.ts';
 CommandIntents(
   'Run Command Suite',
   RunCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   // === HELLO COMMAND TESTS ===
   .Intent("Run 'hello' command with default args", (int) =>
     int
       .Args(['hello'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
         '👋 Hello, world!',
         '🎉 CLI run completed',
@@ -19,7 +19,7 @@ CommandIntents(
   .Intent("Run 'hello' command with a name", (int) =>
     int
       .Args(['hello', 'testy'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
         '👋 Hello, testy!',
         '🎉 CLI run completed',
@@ -29,7 +29,7 @@ CommandIntents(
     int
       .Args(['hello', 'team'])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
         loud: true,
       })
       .ExpectLogs(
@@ -41,7 +41,7 @@ CommandIntents(
   .Intent("Run 'secondary/wave' command with default args", (int) =>
     int
       .Args(['secondary/wave'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
         '👋 Waving at friend',
         '🎉 CLI run completed',
@@ -50,7 +50,7 @@ CommandIntents(
   .Intent("Run 'secondary/wave' command with a name", (int) =>
     int
       .Args(['secondary/wave', 'me'])
-      .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
         '👋 Waving at me',
         '🎉 CLI run completed',
@@ -60,7 +60,7 @@ CommandIntents(
     int
       .Args(['secondary/wave', 'you'])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
         excited: true,
       })
       .ExpectLogs(
@@ -72,7 +72,7 @@ CommandIntents(
     int
       .Args(['secondary/wave', 'nobody'])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
         'dry-run': true,
       })
       .ExpectLogs(
@@ -84,7 +84,7 @@ CommandIntents(
     int
       .Args(['secondary/wave', 'everyone'])
       .Flags({
-        config: './tests/.temp/my-cli/.cli.json',
+        config: './tests/.temp/my-cli/.cli.ts',
         'dry-run': true,
         excited: true,
       })
@@ -98,7 +98,7 @@ CommandIntents(
   // .Intent("Schema-validate 'hello' help args and flags", (int) =>
   //   int
   //     .Args(['hello', '--help'])
-  //     .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+  //     .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
   //     .ExpectLogs(
   //       'Args:',
   //       ...helloArgs.map(formatArgHelpLine),
@@ -109,7 +109,7 @@ CommandIntents(
   // .Intent("Schema-validate 'wave' help args and flags", (int) =>
   //   int
   //     .Args(['wave', '--help'])
-  //     .Flags({ config: './tests/.temp/my-cli/.cli.json' })
+  //     .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
   //     .ExpectLogs(
   //       'Args:',
   //       ...waveArgs.map(formatArgHelpLine),

@@ -61,7 +61,7 @@ const CONFIG_FILE = 'test-config.json';
 CommandIntents(
   'Config Set Command Suite',
   ConfigSetCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(() => {
     // Clear mock store before tests
@@ -86,7 +86,7 @@ CommandIntents(
 CommandIntents(
   'Config Get Command Suite',
   ConfigGetCommand.Build(),
-  import.meta.resolve('../../../../.cli.json'),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(() => {
     // Pre-populate mock store with test data

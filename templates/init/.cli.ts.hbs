@@ -1,0 +1,89 @@
+import { CLI } from '@fathym/cli';
+
+/**
+ * Example service interface for dependency injection.
+ */
+export interface SayHello {
+  Speak(name: string): string;
+}
+
+/**
+ * Default implementation of SayHello service.
+ */
+export class DefaultSayHello implements SayHello {
+  Speak(name: string): string {
+    return `Hello, ${name}!`;
+  }
+}
+
+/**
+ * My CLI - A Test CLI used for whatever you need.
+ *
+ * This file defines the CLI configuration using the fluent API.
+ */
+export default CLI('My CLI', ['my-cli'], '0.0.0', 'A Test CLI used for whatever you need.')
+  .Commands('./commands')
+  .OnInit((ioc, _config) => {
+    // ═══════════════════════════════════════════════════════════════════════════
+    // IoC Service Registration
+    // Register shared services that can be injected into commands
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    ioc.Register(() => new DefaultSayHello(), {
+      Type: ioc.Symbol('SayHello'),
+    });
+  })
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Init Command Configuration (Optional)
+  // Uncomment to enable pre-command hooks for all commands
+  // ═══════════════════════════════════════════════════════════════════════════
+  // .InitCommand(
+  //   (cmd) =>
+  //     cmd
+  //       // Register services available in Init Command context
+  //       .Services(async () => ({
+  //         // Example: VersionChecker: new VersionChecker(),
+  //       }))
+  //       // Define the init command logic
+  //       .Run(async ({ Services, Config, Log, Commands, Params }) => {
+  //         // ─────────────────────────────────────────────────────────────────────
+  //         // PRE-COMMAND LOGIC
+  //         // Runs before the matched command executes
+  //         // ─────────────────────────────────────────────────────────────────────
+  //
+  //         // Access matched command context via Params
+  //         Log.Debug(`Executing: ${Params.Details.key}`);
+  //
+  //         // Example: Version check warning
+  //         // if (Services.VersionChecker.hasUpdate()) {
+  //         //   Log.Warn('A newer version is available');
+  //         // }
+  //
+  //         // Example: Authentication gate
+  //         // if (Params.Details.key.startsWith('admin/')) {
+  //         //   if (!await checkAuth()) {
+  //         //     Log.Error('Authentication required');
+  //         //     return 1; // Block command execution
+  //         //   }
+  //         // }
+  //
+  //         // ─────────────────────────────────────────────────────────────────────
+  //         // EXECUTE MATCHED COMMAND
+  //         // IMPORTANT: Must call $Command() or the command never runs!
+  //         // Pass args and flags to forward original invocation
+  //         // ─────────────────────────────────────────────────────────────────────
+  //
+  //         const exitCode = await Commands!.$Command(Params.Flags.args, Params.Flags.flags);
+  //
+  //         // ─────────────────────────────────────────────────────────────────────
+  //         // POST-COMMAND LOGIC
+  //         // Runs after the matched command completes
+  //         // ─────────────────────────────────────────────────────────────────────
+  //
+  //         // Example: Telemetry logging
+  //         // await telemetry.track({ command: Params.Details.key, exitCode });
+  //
+  //         // Return the exit code (can be modified if needed)
+  //         return exitCode;
+  //       }),
+  // );
