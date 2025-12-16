@@ -1,13 +1,20 @@
 import { CLI } from '@fathym/cli';
+import { parse as parseJsonc } from '@std/jsonc';
 import { VersionResolver } from './src/deps/VersionResolver.ts';
 import { VersionComparator } from './src/deps/VersionComparator.ts';
 
 const PACKAGE_NAME = '@fathym/ftm';
 
+// Read version from deno.jsonc so CI only needs to update one file
+const denoJsoncPath = new URL('./deno.jsonc', import.meta.url);
+const denoJsoncContent = await Deno.readTextFile(denoJsoncPath);
+const denoConfig = parseJsonc(denoJsoncContent) as { version?: string };
+const VERSION = denoConfig.version ?? '0.0.0';
+
 export default CLI(
   'Fathym CLI',
   'ftm',
-  '0.0.0',
+  VERSION,
   'Open-source Fathym CLI',
 )
   .Commands(['./commands', 'jsr:@fathym/ftm@0/commands'])

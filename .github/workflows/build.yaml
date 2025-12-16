@@ -66,11 +66,6 @@ jobs:
       - name: Version package
         run: deno task version -- "${{ steps.version.outputs.version }}"
 
-      - name: Update .cli.json version
-        run: |
-          jq '.Version = "${{ steps.version.outputs.version }}"' .cli.json > .cli.json.tmp
-          mv .cli.json.tmp .cli.json
-
       - name: Compile CLI binaries for all targets
         run: deno task ftm:compile
 
