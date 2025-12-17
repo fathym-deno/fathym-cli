@@ -349,6 +349,16 @@ export default Command('compile', 'Compile the CLI into a native binary')
       }
       Log.Info(`- Permissions: ${permissions.join(' ')}`);
 
+      // Ensure output directory exists before compilation (required for cross-compilation targets)
+      const outputDir = target ? join(baseOutputDir, target) : baseOutputDir;
+      try {
+        await Deno.mkdir(outputDir, { recursive: true });
+      } catch (err) {
+        if (!(err instanceof Deno.errors.AlreadyExists)) {
+          throw err;
+        }
+      }
+
       // Build compile command with optional target
       const compileArgs = [
         'compile',
