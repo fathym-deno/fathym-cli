@@ -23,7 +23,12 @@ import {
   type TaskDefinition,
   TaskPipeline,
 } from '../../src/services/.exports.ts';
-import { EnsureBranchPrefix, NormalizeBranchInput } from '../../src/git/.exports.ts';
+import {
+  EnsureBranchPrefix,
+  GitTargetFlagSchema,
+  NormalizeBranchInput,
+  ResolveGitOpsWorkingDFS,
+} from '../../src/git/.exports.ts';
 
 const FeatureArgsSchema = z.tuple([
   z
@@ -40,7 +45,7 @@ const FeatureFlagsSchema = z.object({
     .describe("Base ref to branch from (default: 'origin/integration')"),
   'no-push': z.boolean().optional().describe('Skip pushing the branch to origin'),
   'dry-run': z.boolean().optional().describe('Preview commands without executing them'),
-});
+}).merge(GitTargetFlagSchema);
 
 class FeatureCommandParams extends CommandParams<
   z.infer<typeof FeatureArgsSchema>,
@@ -64,7 +69,7 @@ class FeatureCommandParams extends CommandParams<
 }
 
 type FeatureCommandServices = {
-  DFS?: DFSFileHandler;
+  DFS: DFSFileHandler;
   Git: GitService;
   Prompt: PromptService;
 };
@@ -84,7 +89,7 @@ export default Command('Create Feature Branch', 'Create a feature branch from or
   .Params(FeatureCommandParams)
   .Services(async (_ctx, ioc): Promise<FeatureCommandServices> => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-    const executionDFS = await dfsCtx.GetExecutionDFS();
+    const workingDFS = await ResolveGitOpsWorkingDFS(dfsCtx);
 
     let gitService: GitService;
     try {
@@ -101,13 +106,13 @@ export default Command('Create Feature Branch', 'Create a feature branch from or
     }
 
     return {
-      DFS: executionDFS,
+      DFS: workingDFS,
       Git: gitService,
       Prompt: promptService,
     };
   })
   .Run(async ({ Services, Params, Log }) => {
-    const cwd = Services.DFS?.Root ?? Deno.cwd();
+    const cwd = Services.DFS.Root ?? Deno.cwd();
     const git = Services.Git.WithLogger(Log);
 
     const ctx: FeaturePipelineContext = {

@@ -1,11 +1,10 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import HotfixCommand from '../../../../commands/git/hotfix.ts';
 import { createMockDFS, MockGitService, MockPromptService } from './_mocks.ts';
+import GitIntentTestCLI from './_test_cli.ts';
 
 const cmd = HotfixCommand.Build();
-const origin = import.meta.resolve('../../../../.cli.ts');
-
-CommandIntentSuite('git hotfix Command Suite', cmd, origin)
+CommandIntentSuite('git hotfix Command Suite', cmd, GitIntentTestCLI)
   .Intent('fails outside a git repository', (int) =>
     int
       .WithServices({

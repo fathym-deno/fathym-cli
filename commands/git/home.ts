@@ -12,7 +12,6 @@
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { z } from 'zod';
-import { join } from '@std/path/join';
 import {
   CliffyPromptService,
   GitConfigStore,
@@ -23,7 +22,12 @@ import {
   TaskPipeline,
   UrlOpener,
 } from '../../src/services/.exports.ts';
-import { type GitHubRemote, ResolveGitHubRemoteFromOrigin } from '../../src/git/.exports.ts';
+import {
+  type GitHubRemote,
+  GitTargetFlagSchema,
+  ResolveGitHubRemoteFromOrigin,
+  ResolveGitOpsWorkingDFS,
+} from '../../src/git/.exports.ts';
 
 const GitHomeArgsSchema = z.tuple([
   z
@@ -47,7 +51,7 @@ const GitHomeFlagsSchema = z.object({
     .boolean()
     .optional()
     .describe('Infer organization/repository from the local git remote'),
-});
+}).merge(GitTargetFlagSchema);
 
 class GitHomeParams extends CommandParams<
   z.infer<typeof GitHomeArgsSchema>,
@@ -71,7 +75,7 @@ class GitHomeParams extends CommandParams<
 }
 
 type GitHomeServices = {
-  DFS?: DFSFileHandler;
+  DFS: DFSFileHandler;
   Git: GitService;
   Config: GitConfigStore;
   Prompt: PromptService;
@@ -102,14 +106,13 @@ export default Command('Open Repo Home', 'Open the configured GitHub repository 
   .Params(GitHomeParams)
   .Services(async (_ctx, ioc): Promise<GitHomeServices> => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-    const executionDFS = await dfsCtx.GetExecutionDFS();
+    const workingDFS = await ResolveGitOpsWorkingDFS(dfsCtx);
 
     const git = await resolveOrFallback(ioc, GitService, () => new GitService());
-    const configDFS = await getConfigDFS(dfsCtx, executionDFS);
     const config = await resolveOrFallback(
       ioc,
       GitConfigStore,
-      () => new GitConfigStore(configDFS),
+      async () => new GitConfigStore(await dfsCtx.GetConfigDFS()),
     );
     const prompt = await resolveOrFallback(
       ioc,
@@ -119,7 +122,7 @@ export default Command('Open Repo Home', 'Open the configured GitHub repository 
     const urls = await resolveOrFallback(ioc, UrlOpener, () => new UrlOpener());
 
     return {
-      DFS: executionDFS,
+      DFS: workingDFS,
       Git: git,
       Config: config,
       Prompt: prompt,
@@ -127,7 +130,7 @@ export default Command('Open Repo Home', 'Open the configured GitHub repository 
     };
   })
   .Run(async ({ Services, Params, Log }) => {
-    const cwd = Services.DFS?.Root ?? Deno.cwd();
+    const cwd = Services.DFS.Root ?? Deno.cwd();
     const defaults = await Services.Config.GetDefaults();
 
     const ctx: GitHomePipelineContext = {
@@ -194,29 +197,6 @@ function buildTasks(): TaskDefinition<GitHomePipelineContext>[] {
       },
     },
   ];
-}
-
-async function getConfigDFS(
-  dfsCtx: CLIDFSContextManager,
-  executionDFS?: DFSFileHandler,
-): Promise<DFSFileHandler> {
-  try {
-    return await dfsCtx.GetConfigDFS();
-  } catch {
-    if (
-      executionDFS &&
-      typeof (executionDFS as DFSFileHandler).ResolvePath === 'function'
-    ) {
-      return executionDFS;
-    }
-
-    const root = executionDFS?.Root ?? Deno.cwd();
-
-    return {
-      Root: root,
-      ResolvePath: (...parts: string[]) => join(root, ...parts),
-    } as DFSFileHandler;
-  }
 }
 
 async function resolveOrFallback<T>(

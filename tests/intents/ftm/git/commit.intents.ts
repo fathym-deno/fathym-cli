@@ -1,11 +1,10 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import GitCommand from '../../../../commands/git/index.ts';
 import { createMockDFS, MockGitService, MockPromptService } from './_mocks.ts';
+import GitIntentTestCLI from './_test_cli.ts';
 
 const cmd = GitCommand.Build();
-const origin = import.meta.resolve('../../../../.cli.ts');
-
-CommandIntentSuite('git Command Suite', cmd, origin)
+CommandIntentSuite('git Command Suite', cmd, GitIntentTestCLI)
   .Intent('fails when not inside a git repository', (int) =>
     int
       .WithServices({

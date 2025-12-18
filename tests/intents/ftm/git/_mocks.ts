@@ -1,3 +1,4 @@
+import type { CLIDFSContextManager } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import type { SelectOptions } from '@cliffy/prompt';
 import {
@@ -8,11 +9,20 @@ import {
 import type { PromptService } from '../../../../src/services/PromptService.ts';
 import { GitConfigStore, type GitDefaults } from '../../../../src/services/GitConfigStore.ts';
 import { UrlOpener } from '../../../../src/services/UrlOpener.ts';
+import { RegisterGitOpsTargetDFS } from '../../../../src/git/.exports.ts';
 
-export function createMockDFS(): DFSFileHandler {
+export function createMockDFS(root: string = '/mock/repo'): DFSFileHandler {
   return {
-    Root: '/mock/repo',
+    Root: root,
+    ResolvePath: (...parts: string[]) => [root, ...parts].join('/'),
   } as DFSFileHandler;
+}
+
+export async function registerMockGitTargetDFS(
+  dfsCtx: CLIDFSContextManager,
+  root: string = '/mock/git-target',
+): Promise<void> {
+  await RegisterGitOpsTargetDFS(dfsCtx, root);
 }
 
 export type PromptResponses = {

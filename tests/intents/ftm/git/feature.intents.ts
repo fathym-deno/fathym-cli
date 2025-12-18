@@ -1,11 +1,10 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import FeatureCommand from '../../../../commands/git/feature.ts';
 import { createMockDFS, MockGitService, MockPromptService } from './_mocks.ts';
+import GitIntentTestCLI from './_test_cli.ts';
 
 const cmd = FeatureCommand.Build();
-const origin = import.meta.resolve('../../../../.cli.ts');
-
-CommandIntentSuite('git feature Command Suite', cmd, origin)
+CommandIntentSuite('git feature Command Suite', cmd, GitIntentTestCLI)
   .Intent('fails outside a git repository', (int) =>
     int
       .WithServices({

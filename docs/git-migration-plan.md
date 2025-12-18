@@ -4,7 +4,7 @@ DocumentType: Guide
 Title: Git Commands Migration Plan
 Summary: Phased plan for porting the legacy OCLIF git commands into the new Fathym CLI runtime.
 Created: 2025-12-17
-Updated: 2025-12-17
+Updated: 2025-12-18
 Owners:
   - fathym
 References:
@@ -81,9 +81,14 @@ Deliverable: commands that only touch local git state.
   - [x] Add `UrlOpener` service + GitHub remote helper for shared browser launches.
   - [x] Prompt for missing context and open arbitrary sections (`--section`).
   - [x] Intent suite covers config defaults, prompting, local inference, and failure states.
-- [ ] CLI DFS integration:
-  - [ ] Commands resolve execution DFS first.
-  - [ ] Config lookups (org/repo, integration branch) go through `GitConfigStore`.
+- [x] CLI DFS integration:
+  - [x] Commands resolve execution DFS (or an override) via `ResolveGitOpsWorkingDFS`.
+  - [x] Config lookups (org/repo, integration branch) go through `GitConfigStore` registered by the git group.
+  - [x] Register `GitConfigStore` + shared DFS access in `commands/git/.group.ts` so every command uses the same instance.
+  - [x] Introduce a `--target` flag handled by the git group's `InitCommand` that resolves a `GitOpsTargetDFS` (falling back to execution DFS) and stashes it in `CLIDFSContextManager`.
+  - [x] Update `git`, `feature`, `hotfix`, and `home` to prefer `GitOpsTargetDFS` (falling back to execution DFS) for file operations.
+  - [x] Extend intent mocks (`tests/intents/ftm/git/_mocks.ts`) with helpers for registering target DFS roots so suites remain deterministic.
+  - ℹ️ Helpers live under `src/git/dfs/gitOpsTarget.ts` and are re-exported via `src/git/.exports.ts`, while the shared `--target` flag schema lives under `src/git/flags/gitTargetFlag.ts`.
 
 **Implementation pattern (example for `git` command):**
 

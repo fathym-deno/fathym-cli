@@ -1,5 +1,6 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import GitHomeCommand from '../../../../commands/git/home.ts';
+import GitIntentTestCLI from './_test_cli.ts';
 import {
   createMockDFS,
   MockGitConfigStore,
@@ -9,9 +10,7 @@ import {
 } from './_mocks.ts';
 
 const cmd = GitHomeCommand.Build();
-const origin = import.meta.resolve('../../../../.cli.ts');
-
-CommandIntentSuite('git home Command Suite', cmd, origin)
+CommandIntentSuite('git home Command Suite', cmd, GitIntentTestCLI)
   .Intent('fails when --use-local is used outside a repo', (int) =>
     int
       .Flags({ 'use-local': true })

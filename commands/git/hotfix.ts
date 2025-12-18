@@ -13,7 +13,12 @@
 import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { z } from 'zod';
-import { EnsureBranchPrefix, NormalizeBranchInput } from '../../src/git/.exports.ts';
+import {
+  EnsureBranchPrefix,
+  GitTargetFlagSchema,
+  NormalizeBranchInput,
+  ResolveGitOpsWorkingDFS,
+} from '../../src/git/.exports.ts';
 import {
   CliffyPromptService,
   type GitRunOptions,
@@ -38,7 +43,7 @@ const HotfixFlagsSchema = z.object({
     .describe("Base ref to branch from (default: 'origin/main')"),
   'no-push': z.boolean().optional().describe('Skip pushing the branch to origin'),
   'dry-run': z.boolean().optional().describe('Preview commands without executing them'),
-});
+}).merge(GitTargetFlagSchema);
 
 class HotfixCommandParams extends CommandParams<
   z.infer<typeof HotfixArgsSchema>,
@@ -62,7 +67,7 @@ class HotfixCommandParams extends CommandParams<
 }
 
 type HotfixCommandServices = {
-  DFS?: DFSFileHandler;
+  DFS: DFSFileHandler;
   Git: GitService;
   Prompt: PromptService;
 };
@@ -82,7 +87,7 @@ export default Command('Create Hotfix Branch', 'Create a hotfix branch from orig
   .Params(HotfixCommandParams)
   .Services(async (_ctx, ioc): Promise<HotfixCommandServices> => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-    const executionDFS = await dfsCtx.GetExecutionDFS();
+    const workingDFS = await ResolveGitOpsWorkingDFS(dfsCtx);
 
     let gitService: GitService;
     try {
@@ -99,13 +104,13 @@ export default Command('Create Hotfix Branch', 'Create a hotfix branch from orig
     }
 
     return {
-      DFS: executionDFS,
+      DFS: workingDFS,
       Git: gitService,
       Prompt: promptService,
     };
   })
   .Run(async ({ Services, Params, Log }) => {
-    const cwd = Services.DFS?.Root ?? Deno.cwd();
+    const cwd = Services.DFS.Root ?? Deno.cwd();
     const git = Services.Git.WithLogger(Log);
 
     const ctx: HotfixPipelineContext = {

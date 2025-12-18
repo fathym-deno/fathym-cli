@@ -24,6 +24,7 @@ import {
   type TaskDefinition,
   TaskPipeline,
 } from '../../src/services/.exports.ts';
+import { GitTargetFlagSchema, ResolveGitOpsWorkingDFS } from '../../src/git/.exports.ts';
 
 const ArgsSchema = z.tuple([]);
 
@@ -35,6 +36,7 @@ const FlagsSchema = z
     'no-push': z.boolean().optional().describe('Skip pushing to origin'),
     'no-sync': z.boolean().optional().describe('Skip integration sync (fetch/merge/pull/prune)'),
   })
+  .merge(GitTargetFlagSchema)
   .passthrough();
 
 class GitParams extends CommandParams<
@@ -63,7 +65,7 @@ class GitParams extends CommandParams<
 }
 
 type GitCommandServices = {
-  DFS?: DFSFileHandler;
+  DFS: DFSFileHandler;
   Git: GitService;
   Prompt: PromptService;
 };
@@ -84,8 +86,7 @@ export default Command('Git Workflow', 'Commit changes and sync with integration
   .Params(GitParams)
   .Services(async (_ctx, ioc): Promise<GitCommandServices> => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-
-    const executionDFS = await dfsCtx.GetExecutionDFS();
+    const workingDFS = await ResolveGitOpsWorkingDFS(dfsCtx);
 
     let gitService: GitService;
     try {
@@ -102,13 +103,13 @@ export default Command('Git Workflow', 'Commit changes and sync with integration
     }
 
     return {
-      DFS: executionDFS,
+      DFS: workingDFS,
       Git: gitService,
       Prompt: promptService,
     };
   })
   .Run(async ({ Services, Log, Params }) => {
-    const cwd = Services.DFS?.Root ?? Deno.cwd();
+    const cwd = Services.DFS.Root ?? Deno.cwd();
     const git = Services.Git.WithLogger(Log);
 
     const ctx: GitPipelineContext = {
