@@ -7,7 +7,13 @@ import {
   GitService,
 } from '../../../../src/services/GitService.ts';
 import type { PromptService } from '../../../../src/services/PromptService.ts';
-import { GitConfigStore, type GitDefaults } from '../../../../src/services/GitConfigStore.ts';
+import {
+  type AccessTokenData,
+  FathymConfigStore,
+  GitConfigStore,
+  type GitDefaults,
+} from '../../../../src/services/.exports.ts';
+import { FathymApiClient } from '../../../../src/services/FathymApiClient.ts';
 import { UrlOpener } from '../../../../src/services/UrlOpener.ts';
 import { RegisterGitOpsTargetDFS } from '../../../../src/git/.exports.ts';
 
@@ -221,5 +227,58 @@ export class MockUrlOpener extends UrlOpener {
   public override Open(url: string): Promise<void> {
     this.opened.push(url);
     return Promise.resolve();
+  }
+}
+
+type MockFathymConfigOptions = {
+  activeLookup?: string;
+  apiRoot?: string;
+  token?: AccessTokenData;
+};
+
+export class MockFathymConfigStore extends FathymConfigStore {
+  public constructor(private readonly options: MockFathymConfigOptions = {}) {
+    super({} as DFSFileHandler);
+  }
+
+  public override GetActiveEnterpriseLookup(): Promise<string | undefined> {
+    return Promise.resolve(this.options.activeLookup);
+  }
+
+  public override SetActiveEnterpriseLookup(lookup: string): Promise<void> {
+    this.options.activeLookup = lookup;
+    return Promise.resolve();
+  }
+
+  public override GetApiRoot(): Promise<string> {
+    return Promise.resolve(this.options.apiRoot ?? 'https://api.fathym.com/');
+  }
+
+  public override GetAccessToken(): Promise<AccessTokenData | undefined> {
+    return Promise.resolve(this.options.token);
+  }
+
+  public override SetAccessToken(token?: AccessTokenData): Promise<void> {
+    this.options.token = token;
+    return Promise.resolve();
+  }
+}
+
+export class MockFathymApiClient extends FathymApiClient {
+  public requests: string[] = [];
+  public responses = new Map<string, unknown>();
+
+  public constructor() {
+    // Pass a mock store but it won't be used since tests override GetJson directly
+    super(new MockFathymConfigStore());
+  }
+
+  public override GetJson<T>(path: string): Promise<T> {
+    this.requests.push(path);
+    if (!this.responses.has(path)) {
+      throw new Error(`No mock response for ${path}`);
+    }
+
+    return Promise.resolve(this.responses.get(path) as T);
   }
 }

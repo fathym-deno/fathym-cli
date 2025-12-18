@@ -8,8 +8,14 @@
  */
 
 import { CLIDFSContextManager, Group } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
 import { RegisterGitOpsTargetDFS } from '../../src/git/.exports.ts';
-import { GitConfigStore, GitService } from '../../src/services/.exports.ts';
+import {
+  FathymApiClient,
+  FathymConfigStore,
+  GitConfigStore,
+  GitService,
+} from '../../src/services/.exports.ts';
 
 type GitGroupServices = {
   DFSContext: CLIDFSContextManager;
@@ -24,8 +30,25 @@ export default Group('git')
       GitConfigStore,
       async () => {
         const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-        const configDFS = await dfsCtx.GetConfigDFS();
+        const configDFS = await resolveConfigDFS(dfsCtx);
         return new GitConfigStore(configDFS);
+      },
+    );
+
+    ioc.Register(
+      FathymConfigStore,
+      async () => {
+        const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
+        const configDFS = await resolveConfigDFS(dfsCtx);
+        return new FathymConfigStore(configDFS);
+      },
+    );
+
+    ioc.Register(
+      FathymApiClient,
+      async () => {
+        const store = await ioc.Resolve(FathymConfigStore);
+        return new FathymApiClient(store);
       },
     );
   })
@@ -40,7 +63,7 @@ export default Group('git')
 
         if (target) {
           const targetDFS = await RegisterGitOpsTargetDFS(Services.DFSContext, target);
-          Log.Debug(`git: using target DFS root ${targetDFS.Root}`);
+          Log.Info(`git: using target DFS root ${targetDFS.Root}`);
         }
 
         return await Commands!.$Command(Params.Flags.args, Params.Flags.flags);
@@ -57,4 +80,14 @@ function extractTargetFlag(
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+async function resolveConfigDFS(
+  dfsCtx: CLIDFSContextManager,
+): Promise<DFSFileHandler> {
+  try {
+    return await dfsCtx.GetConfigDFS();
+  } catch {
+    return await dfsCtx.GetExecutionDFS();
+  }
 }

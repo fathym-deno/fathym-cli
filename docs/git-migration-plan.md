@@ -155,11 +155,11 @@ Intent tests (per command) should use `CommandIntent`/`CommandIntents` to exerci
 
 Deliverable: commands that require the backend APIs & OAuth.
 
-- [ ] HTTP client wrapper mirroring `common/axios.ts` (ConfigDFS-based token + base URL).
-- [ ] Port `git auth`:
-  - [ ] Launch B2C OAuth (`https://www.fathym.com/.oauth/GitHubOAuth?...`).
-  - [ ] Exchange code via existing flows, store token in ConfigDFS.
-  - [ ] Flags: `--edit`, `--self` parity.
+- [x] HTTP client wrapper mirroring `common/axios.ts` (ConfigDFS-based token + base URL).
+- [x] Port `git auth`:
+  - [x] Launch B2C OAuth (`https://www.fathym.com/.oauth/GitHubOAuth?...`).
+  - [x] Resolve parent vs self enterprise lookups via the Fathym API + ConfigDFS data.
+  - [x] Reuse ConfigDFS helpers so auth state aligns with the rest of the CLI (token exchange still handled by `ftm auth`).
 - [ ] Port lookup commands (`git repos`):
   - [ ] `GET github/organizations`.
   - [ ] `GET …/repositories`.
@@ -198,7 +198,8 @@ Deliverable: commands that require the backend APIs & OAuth.
 - [x] Implement `commands/git/.group.ts` with service registration.
 - [x] Port `git` (commit/sync) using TaskPipeline + GitService; add intent suite.
 - [x] Port `git feature` + `git hotfix` following the same pattern.
-- [ ] Add HTTP client + auth store; port `git configure` and `git auth`.
+- [x] Add HTTP client + auth store; port `git auth`.
+- [ ] Implement git lookup helpers + `git configure -s` using the new client.
 - [ ] Wire `git clone`/`git import` using new services (git home complete).
 - [ ] Run deploy scripts (or intent tests) to validate real workflows.
 

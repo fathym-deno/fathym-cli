@@ -1,7 +1,7 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import HotfixCommand from '../../../../commands/git/hotfix.ts';
 import { createMockDFS, MockGitService, MockPromptService } from './_mocks.ts';
-import GitIntentTestCLI from './_test_cli.ts';
+import GitIntentTestCLI from './.test.cli.ts';
 
 const cmd = HotfixCommand.Build();
 CommandIntentSuite('git hotfix Command Suite', cmd, GitIntentTestCLI)

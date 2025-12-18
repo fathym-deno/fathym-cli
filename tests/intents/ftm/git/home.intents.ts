@@ -1,6 +1,6 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import GitHomeCommand from '../../../../commands/git/home.ts';
-import GitIntentTestCLI from './_test_cli.ts';
+import GitIntentTestCLI from './.test.cli.ts';
 import {
   createMockDFS,
   MockGitConfigStore,

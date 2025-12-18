@@ -1,5 +1,4 @@
 import type { DFSFileHandler } from '@fathym/dfs';
-import { dirname } from '@std/path/dirname';
 
 export interface GitDefaults {
   organization?: string;
@@ -38,35 +37,22 @@ const DEFAULT_CONFIG: GitConfigData = {
  */
 export class GitConfigStore {
   public constructor(
-    protected dfs: DFSFileHandler,
-    protected filePath = 'git/config.json',
+    protected readonly dfs: DFSFileHandler,
+    protected readonly filePath = 'git/config.json',
   ) {}
 
   /**
    * Load the config file (creating it with defaults if it doesn't exist).
    */
   public async Load(): Promise<GitConfigData> {
-    try {
-      const fullPath = await this.dfs.ResolvePath(this.filePath);
-      const text = await Deno.readTextFile(fullPath);
-      const parsed = JSON.parse(text) as GitConfigData;
-      return {
-        ...DEFAULT_CONFIG,
-        ...parsed,
-        configuredRepos: parsed?.configuredRepos ?? {},
-      };
-    } catch {
-      return { ...DEFAULT_CONFIG };
-    }
+    return await this.loadConfig();
   }
 
   /**
    * Persist the config to disk (ensuring directories exist).
    */
   public async Save(config: GitConfigData): Promise<void> {
-    const fullPath = await this.dfs.ResolvePath(this.filePath);
-    await Deno.mkdir(dirname(fullPath), { recursive: true });
-    await Deno.writeTextFile(fullPath, JSON.stringify(config, null, 2));
+    await this.saveConfig(config);
   }
 
   /**
@@ -130,5 +116,52 @@ export class GitConfigStore {
 
   protected static repoKey(org: string, repo: string): string {
     return `${org}/${repo}`.toLowerCase();
+  }
+
+  protected async loadConfig(): Promise<GitConfigData> {
+    try {
+      const file = await this.dfs.GetFileInfo(this.filePath);
+      if (!file?.Contents) {
+        return this.cloneDefaults();
+      }
+
+      const text = await new Response(file.Contents).text();
+      const parsed = JSON.parse(text) as GitConfigData;
+      return this.mergeWithDefaults(parsed);
+    } catch {
+      return this.cloneDefaults();
+    }
+  }
+
+  protected async saveConfig(config: GitConfigData): Promise<void> {
+    await this.dfs.WriteFile(this.filePath, JSON.stringify(config, null, 2));
+  }
+
+  protected mergeWithDefaults(config?: GitConfigData): GitConfigData {
+    const merged: GitConfigData = {
+      ...DEFAULT_CONFIG,
+      ...config,
+      configuredRepos: {
+        ...DEFAULT_CONFIG.configuredRepos,
+        ...(config?.configuredRepos ?? {}),
+      },
+    };
+
+    if (config?.defaults) {
+      merged.defaults = { ...config.defaults };
+    }
+
+    if (config?.auth) {
+      merged.auth = { ...config.auth };
+    }
+
+    return merged;
+  }
+
+  protected cloneDefaults(): GitConfigData {
+    return {
+      ...DEFAULT_CONFIG,
+      configuredRepos: { ...DEFAULT_CONFIG.configuredRepos },
+    };
   }
 }

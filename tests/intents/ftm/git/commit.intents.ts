@@ -1,7 +1,7 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import GitCommand from '../../../../commands/git/index.ts';
 import { createMockDFS, MockGitService, MockPromptService } from './_mocks.ts';
-import GitIntentTestCLI from './_test_cli.ts';
+import GitIntentTestCLI from './.test.cli.ts';
 
 const cmd = GitCommand.Build();
 CommandIntentSuite('git Command Suite', cmd, GitIntentTestCLI)
