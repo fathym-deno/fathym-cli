@@ -3,6 +3,7 @@ import { parse as parseJsonc } from '@std/jsonc';
 import { VersionResolver } from './src/deps/VersionResolver.ts';
 import { VersionComparator } from './src/deps/VersionComparator.ts';
 import { CliffyPromptService } from './src/services/PromptService.ts';
+import { UrlOpener } from './src/services/UrlOpener.ts';
 
 const PACKAGE_NAME = '@fathym/ftm';
 
@@ -25,6 +26,7 @@ export default CLI(
   .Templates('./templates')
   .OnInit((ioc, _config) => {
     ioc.Register(CliffyPromptService, () => new CliffyPromptService());
+    ioc.Register(UrlOpener, () => new UrlOpener());
   })
   .InitCommand((cmd) =>
     cmd

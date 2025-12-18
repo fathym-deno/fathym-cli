@@ -5,3 +5,4 @@ export * from './InstallService.ts';
 export * from './PromptService.ts';
 export * from './Spinner.ts';
 export * from './TaskPipeline.ts';
+export * from './UrlOpener.ts';

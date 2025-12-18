@@ -6,6 +6,8 @@ import {
   GitService,
 } from '../../../../src/services/GitService.ts';
 import type { PromptService } from '../../../../src/services/PromptService.ts';
+import { GitConfigStore, type GitDefaults } from '../../../../src/services/GitConfigStore.ts';
+import { UrlOpener } from '../../../../src/services/UrlOpener.ts';
 
 export function createMockDFS(): DFSFileHandler {
   return {
@@ -90,6 +92,7 @@ export type GitMockOptions = {
   hasChanges?: boolean;
   branch?: string;
   remoteExists?: boolean;
+  remoteUrl?: string;
 };
 
 export class MockGitService extends GitService {
@@ -120,6 +123,17 @@ export class MockGitService extends GitService {
     args: string[],
     options: GitRunOptions = {},
   ): Promise<GitRunResult> {
+    if (args[0] === 'remote' && args[1] === 'get-url') {
+      const stdout = this.opts.remoteUrl ?? 'https://github.com/fathym/mock.git';
+
+      return Promise.resolve({
+        stdout,
+        stderr: '',
+        success: true,
+        code: 0,
+      });
+    }
+
     if (options.dryRun) {
       this.logger?.Info?.(`[dry-run] git ${args.join(' ')}`);
     }
@@ -178,5 +192,24 @@ export class MockGitService extends GitService {
     return this.Run(['push', '--set-upstream', 'origin', branch], options).then(
       () => undefined,
     );
+  }
+}
+
+export class MockGitConfigStore extends GitConfigStore {
+  public constructor(private readonly defaults?: GitDefaults) {
+    super({} as DFSFileHandler);
+  }
+
+  public override GetDefaults(): Promise<GitDefaults | undefined> {
+    return Promise.resolve(this.defaults);
+  }
+}
+
+export class MockUrlOpener extends UrlOpener {
+  public opened: string[] = [];
+
+  public override Open(url: string): Promise<void> {
+    this.opened.push(url);
+    return Promise.resolve();
   }
 }

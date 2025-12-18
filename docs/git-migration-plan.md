@@ -76,7 +76,11 @@ Deliverable: commands that only touch local git state.
   - [x] Normalize names + prefix with `hotfix/`, default base `origin/main` with `--base` overrides.
   - [x] TaskPipeline stages for checkout, push/upstream (respecting `--no-push`), prune.
   - [x] Intent suite for repo validation, dirty tree handling, push flow, dry-run/custom base.
-- [ ] `commands/git/home.ts` (open GitHub URL; uses config/local defaults).
+- [x] `commands/git/home.ts`:
+  - [x] Resolve org/repo via args, config defaults, or `--use-local` remote parsing.
+  - [x] Add `UrlOpener` service + GitHub remote helper for shared browser launches.
+  - [x] Prompt for missing context and open arbitrary sections (`--section`).
+  - [x] Intent suite covers config defaults, prompting, local inference, and failure states.
 - [ ] CLI DFS integration:
   - [ ] Commands resolve execution DFS first.
   - [ ] Config lookups (org/repo, integration branch) go through `GitConfigStore`.
@@ -190,7 +194,7 @@ Deliverable: commands that require the backend APIs & OAuth.
 - [x] Port `git` (commit/sync) using TaskPipeline + GitService; add intent suite.
 - [x] Port `git feature` + `git hotfix` following the same pattern.
 - [ ] Add HTTP client + auth store; port `git configure` and `git auth`.
-- [ ] Wire `git clone`/`git import`/`git home` using new services.
+- [ ] Wire `git clone`/`git import` using new services (git home complete).
 - [ ] Run deploy scripts (or intent tests) to validate real workflows.
 
 Progress updates and future phases should be logged here so contributors have a single source of truth for the git migration effort.
