@@ -88,6 +88,8 @@ export interface FindReferencesOptions {
   sourceFilter?: PackageReference['source'] | PackageReference['source'][] | 'all';
   /** Filter by project refs - only include references from projects matching these refs */
   projectFilter?: string[];
+  /** Exclude references from projects matching these refs (applied after projectFilter) */
+  excludeProjectFilter?: string[];
 }
 
 /**
@@ -111,6 +113,7 @@ export async function findPackageReferences(
   // Parse filter options
   const sourceFilter = options?.sourceFilter ?? 'all';
   const projectFilter = options?.projectFilter ?? [];
+  const excludeProjectFilter = options?.excludeProjectFilter ?? [];
 
   // Normalize source filter to array for easier checking
   const sourceTypes: PackageReference['source'][] | 'all' = sourceFilter === 'all'
@@ -166,10 +169,25 @@ export async function findPackageReferences(
     }
   }
 
+  // Resolve excluded project refs to a set of project names to skip
+  let excludedProjects: Set<string> | null = null;
+  if (excludeProjectFilter.length > 0) {
+    excludedProjects = new Set<string>();
+    for (const ref of excludeProjectFilter) {
+      const resolved = await resolver.Resolve(ref);
+      for (const project of resolved) {
+        if (project.name) {
+          excludedProjects.add(project.name);
+        }
+      }
+    }
+  }
+
   /**
    * Check if a project name passes the project filter.
    */
   function matchesProjectFilter(projectName: string): boolean {
+    if (excludedProjects?.has(projectName)) return false;
     if (!allowedProjects) return true; // No filter = allow all
     return allowedProjects.has(projectName);
   }
@@ -356,6 +374,8 @@ export interface UpgradeOptions {
   sourceFilter?: PackageReference['source'] | PackageReference['source'][] | 'all';
   /** Filter by project refs - only upgrade references in projects matching these refs */
   projectFilter?: string[];
+  /** Exclude references from projects matching these refs (applied after projectFilter) */
+  excludeProjectFilter?: string[];
 }
 
 /**
@@ -367,7 +387,13 @@ export async function upgradePackageReferences(
   resolver: DFSProjectResolver,
   options: UpgradeOptions,
 ): Promise<UpgradeResult[]> {
-  const { version, dryRun = false, sourceFilter = 'all', projectFilter = [] } = options;
+  const {
+    version,
+    dryRun = false,
+    sourceFilter = 'all',
+    projectFilter = [],
+    excludeProjectFilter = [],
+  } = options;
   const results: UpgradeResult[] = [];
 
   const dfs = resolver.DFS;
@@ -400,6 +426,7 @@ export async function upgradePackageReferences(
   const filteredRefs = await findPackageReferences(packageName, resolver, {
     sourceFilter,
     projectFilter,
+    excludeProjectFilter,
   });
 
   // Group references by file for efficient batch updates

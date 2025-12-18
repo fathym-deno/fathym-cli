@@ -278,6 +278,8 @@ export default Command(
         dryRun: Params.DryRun,
         sourceFilter: sourceFilterForApi,
         projectFilter: parsedFilters.projectRefs,
+        // Never upgrade references inside the upgraded package's own project.
+        excludeProjectFilter: [packageName],
       });
 
       // Calculate summary

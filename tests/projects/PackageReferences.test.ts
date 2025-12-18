@@ -330,6 +330,45 @@ Deno.test('upgradePackageReferences - upgrades all references when not dry-run',
   assertEquals(app2Content.includes(TEST_PKG_V1), false);
 });
 
+Deno.test('upgradePackageReferences - excludes references from specified projects', async () => {
+  const dfs = await createTestDFS({
+    // The package project itself (should be excluded from upgrades)
+    '/projects/pkg/deno.jsonc': JSON.stringify({
+      name: TEST_PKG,
+      exports: { '.': './mod.ts' },
+    }),
+    '/projects/pkg/src/mod.deps.ts': `export * from 'jsr:${TEST_PKG}@${TEST_PKG_V1}';`,
+
+    // A consuming project (should be upgraded)
+    '/projects/app/deno.jsonc': JSON.stringify({
+      name: '@test/app',
+      exports: { '.': './mod.ts' },
+      imports: {
+        [TEST_PKG]: `jsr:${TEST_PKG}@${TEST_PKG_V1}`,
+      },
+    }),
+  });
+
+  const resolver = new DFSProjectResolver(dfs);
+  const results = await upgradePackageReferences(TEST_PKG, resolver, {
+    version: TEST_PKG_V2,
+    dryRun: false,
+    excludeProjectFilter: [TEST_PKG],
+  });
+
+  // Only the consuming project should be upgraded
+  assertEquals(results.length, 1);
+  assertEquals(results[0].projectName, '@test/app');
+
+  const pkgDeps = await readDFSFile(dfs, '/projects/pkg/src/mod.deps.ts');
+  assertEquals(pkgDeps.includes(TEST_PKG_V1), true);
+  assertEquals(pkgDeps.includes(TEST_PKG_V2), false);
+
+  const appConfig = await readDFSFile(dfs, '/projects/app/deno.jsonc');
+  assertEquals(appConfig.includes(`jsr:${TEST_PKG}@${TEST_PKG_V2}`), true);
+  assertEquals(appConfig.includes(`jsr:${TEST_PKG}@${TEST_PKG_V1}`), false);
+});
+
 Deno.test('upgradePackageReferences - filters by source type', async () => {
   const dfs = await createTestDFS({
     '/projects/app/deno.jsonc': JSON.stringify({

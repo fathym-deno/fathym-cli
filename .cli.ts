@@ -2,6 +2,7 @@ import { CLI } from '@fathym/cli';
 import { parse as parseJsonc } from '@std/jsonc';
 import { VersionResolver } from './src/deps/VersionResolver.ts';
 import { VersionComparator } from './src/deps/VersionComparator.ts';
+import { CliffyPromptService } from './src/services/PromptService.ts';
 
 const PACKAGE_NAME = '@fathym/ftm';
 
@@ -22,6 +23,9 @@ export default CLI(
   // NOTE: .Plugins() not yet implemented in CLIModuleBuilder
   // .Plugins(['jsr:@fathym/cli-mcp-server/plugin'])
   .Templates('./templates')
+  .OnInit((ioc, _config) => {
+    ioc.Register(CliffyPromptService, () => new CliffyPromptService());
+  })
   .InitCommand((cmd) =>
     cmd
       // ═══════════════════════════════════════════════════════════════════
