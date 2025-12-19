@@ -179,6 +179,9 @@ Deliverable: commands that require the backend APIs & OAuth.
   - [x] Return structured `CommandStatus` data so JSON output provides repo/branch/path metadata.
   - [x] Intent suite covering configure gate failures, dry-run depth/branch combos, DFS destinations, and `--force`.
 - [x] Port `git import` (mirror remote).
+  - [x] Prompt/arg resolution for organization, repository, and remote, plus configure gate with `--force`.
+  - [x] Mirror via `git clone --bare` + `git push --mirror`, respecting DFS `--target`/`--dir`, depth/branch, and dry-run logging.
+  - [x] Emit structured `CommandStatus` metadata and intent suites for mirror success, prompts, dry-run, and gating.
 - [ ] Prompt helper parity (`ensurePromptValue` equivalent, with DFS/local defaults).
 
 ### Phase 3 – Polish & Parity

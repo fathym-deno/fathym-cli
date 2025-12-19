@@ -1,8 +1,10 @@
-import './commit.intents.ts';
 import './auth.intents.ts';
-import './feature.intents.ts';
-import './hotfix.intents.ts';
-import './home.intents.ts';
+import './clone.intents.ts';
+import './commit.intents.ts';
 import './configure.intents.ts';
+import './feature.intents.ts';
+import './home.intents.ts';
+import './hotfix.intents.ts';
+import './import.intents.ts';
 import './repos.intents.ts';
 import './git.group.intents.ts';

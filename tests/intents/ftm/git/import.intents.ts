@@ -17,8 +17,6 @@ CommandIntentSuite('git import Command Suite', cmd, GitIntentTestCLI)
         Prompt: new MockPromptService(),
       })
       .ExpectLogs(
-        '? Organization: fathym',
-        '? Repository: cli',
         'Repository fathym/cli has not been configured. Run `ftm git configure -s` first or pass --force to bypass.',
       )
       .ExpectExit(1))
@@ -37,13 +35,7 @@ CommandIntentSuite('git import Command Suite', cmd, GitIntentTestCLI)
         Prompt: new MockPromptService(),
       })
       .ExpectLogs(
-        '? Organization: fathym',
-        '? Repository: cli',
-        '? Repository fathym/cli is configured',
-        '? Remote: https://github.com/example/source.git',
-        '? Destination: /workspace/cli',
-        '? Clone https://github.com/example/source.git as bare repository',
-        '? Push mirror to fathym/cli',
+        'Imported https://github.com/example/source.git → fathym/cli',
       )
       .After(() => {
         assertEquals(git.Commands[0]?.args, [
@@ -81,12 +73,6 @@ CommandIntentSuite('git import Command Suite', cmd, GitIntentTestCLI)
         }),
       })
       .ExpectLogs(
-        '? Organization: openindustrial',
-        '? Repository: platform',
-        '? Repository openindustrial/platform is configured',
-        '? Remote: https://github.com/example/platform.git',
-        '? Destination: /tmp/import-tmp',
-        '? Clone https://github.com/example/platform.git as bare repository',
         '[dry-run] git clone --bare --depth 1 --branch integration https://github.com/example/platform.git /tmp/import-tmp',
         '[dry-run] git push --mirror https://github.com/openindustrial/platform.git',
       )
@@ -113,9 +99,6 @@ CommandIntentSuite('git import Command Suite', cmd, GitIntentTestCLI)
       })
       .ExpectLogs(
         'Proceeding without configure (--force)',
-        '? Remote: https://github.com/example/platform.git',
-        '? Destination: /tmp/platform',
-        '? Clone https://github.com/example/platform.git as bare repository',
         '[dry-run] git clone --bare https://github.com/example/platform.git /tmp/platform',
         '[dry-run] git push --mirror https://github.com/openindustrial/platform.git',
       )

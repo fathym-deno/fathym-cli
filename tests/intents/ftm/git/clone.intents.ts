@@ -17,8 +17,6 @@ CommandIntentSuite('git clone Command Suite', cmd, GitIntentTestCLI)
         Prompt: new MockPromptService(),
       })
       .ExpectLogs(
-        '? Organization: fathym',
-        '? Repository: cli',
         'Repository fathym/cli has not been configured. Run `ftm git configure -s` first or pass --force to bypass.',
       )
       .ExpectExit(1))
@@ -36,13 +34,7 @@ CommandIntentSuite('git clone Command Suite', cmd, GitIntentTestCLI)
         Config: config,
         Prompt: new MockPromptService(),
       })
-      .ExpectLogs(
-        '? Organization: fathym',
-        '? Repository: cli',
-        '? Repository fathym/cli is configured',
-        '? Destination: /workspace/cli',
-        '? Clone repository fathym/cli',
-      )
+      .ExpectLogs('Cloned fathym/cli → /workspace/cli')
       .After(() => {
         assertEquals(git.Commands.at(-1)?.args, [
           'clone',
@@ -68,7 +60,6 @@ CommandIntentSuite('git clone Command Suite', cmd, GitIntentTestCLI)
         Prompt: new MockPromptService(),
       })
       .ExpectLogs(
-        '? Destination: /git/target/platform-src',
         '[dry-run] git clone --depth 1 --branch integration https://github.com/openindustrial/platform.git /git/target/platform-src',
       )
       .After(() => {
