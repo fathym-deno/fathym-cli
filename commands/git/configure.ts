@@ -16,7 +16,6 @@ import { z } from 'zod';
 import {
   CliffyPromptService,
   FathymApiClient,
-  FathymConfigStore,
   FathymGitHubLookupService,
   type FathymGitHubOrganization,
   type FathymGitHubRepository,
@@ -111,10 +110,6 @@ type GitConfigurePipelineContext = {
   configureResponse?: Record<string, unknown>;
 };
 
-type IoCResolver = {
-  Resolve<T>(token: new (...args: never[]) => T): Promise<T>;
-};
-
 export default Command('Configure Repository', 'Provision a GitHub repository with Fathym defaults')
   .Args(GitConfigureArgsSchema)
   .Flags(GitConfigureFlagsSchema)
@@ -123,34 +118,11 @@ export default Command('Configure Repository', 'Provision a GitHub repository wi
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
     const workingDFS = await ResolveGitOpsWorkingDFS(dfsCtx);
 
-    const git = await resolveOrFallback(ioc, GitService, () => new GitService());
-    const config = await resolveOrFallback(
-      ioc,
-      GitConfigStore,
-      async () => new GitConfigStore(await dfsCtx.GetConfigDFS()),
-    );
-    const prompt = await resolveOrFallback(
-      ioc,
-      CliffyPromptService,
-      () => new CliffyPromptService(),
-    );
-    const api = await resolveOrFallback(
-      ioc,
-      FathymApiClient,
-      async () =>
-        new FathymApiClient(
-          await resolveOrFallback(
-            ioc,
-            FathymConfigStore,
-            async () => new FathymConfigStore(await dfsCtx.GetConfigDFS()),
-          ),
-        ),
-    );
-    const lookup = await resolveOrFallback(
-      ioc,
-      FathymGitHubLookupService,
-      () => new FathymGitHubLookupService(api),
-    );
+    const git = await ioc.Resolve(GitService);
+    const config = await ioc.Resolve(GitConfigStore);
+    const prompt = await ioc.Resolve(CliffyPromptService);
+    const api = await ioc.Resolve(FathymApiClient);
+    const lookup = await ioc.Resolve(FathymGitHubLookupService);
 
     return {
       DFS: workingDFS,
@@ -444,16 +416,4 @@ function buildRepositoryOptions(
   options.push({ name: 'Enter a custom repository', value: '__custom__' });
 
   return options;
-}
-
-async function resolveOrFallback<T>(
-  ioc: IoCResolver,
-  token: new (...args: never[]) => T,
-  fallback: () => T | Promise<T>,
-): Promise<T> {
-  try {
-    return await ioc.Resolve(token);
-  } catch {
-    return await fallback();
-  }
 }

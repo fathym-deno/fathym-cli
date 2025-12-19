@@ -96,10 +96,6 @@ type GitHomePipelineContext = {
   finalUrl?: string;
 };
 
-type IoCResolver = {
-  Resolve<T>(token: new (...args: never[]) => T): Promise<T>;
-};
-
 export default Command('Open Repo Home', 'Open the configured GitHub repository in your browser')
   .Args(GitHomeArgsSchema)
   .Flags(GitHomeFlagsSchema)
@@ -108,18 +104,10 @@ export default Command('Open Repo Home', 'Open the configured GitHub repository 
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
     const workingDFS = await ResolveGitOpsWorkingDFS(dfsCtx);
 
-    const git = await resolveOrFallback(ioc, GitService, () => new GitService());
-    const config = await resolveOrFallback(
-      ioc,
-      GitConfigStore,
-      async () => new GitConfigStore(await dfsCtx.GetConfigDFS()),
-    );
-    const prompt = await resolveOrFallback(
-      ioc,
-      CliffyPromptService,
-      () => new CliffyPromptService(),
-    );
-    const urls = await resolveOrFallback(ioc, UrlOpener, () => new UrlOpener());
+    const git = await ioc.Resolve(GitService);
+    const config = await ioc.Resolve(GitConfigStore);
+    const prompt = await ioc.Resolve(CliffyPromptService);
+    const urls = await ioc.Resolve(UrlOpener);
 
     return {
       DFS: workingDFS,
@@ -197,18 +185,6 @@ function buildTasks(): TaskDefinition<GitHomePipelineContext>[] {
       },
     },
   ];
-}
-
-async function resolveOrFallback<T>(
-  ioc: IoCResolver,
-  token: new (...args: never[]) => T,
-  fallback: () => T | Promise<T>,
-): Promise<T> {
-  try {
-    return await ioc.Resolve(token);
-  } catch {
-    return await fallback();
-  }
 }
 
 async function resolveOrganization(ctx: GitHomePipelineContext): Promise<string> {

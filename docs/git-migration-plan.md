@@ -88,7 +88,8 @@ Deliverable: commands that only touch local git state.
   - [x] Introduce a `--target` flag handled by the git group's `InitCommand` that resolves a `GitOpsTargetDFS` (falling back to execution DFS) and stashes it in `CLIDFSContextManager`.
   - [x] Update `git`, `feature`, `hotfix`, and `home` to prefer `GitOpsTargetDFS` (falling back to execution DFS) for file operations.
   - [x] Extend intent mocks (`tests/intents/ftm/git/_mocks.ts`) with helpers for registering target DFS roots so suites remain deterministic.
-  - ℹ️ Helpers live under `src/git/dfs/gitOpsTarget.ts` and are re-exported via `src/git/.exports.ts`, while the shared `--target` flag schema lives under `src/git/flags/gitTargetFlag.ts`.
+  - [x] Helpers live under `src/git/dfs/gitOpsTarget.ts` (exported via `src/git/.exports.ts`) and the shared `--target` flag schema resides in `src/git/flags/gitTargetFlag.ts`.
+  - [x] Removed the temporary `resolveOrFallback` helper; git commands now rely entirely on IoC registrations, and the git intent test CLI registers `GitService` + `GitConfigStore` so suites can override them deterministically.
 
 **Implementation pattern (example for `git` command):**
 

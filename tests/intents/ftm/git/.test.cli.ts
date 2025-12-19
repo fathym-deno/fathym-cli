@@ -6,6 +6,8 @@ import {
   FathymApiClient,
   FathymConfigStore,
   FathymGitHubLookupService,
+  GitConfigStore,
+  GitService,
 } from '../../../../src/services/.exports.ts';
 import { MockFathymGitHubLookupService } from './_mocks.ts';
 
@@ -19,9 +21,11 @@ export default CLI('Git Intent CLI', 'ftm', '0.0.0')
   .OnInit((ioc) => {
     ioc.Register(CliffyPromptService, () => new CliffyPromptService());
     ioc.Register(UrlOpener, () => new UrlOpener());
+    ioc.Register(GitService, () => new GitService());
 
     const configDFS = new MemoryDFSFileHandler({ Root: '/' });
 
+    ioc.Register(GitConfigStore, () => new GitConfigStore(configDFS));
     ioc.Register(FathymConfigStore, () => new FathymConfigStore(configDFS));
     ioc.Register(
       FathymApiClient,
