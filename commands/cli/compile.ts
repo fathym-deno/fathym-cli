@@ -102,6 +102,7 @@
  * @module
  */
 
+import { dirname } from '@std/path/dirname';
 import { join } from '@std/path/join';
 import { toFileUrl } from '@std/path/to-file-url';
 import { z } from 'zod';
@@ -341,16 +342,18 @@ export default Command('compile', 'Compile the CLI into a native binary')
         outputBinaryPath = join(baseOutputDir, primaryToken);
       }
 
+      const outputBinaryWithExt = `${outputBinaryPath}${binaryExt}`;
+
       Log.Info(`🔧 Compiling CLI for: ${primaryToken}`);
       Log.Info(`- Entry: ${entryPath}`);
-      Log.Info(`- Output: ${outputBinaryPath}${binaryExt}`);
+      Log.Info(`- Output: ${outputBinaryWithExt}`);
       if (target) {
         Log.Info(`- Target: ${target}`);
       }
       Log.Info(`- Permissions: ${permissions.join(' ')}`);
 
       // Ensure output directory exists before compilation (required for cross-compilation targets)
-      const outputDir = target ? join(baseOutputDir, target) : baseOutputDir;
+      const outputDir = dirname(outputBinaryWithExt);
       try {
         await Deno.mkdir(outputDir, { recursive: true });
       } catch (err) {
@@ -364,7 +367,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
         'compile',
         ...permissions,
         '--output',
-        outputBinaryPath,
+        outputBinaryWithExt,
         ...(target ? ['--target', target] : []),
         entryPath,
       ];
@@ -375,7 +378,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
         cwd: Services.CLIDFS.Root,
       });
 
-      Log.Success(`✅ Compiled: ${outputBinaryPath}${binaryExt}`);
+      Log.Success(`✅ Compiled: ${outputBinaryWithExt}`);
       if (target) {
         Log.Info(`📦 Cross-compiled for: ${target}`);
       }
