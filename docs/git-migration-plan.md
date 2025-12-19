@@ -166,11 +166,12 @@ Deliverable: commands that require the backend APIs & OAuth.
   - [x] `GET …/branches`.
   - [x] Render lookups/instructions at the end.
   - [x] Add intent suite covering default listing, org filtering, and branch details.
-- [ ] Port `git configure -s`:
-  - [ ] Ensure org/repo via prompts + backend list endpoints.
-  - [ ] Prompt for license (MIT/Apache/GPL/custom).
-  - [ ] POST `github/organizations/{org}/repositories/{repo}/configure`.
-  - [ ] Record configured repo in `GitConfigStore`.
+- [x] Port `git configure -s`:
+  - [x] Ensure org/repo via prompts + backend list endpoints (with `--skip-local` guardrail and `--target` DFS support).
+  - [x] Prompt for license (MIT/Apache/GPL/custom) with custom-entry fallback.
+  - [x] POST `github/organizations/{org}/repositories/{repo}/configure`.
+  - [x] Record configured repo in `GitConfigStore` + persist defaults.
+  - [x] Intent suite covering flag-driven flow, lookup-driven prompts, and local-remote inference.
 - [ ] Port `git clone`:
   - [ ] Gate on configured repo (or `--force`).
   - [ ] Clone from GitHub with optional branch/depth.
@@ -201,7 +202,7 @@ Deliverable: commands that require the backend APIs & OAuth.
 - [x] Port `git feature` + `git hotfix` following the same pattern.
 - [x] Add HTTP client + auth store; port `git auth`.
 - [x] Implement git lookup helpers + `git repos` command/tests.
-- [ ] Implement `git configure -s` using the new client.
+- [x] Implement `git configure -s` using the new client.
 - [ ] Wire `git clone`/`git import` using new services (git home complete).
 - [ ] Run deploy scripts (or intent tests) to validate real workflows.
 

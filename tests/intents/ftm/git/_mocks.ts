@@ -14,7 +14,9 @@ import {
   FathymGitHubLookupService,
   type FathymGitHubOrganization,
   type FathymGitHubRepository,
+  type GitConfigData,
   GitConfigStore,
+  type GitConfiguredRepo,
   type GitDefaults,
 } from '../../../../src/services/.exports.ts';
 import { FathymApiClient } from '../../../../src/services/FathymApiClient.ts';
@@ -216,12 +218,68 @@ export class MockGitService extends GitService {
 }
 
 export class MockGitConfigStore extends GitConfigStore {
-  public constructor(private readonly defaults?: GitDefaults) {
+  public defaults?: GitDefaults;
+  public configuredRecords: GitConfiguredRepo[] = [];
+  private data: GitConfigData;
+
+  public constructor(defaults?: GitDefaults) {
     super({} as DFSFileHandler);
+    this.defaults = defaults;
+    this.data = {
+      defaults,
+      configuredRepos: {},
+    };
   }
 
-  public override GetDefaults(): Promise<GitDefaults | undefined> {
-    return Promise.resolve(this.defaults);
+  public override async Load(): Promise<GitConfigData> {
+    return await Promise.resolve(cloneConfig(this.data));
+  }
+
+  public override async Save(config: GitConfigData): Promise<void> {
+    this.data = cloneConfig(config);
+    await Promise.resolve();
+  }
+
+  public override async Update(
+    mutator: (config: GitConfigData) => void | Promise<void>,
+  ): Promise<GitConfigData> {
+    const clone = await this.Load();
+    await mutator(clone);
+    await this.Save(clone);
+    return clone;
+  }
+
+  public override async GetDefaults(): Promise<GitDefaults | undefined> {
+    return await Promise.resolve(this.data.defaults);
+  }
+
+  public override async SetDefaults(defaults: GitDefaults): Promise<void> {
+    this.data.defaults = { ...(this.data.defaults ?? {}), ...defaults };
+    this.defaults = this.data.defaults;
+    await Promise.resolve();
+  }
+
+  public override async MarkConfigured(
+    organization: string,
+    repository: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    const key = `${organization}/${repository}`.toLowerCase();
+    const record: GitConfiguredRepo = {
+      organization,
+      repository,
+      configuredAt: 'mock-date',
+      metadata,
+    };
+
+    this.data.configuredRepos[key] = record;
+    this.configuredRecords.push(record);
+    await Promise.resolve();
+  }
+
+  public override async IsConfigured(organization: string, repository: string): Promise<boolean> {
+    const key = `${organization}/${repository}`.toLowerCase();
+    return await Promise.resolve(Boolean(this.data.configuredRepos[key]));
   }
 }
 
@@ -278,13 +336,49 @@ export class MockFathymApiClient extends FathymApiClient {
   }
 
   public override GetJson<T>(path: string): Promise<T> {
-    this.requests.push(path);
-    if (!this.responses.has(path)) {
-      throw new Error(`No mock response for ${path}`);
+    this.requests.push(`GET ${path}`);
+    const key = this.findResponseKey('GET', path);
+    if (!key) {
+      throw new Error(`No mock response for GET ${path}`);
     }
 
-    return Promise.resolve(this.responses.get(path) as T);
+    return Promise.resolve(this.responses.get(key) as T);
   }
+
+  public override PostJson<TBody extends Record<string, unknown>, TResponse>(
+    path: string,
+    body: TBody,
+  ): Promise<TResponse> {
+    this.requests.push(`POST ${path}`);
+    const key = this.findResponseKey('POST', path);
+    if (!key) {
+      throw new Error(`No mock response for POST ${path}`);
+    }
+
+    const value = this.responses.get(key);
+    if (typeof value === 'function') {
+      return Promise.resolve((value as (payload: TBody) => TResponse)(body));
+    }
+
+    return Promise.resolve(value as TResponse);
+  }
+
+  private findResponseKey(method: string, path: string): string | undefined {
+    const keyed = `${method.toUpperCase()} ${path}`;
+    if (this.responses.has(keyed)) {
+      return keyed;
+    }
+
+    if (this.responses.has(path)) {
+      return path;
+    }
+
+    return undefined;
+  }
+}
+
+function cloneConfig(data: GitConfigData): GitConfigData {
+  return JSON.parse(JSON.stringify(data));
 }
 
 type MockLookupOptions = {
