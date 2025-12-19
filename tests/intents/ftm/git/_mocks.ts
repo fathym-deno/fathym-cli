@@ -10,6 +10,10 @@ import type { PromptService } from '../../../../src/services/PromptService.ts';
 import {
   type AccessTokenData,
   FathymConfigStore,
+  type FathymGitHubBranch,
+  FathymGitHubLookupService,
+  type FathymGitHubOrganization,
+  type FathymGitHubRepository,
   GitConfigStore,
   type GitDefaults,
 } from '../../../../src/services/.exports.ts';
@@ -280,5 +284,36 @@ export class MockFathymApiClient extends FathymApiClient {
     }
 
     return Promise.resolve(this.responses.get(path) as T);
+  }
+}
+
+type MockLookupOptions = {
+  organizations?: FathymGitHubOrganization[];
+  repositories?: Record<string, FathymGitHubRepository[]>;
+  branches?: Record<string, FathymGitHubBranch[]>;
+};
+
+export class MockFathymGitHubLookupService extends FathymGitHubLookupService {
+  public constructor(private readonly options: MockLookupOptions = {}) {
+    super({} as FathymApiClient);
+  }
+
+  public override ListOrganizations(): Promise<FathymGitHubOrganization[]> {
+    return Promise.resolve(this.options.organizations ?? []);
+  }
+
+  public override ListRepositories(
+    organizationLookup: string,
+  ): Promise<FathymGitHubRepository[]> {
+    const key = organizationLookup.toLowerCase();
+    return Promise.resolve(this.options.repositories?.[key] ?? []);
+  }
+
+  public override ListBranches(
+    organizationLookup: string,
+    repositoryLookup: string,
+  ): Promise<FathymGitHubBranch[]> {
+    const key = `${organizationLookup}/${repositoryLookup}`.toLowerCase();
+    return Promise.resolve(this.options.branches?.[key] ?? []);
   }
 }

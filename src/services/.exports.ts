@@ -1,6 +1,7 @@
 export * from './ConfigFileService.ts';
 export * from './FathymApiClient.ts';
 export * from './FathymConfigStore.ts';
+export * from './FathymGitHubLookupService.ts';
 export * from './GitConfigStore.ts';
 export * from './GitService.ts';
 export * from './InstallService.ts';

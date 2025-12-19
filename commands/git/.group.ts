@@ -13,6 +13,7 @@ import { RegisterGitOpsTargetDFS } from '../../src/git/.exports.ts';
 import {
   FathymApiClient,
   FathymConfigStore,
+  FathymGitHubLookupService,
   GitConfigStore,
   GitService,
 } from '../../src/services/.exports.ts';
@@ -50,6 +51,11 @@ export default Group('git')
         const store = await ioc.Resolve(FathymConfigStore);
         return new FathymApiClient(store);
       },
+    );
+
+    ioc.Register(
+      FathymGitHubLookupService,
+      async () => new FathymGitHubLookupService(await ioc.Resolve(FathymApiClient)),
     );
   })
   .InitCommand((cmd) =>

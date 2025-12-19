@@ -160,11 +160,12 @@ Deliverable: commands that require the backend APIs & OAuth.
   - [x] Launch B2C OAuth (`https://www.fathym.com/.oauth/GitHubOAuth?...`).
   - [x] Resolve parent vs self enterprise lookups via the Fathym API + ConfigDFS data.
   - [x] Reuse ConfigDFS helpers so auth state aligns with the rest of the CLI (token exchange still handled by `ftm auth`).
-- [ ] Port lookup commands (`git repos`):
-  - [ ] `GET github/organizations`.
-  - [ ] `GET …/repositories`.
-  - [ ] `GET …/branches`.
-  - [ ] Render lookups/instructions at the end.
+- [x] Port lookup commands (`git repos`):
+  - [x] `GET github/organizations`.
+  - [x] `GET …/repositories`.
+  - [x] `GET …/branches`.
+  - [x] Render lookups/instructions at the end.
+  - [x] Add intent suite covering default listing, org filtering, and branch details.
 - [ ] Port `git configure -s`:
   - [ ] Ensure org/repo via prompts + backend list endpoints.
   - [ ] Prompt for license (MIT/Apache/GPL/custom).
@@ -199,7 +200,8 @@ Deliverable: commands that require the backend APIs & OAuth.
 - [x] Port `git` (commit/sync) using TaskPipeline + GitService; add intent suite.
 - [x] Port `git feature` + `git hotfix` following the same pattern.
 - [x] Add HTTP client + auth store; port `git auth`.
-- [ ] Implement git lookup helpers + `git configure -s` using the new client.
+- [x] Implement git lookup helpers + `git repos` command/tests.
+- [ ] Implement `git configure -s` using the new client.
 - [ ] Wire `git clone`/`git import` using new services (git home complete).
 - [ ] Run deploy scripts (or intent tests) to validate real workflows.
 

@@ -272,7 +272,7 @@ export { b } from 'jsr:@fathym/eac@0.2.232-hmis';
 Deno.test('DepsFileParser.filterByPattern - Wildcard suffix match', () => {
   const content = `
 export { a } from 'jsr:@fathym/eac@0.2.232-hmis';
-export { b } from 'jsr:@fathym/eac-identity@0.0.75-eac-cascade';
+export { b } from 'jsr:@fathym/eac-identity@0.0.76-eac-cascade';
 export { c } from 'jsr:@fathym/common@0.2.307-common-release';
 `;
   const refs = parser.parse(content);

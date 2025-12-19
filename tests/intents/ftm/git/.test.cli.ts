@@ -2,7 +2,12 @@ import { CLI } from '@fathym/cli';
 import { MemoryDFSFileHandler } from '@fathym/dfs/handlers';
 import { CliffyPromptService } from '../../../../src/services/PromptService.ts';
 import { UrlOpener } from '../../../../src/services/UrlOpener.ts';
-import { FathymApiClient, FathymConfigStore } from '../../../../src/services/.exports.ts';
+import {
+  FathymApiClient,
+  FathymConfigStore,
+  FathymGitHubLookupService,
+} from '../../../../src/services/.exports.ts';
+import { MockFathymGitHubLookupService } from './_mocks.ts';
 
 /**
  * Minimal CLI configuration shared by git intent suites.
@@ -21,5 +26,9 @@ export default CLI('Git Intent CLI', 'ftm', '0.0.0')
     ioc.Register(
       FathymApiClient,
       async () => new FathymApiClient(await ioc.Resolve(FathymConfigStore)),
+    );
+    ioc.Register(
+      FathymGitHubLookupService,
+      () => new MockFathymGitHubLookupService(),
     );
   });
