@@ -119,6 +119,7 @@ export type GitMockOptions = {
 
 export class MockGitService extends GitService {
   private readonly remoteBranches = new Set<string>();
+  public readonly Commands: { args: string[]; options: GitRunOptions }[] = [];
 
   public constructor(private readonly opts: GitMockOptions = {}) {
     super();
@@ -145,6 +146,8 @@ export class MockGitService extends GitService {
     args: string[],
     options: GitRunOptions = {},
   ): Promise<GitRunResult> {
+    this.Commands.push({ args: [...args], options: { ...options } });
+
     if (args[0] === 'remote' && args[1] === 'get-url') {
       const stdout = this.opts.remoteUrl ?? 'https://github.com/fathym/mock.git';
 
@@ -222,13 +225,31 @@ export class MockGitConfigStore extends GitConfigStore {
   public configuredRecords: GitConfiguredRepo[] = [];
   private data: GitConfigData;
 
-  public constructor(defaults?: GitDefaults) {
+  public constructor(
+    defaults?: GitDefaults,
+    configured?: MockConfiguredRepoInput[],
+  ) {
     super({} as DFSFileHandler);
     this.defaults = defaults;
     this.data = {
       defaults,
       configuredRepos: {},
     };
+
+    if (configured) {
+      for (const repo of configured) {
+        const key = MockGitConfigStore.repoKey(repo.organization, repo.repository);
+        const record: GitConfiguredRepo = {
+          organization: repo.organization,
+          repository: repo.repository,
+          configuredAt: repo.configuredAt ?? 'mock-date',
+          metadata: repo.metadata,
+        };
+
+        this.data.configuredRepos[key] = record;
+        this.configuredRecords.push(record);
+      }
+    }
   }
 
   public override async Load(): Promise<GitConfigData> {
@@ -282,6 +303,13 @@ export class MockGitConfigStore extends GitConfigStore {
     return await Promise.resolve(Boolean(this.data.configuredRepos[key]));
   }
 }
+
+type MockConfiguredRepoInput = {
+  organization: string;
+  repository: string;
+  metadata?: Record<string, unknown>;
+  configuredAt?: string;
+};
 
 export class MockUrlOpener extends UrlOpener {
   public opened: string[] = [];

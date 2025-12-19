@@ -173,10 +173,11 @@ Deliverable: commands that require the backend APIs & OAuth.
   - [x] POST `github/organizations/{org}/repositories/{repo}/configure`.
   - [x] Record configured repo in `GitConfigStore` + persist defaults.
   - [x] Intent suite covering flag-driven flow, lookup-driven prompts, and local-remote inference.
-- [ ] Port `git clone`:
-  - [ ] Gate on configured repo (or `--force`).
-  - [ ] Clone from GitHub with optional branch/depth.
-  - [ ] Optionally checkout `integration`.
+- [x] Port `git clone`:
+  - [x] Gate on configured repo (or `--force`) and surface the decision inside `CommandStatus`.
+  - [x] Clone from GitHub with optional branch/depth plus DFS-aware destination resolution (`--dir`, `--target`).
+  - [x] Return structured `CommandStatus` data so JSON output provides repo/branch/path metadata.
+  - [x] Intent suite covering configure gate failures, dry-run depth/branch combos, DFS destinations, and `--force`.
 - [ ] Port `git import` (mirror remote).
 - [ ] Prompt helper parity (`ensurePromptValue` equivalent, with DFS/local defaults).
 
@@ -204,7 +205,7 @@ Deliverable: commands that require the backend APIs & OAuth.
 - [x] Add HTTP client + auth store; port `git auth`.
 - [x] Implement git lookup helpers + `git repos` command/tests.
 - [x] Implement `git configure -s` using the new client.
-- [ ] Wire `git clone`/`git import` using new services (git home complete).
+- [ ] Wire `git import` using the new services (git clone complete).
 - [ ] Run deploy scripts (or intent tests) to validate real workflows.
 
 Progress updates and future phases should be logged here so contributors have a single source of truth for the git migration effort.
