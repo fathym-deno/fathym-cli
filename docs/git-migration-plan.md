@@ -178,7 +178,7 @@ Deliverable: commands that require the backend APIs & OAuth.
   - [x] Clone from GitHub with optional branch/depth plus DFS-aware destination resolution (`--dir`, `--target`).
   - [x] Return structured `CommandStatus` data so JSON output provides repo/branch/path metadata.
   - [x] Intent suite covering configure gate failures, dry-run depth/branch combos, DFS destinations, and `--force`.
-- [ ] Port `git import` (mirror remote).
+- [x] Port `git import` (mirror remote).
 - [ ] Prompt helper parity (`ensurePromptValue` equivalent, with DFS/local defaults).
 
 ### Phase 3 – Polish & Parity
