@@ -1,7 +1,7 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import BuildCommand from '../../../../commands/cli/build.ts';
 
-CommandIntents(
+CommandIntentSuite(
   'Build Command Suite',
   BuildCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

@@ -66,7 +66,7 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import { CascadeRunner } from '../../../src/pipelines/CascadeRunner.ts';
@@ -76,6 +76,18 @@ import FmtCommand from './fmt.ts';
 import LintCommand from './lint.ts';
 import CheckCommand from './check.ts';
 import TestCommand from './test.ts';
+
+/**
+ * Result data for the build command.
+ */
+export interface ProjectBuildResult {
+  /** The project that was built */
+  project: string;
+  /** Whether build succeeded */
+  success: boolean;
+  /** Exit code from the build pipeline */
+  exitCode: number;
+}
 
 /**
  * Build pipeline step definitions.
@@ -212,7 +224,7 @@ export default Command(
       Project: projects[0],
     };
   })
-  .Run(async ({ Params, Commands, Services, Log }) => {
+  .Run(async ({ Params, Commands, Services, Log }): Promise<CommandStatus<ProjectBuildResult>> => {
     const { Project } = Services;
     const { Task, Fmt, Lint, Check, Test } = Commands!;
 
@@ -237,9 +249,30 @@ export default Command(
 
     // Execute (handles --explain, --dry-run, full override, and step execution)
     try {
-      return await runner.run(resolution, stepCommands, Params.ProjectRef);
+      const exitCode = await runner.run(resolution, stepCommands, Params.ProjectRef);
+      const success = exitCode === 0;
+
+      return {
+        Code: exitCode,
+        Message: success
+          ? `Build succeeded for ${Params.ProjectRef}`
+          : `Build failed for ${Params.ProjectRef}`,
+        Data: {
+          project: Params.ProjectRef,
+          success,
+          exitCode,
+        },
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Build failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: {
+          project: Params.ProjectRef,
+          success: false,
+          exitCode: 1,
+        },
+      };
     }
   });

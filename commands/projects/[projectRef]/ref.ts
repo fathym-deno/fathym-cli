@@ -59,7 +59,7 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import { VersionResolver } from '../../../src/deps/VersionResolver.ts';
@@ -277,12 +277,24 @@ export default Command(
       VersionResolver: new VersionResolver(),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<RefOutput>> => {
     const { ProjectResolver, VersionResolver } = Services;
 
     if (!Params.ProjectRef) {
       Log.Error('No project reference provided.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No project reference provided',
+        Data: {
+          dir: '',
+          configPath: '',
+          git: {},
+          hasBuild: false,
+          tasks: [],
+          jsrVersions: {},
+          referencedBy: [],
+        },
+      };
     }
 
     try {
@@ -290,7 +302,19 @@ export default Command(
 
       if (projects.length === 0) {
         Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
-        return 1;
+        return {
+          Code: 1,
+          Message: `No projects found matching '${Params.ProjectRef}'`,
+          Data: {
+            dir: '',
+            configPath: '',
+            git: {},
+            hasBuild: false,
+            tasks: [],
+            jsrVersions: {},
+            referencedBy: [],
+          },
+        };
       }
 
       if (projects.length > 1) {
@@ -298,7 +322,19 @@ export default Command(
           `Found ${projects.length} projects. Please specify a single project:\n` +
             projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
         );
-        return 1;
+        return {
+          Code: 1,
+          Message: `Found ${projects.length} projects, please specify a single project`,
+          Data: {
+            dir: '',
+            configPath: '',
+            git: {},
+            hasBuild: false,
+            tasks: [],
+            jsrVersions: {},
+            referencedBy: [],
+          },
+        };
       }
 
       const project = projects[0];
@@ -400,9 +436,25 @@ export default Command(
         }
       }
 
-      return 0;
+      return {
+        Code: 0,
+        Message: `Ref resolved for ${project.name ?? project.dir}`,
+        Data: output,
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Ref failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: {
+          dir: '',
+          configPath: '',
+          git: {},
+          hasBuild: false,
+          tasks: [],
+          jsrVersions: {},
+          referencedBy: [],
+        },
+      };
     }
   });

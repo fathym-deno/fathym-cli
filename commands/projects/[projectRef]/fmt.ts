@@ -21,9 +21,23 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
+
+/**
+ * Result data for the fmt command.
+ */
+export interface ProjectFmtResult {
+  /** The project that was formatted */
+  project: string;
+  /** Whether formatting passed/succeeded */
+  success: boolean;
+  /** Exit code from deno fmt */
+  exitCode: number;
+  /** Whether --check mode was used */
+  checkOnly: boolean;
+}
 
 /**
  * Segments schema for the fmt command.
@@ -95,12 +109,17 @@ export default Command(
       ProjectResolver: new DFSProjectResolver(dfs as unknown as DFSFileHandler),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<ProjectFmtResult>> => {
     const resolver = Services.ProjectResolver;
+    const checkOnly = Params.Check;
 
     if (!Params.ProjectRef) {
       Log.Error('No project reference provided.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No project reference provided',
+        Data: { project: '', success: false, exitCode: 1, checkOnly },
+      };
     }
 
     try {
@@ -108,7 +127,11 @@ export default Command(
 
       if (projects.length === 0) {
         Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
-        return 1;
+        return {
+          Code: 1,
+          Message: `No projects found matching '${Params.ProjectRef}'`,
+          Data: { project: Params.ProjectRef, success: false, exitCode: 1, checkOnly },
+        };
       }
 
       if (projects.length > 1) {
@@ -116,7 +139,11 @@ export default Command(
           `Found ${projects.length} projects. Please specify a single project:\n` +
             projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
         );
-        return 1;
+        return {
+          Code: 1,
+          Message: `Found ${projects.length} projects, please specify a single project`,
+          Data: { project: Params.ProjectRef, success: false, exitCode: 1, checkOnly },
+        };
       }
 
       const project = projects[0];
@@ -127,7 +154,7 @@ export default Command(
       }
 
       const args = ['fmt'];
-      if (Params.Check) {
+      if (checkOnly) {
         args.push('--check');
       }
 
@@ -135,7 +162,11 @@ export default Command(
         Log.Info(
           `[DRY RUN] Would run: deno ${args.join(' ')} in ${project.dir}`,
         );
-        return 0;
+        return {
+          Code: 0,
+          Message: `[DRY RUN] Would format ${projectName}`,
+          Data: { project: projectName, success: true, exitCode: 0, checkOnly },
+        };
       }
 
       const cmd = new Deno.Command('deno', {
@@ -147,14 +178,25 @@ export default Command(
       });
 
       const { code } = await cmd.output();
+      const success = code === 0;
 
-      if (Params.Verbose && code === 0) {
+      if (Params.Verbose && success) {
         Log.Info(`Formatting complete.`);
       }
 
-      return code;
+      return {
+        Code: code,
+        Message: success
+          ? `Formatting ${checkOnly ? 'check passed' : 'complete'} for ${projectName}`
+          : `Formatting ${checkOnly ? 'check failed' : 'failed'} for ${projectName}`,
+        Data: { project: projectName, success, exitCode: code, checkOnly },
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Formatting failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: { project: Params.ProjectRef, success: false, exitCode: 1, checkOnly },
+      };
     }
   });

@@ -1,7 +1,7 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import TestCommand from '../../../../commands/cli/test.ts';
 
-CommandIntents(
+CommandIntentSuite(
   'Test Command Suite',
   TestCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

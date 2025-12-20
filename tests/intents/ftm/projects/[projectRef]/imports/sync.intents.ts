@@ -1,10 +1,10 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import SyncCommand from '../../../../../../commands/projects/[projectRef]/imports/sync.ts';
 
 const cmd = SyncCommand.Build();
 const origin = import.meta.resolve('../../../../../../.cli.ts');
 
-CommandIntents('projects:[projectRef]:imports:sync Command Suite', cmd, origin)
+CommandIntentSuite('projects:[projectRef]:imports:sync Command Suite', cmd, origin)
   .Intent('Fails gracefully for non-existent project', (int) =>
     int
       .Segments({ projectRef: '@nonexistent/package' })

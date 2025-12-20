@@ -89,7 +89,13 @@
 import { dirname } from '@std/path';
 import { toFileUrl } from '@std/path/to-file-url';
 import { z } from 'zod';
-import { CLIDFSContextManager, CLIModuleBuilder, Command, CommandParams } from '@fathym/cli';
+import {
+  CLIDFSContextManager,
+  CLIModuleBuilder,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from '@fathym/cli';
 import {
   detectTarget,
   findBinary,
@@ -97,6 +103,20 @@ import {
   installBinary,
   type InstallLogger,
 } from '../../src/services/InstallService.ts';
+
+/**
+ * Result data for the install command.
+ */
+export interface InstallResult {
+  /** Whether installation was successful */
+  installed: boolean;
+  /** The path where the binary was installed */
+  binaryPath: string;
+  /** The target platform */
+  target: string;
+  /** Any aliases that were created */
+  aliases?: string[];
+}
 
 /**
  * Zod schema for install command positional arguments.
@@ -208,15 +228,20 @@ export default Command(
       InstallDFS: installDFS,
     };
   })
-  .Run(async ({ Log, Services, Params }) => {
+  .Run(async ({ Log, Services, Params }): Promise<CommandStatus<InstallResult>> => {
     const { ConfigDFS, InstallDFS } = Services;
 
     const configPath = await ConfigDFS.ResolvePath('.cli.ts');
     const configInfo = await ConfigDFS.GetFileInfo('.cli.ts');
+    const target = Params.Target ?? detectTarget();
 
     if (!configInfo) {
       Log.Error(`❌ Could not find CLI config at: ${configPath}`);
-      Deno.exit(1);
+      return {
+        Code: 1,
+        Message: `Could not find CLI config at: ${configPath}`,
+        Data: { installed: false, binaryPath: '', target },
+      };
     }
 
     // Import CLI module to get config
@@ -231,11 +256,14 @@ export default Command(
 
     if (!tokens.length) {
       Log.Error('❌ No tokens specified in CLI config.');
-      Deno.exit(1);
+      return {
+        Code: 1,
+        Message: 'No tokens specified in CLI config',
+        Data: { installed: false, binaryPath: '', target },
+      };
     }
 
     // Determine target - use flag or auto-detect from OS/arch
-    const target = Params.Target ?? detectTarget();
     const binaryExt = getBinaryExtension(target);
     const binaryName = `${tokens[0]}${binaryExt}`;
 
@@ -250,12 +278,18 @@ export default Command(
       Log.Error(`   Looked in: ${distDir}/exe/${target}/${binaryName}`);
       Log.Error(`   Also tried: ${distDir}/exe/${binaryName}`);
       Log.Error(`   And legacy: ${distDir}/${target}/${binaryName}`);
-      Deno.exit(1);
+      return {
+        Code: 1,
+        Message: `Could not find binary for target: ${target}`,
+        Data: { installed: false, binaryPath: '', target },
+      };
     }
 
     Log.Info(`📦 Found binary: ${sourceBinaryPath}`);
 
     const installDir = await InstallDFS.ResolvePath(Params.To);
+    const installedBinaryPath = `${installDir}/${binaryName}`;
+    const aliases = tokens.slice(1);
 
     // Create logger adapter for InstallService
     const logger: InstallLogger = {
@@ -271,7 +305,7 @@ export default Command(
         sourcePath: sourceBinaryPath,
         installDir,
         binaryName,
-        aliases: tokens.slice(1),
+        aliases,
         log: logger,
       });
     } catch (err) {
@@ -281,8 +315,23 @@ export default Command(
         Log.Error('  1. Close all terminal windows running the CLI');
         Log.Error('  2. Run the install command in a new terminal:');
         Log.Error(`     deno task cli:run cli install --useHome --to=.bin`);
-        Deno.exit(1);
+        return {
+          Code: 1,
+          Message: 'Binary locked and cannot be replaced',
+          Data: { installed: false, binaryPath: installedBinaryPath, target },
+        };
       }
       throw err;
     }
+
+    return {
+      Code: 0,
+      Message: `Successfully installed to ${installedBinaryPath}`,
+      Data: {
+        installed: true,
+        binaryPath: installedBinaryPath,
+        target,
+        aliases: aliases.length ? aliases : undefined,
+      },
+    };
   });

@@ -68,7 +68,7 @@ jobs:
         run: deno task version -- "${{ steps.version.outputs.version }}"
 
       - name: Compile CLI binaries for all targets
-        run: deno task ftm:compile
+        run: deno task cli:run cli compile --all --version="${{ steps.version.outputs.version }}"
 
       - name: Regenerate install scripts with version
         run: deno task ftm:install:scripts

@@ -10,9 +10,21 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { z } from 'zod';
+
+/**
+ * Result data for the git hotfix command.
+ */
+export interface GitHotfixResult {
+  /** The branch that was created */
+  branch: string;
+  /** The base ref it was created from */
+  baseRef: string;
+  /** Whether the branch was pushed */
+  pushed: boolean;
+}
 import {
   EnsureBranchPrefix,
   GitTargetFlagSchema,
@@ -109,7 +121,7 @@ export default Command('Create Hotfix Branch', 'Create a hotfix branch from orig
       Prompt: promptService,
     };
   })
-  .Run(async ({ Services, Params, Log }) => {
+  .Run(async ({ Services, Params, Log }): Promise<CommandStatus<GitHotfixResult>> => {
     const cwd = Services.DFS.Root ?? Deno.cwd();
     const git = Services.Git.WithLogger(Log);
 
@@ -123,7 +135,15 @@ export default Command('Create Hotfix Branch', 'Create a hotfix branch from orig
 
     await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-    return 0;
+    return {
+      Code: 0,
+      Message: `Created hotfix branch ${ctx.branchName}`,
+      Data: {
+        branch: ctx.branchName!,
+        baseRef: ctx.baseRef,
+        pushed: !Params.NoPush,
+      },
+    };
   });
 
 function buildTasks(): TaskDefinition<HotfixPipelineContext>[] {

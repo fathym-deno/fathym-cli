@@ -1,9 +1,9 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import InitCommand from '../../../../commands/cli/init.ts';
 
 const TEMP_CLI_PATH = './tests/.temp/my-cli';
 
-CommandIntents(
+CommandIntentSuite(
   'Init Command Suite',
   InitCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

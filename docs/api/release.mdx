@@ -42,6 +42,7 @@ The release command takes no positional arguments.
 | `--targets` | string | (all 5 platforms) | Comma-separated target platforms |
 | `--skip-scripts` | boolean | `false` | Skip generating install scripts |
 | `--repo` | string | - | GitHub repository for install scripts (e.g., `owner/repo`) |
+| `--version` | string | `0.0.0` | Version to embed in the compiled binary |
 
 ## Examples
 
@@ -60,6 +61,9 @@ ftm cli release --repo=fathym/my-cli
 
 # Release from specific config
 ftm cli release --config=./my-cli/.cli.json
+
+# Release with embedded version (for CI/CD)
+ftm cli release --version=1.2.3
 ```
 
 ## Execution Flow
@@ -67,10 +71,10 @@ ftm cli release --config=./my-cli/.cli.json
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  1. Load .cli.json and determine targets                           │
-│  2. Run `ftm cli build` to prepare static artifacts                │
-│  3. For each target, run `ftm cli compile --target=<target>`       │
-│  4. Run `ftm cli install scripts` to generate install scripts      │
-│  5. Output summary of generated files                              │
+│  2. Run `ftm cli compile --all --version=<version>`                │
+│     (compile internally runs build first)                          │
+│  3. Run `ftm cli install scripts` to generate install scripts      │
+│  4. Output summary of generated files                              │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -134,10 +138,9 @@ Configure default targets in `.cli.json`:
 ## How It Works
 
 1. **Load Configuration** - Read `.cli.json` and determine targets from flag, config, or defaults
-2. **Build Artifacts** - Execute `ftm cli build` to prepare static embeddings
-3. **Cross-Compile** - For each target, execute `ftm cli compile --target=<target>`
-4. **Generate Scripts** - Execute `ftm cli install scripts` to create install.sh and install.ps1
-5. **Summary** - Output list of generated files and next steps
+2. **Compile All Targets** - Execute `ftm cli compile --all --version=<version>` (compile internally runs build first)
+3. **Generate Scripts** - Execute `ftm cli install scripts` to create install.sh and install.ps1
+4. **Summary** - Output list of generated files and next steps
 
 ## Post-Release Steps
 
@@ -164,7 +167,7 @@ iwr -useb https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | i
 
 ## Related
 
-- [ftm cli build](./build.mdx) - Step 1: Prepare build artifacts
-- [ftm cli compile](./compile.mdx) - Step 2: Compile to native binary
-- [ftm cli install scripts](./install.mdx#ftm-cli-install-scripts) - Step 3: Generate install scripts
+- [ftm cli build](./build.mdx) - Prepare build artifacts (called internally by compile)
+- [ftm cli compile](./compile.mdx) - Compile to native binary (includes build)
+- [ftm cli install scripts](./install.mdx#ftm-cli-install-scripts) - Generate install scripts
 - [Distribution Guide](../guides/distribution.mdx) - Full distribution workflow

@@ -69,7 +69,7 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import {
@@ -230,12 +230,25 @@ export default Command(
       ProjectResolver: new DFSProjectResolver(dfs as unknown as DFSFileHandler),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<UpgradeOutput>> => {
     const { ProjectResolver } = Services;
+
+    const emptyOutput: UpgradeOutput = {
+      packageName: '',
+      targetVersion: Params.Version,
+      dryRun: Params.DryRun,
+      filter: { sourceTypes: [], projectRefs: [] },
+      results: [],
+      summary: { total: 0, success: 0, failed: 0 },
+    };
 
     if (!Params.ProjectRef) {
       Log.Error('No project reference provided.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No project reference provided',
+        Data: emptyOutput,
+      };
     }
 
     try {
@@ -244,7 +257,11 @@ export default Command(
 
       if (projects.length === 0) {
         Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
-        return 1;
+        return {
+          Code: 1,
+          Message: `No projects found matching '${Params.ProjectRef}'`,
+          Data: emptyOutput,
+        };
       }
 
       if (projects.length > 1) {
@@ -252,7 +269,11 @@ export default Command(
           `Found ${projects.length} projects. Please specify a single project:\n` +
             projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
         );
-        return 1;
+        return {
+          Code: 1,
+          Message: `Found ${projects.length} projects, please specify a single project`,
+          Data: emptyOutput,
+        };
       }
 
       const project = projects[0];
@@ -260,7 +281,11 @@ export default Command(
 
       if (!packageName) {
         Log.Error('Project does not have a package name defined in deno.json(c).');
-        return 1;
+        return {
+          Code: 1,
+          Message: 'Project does not have a package name defined',
+          Data: emptyOutput,
+        };
       }
 
       // Parse filter into source types and project refs
@@ -310,7 +335,11 @@ export default Command(
 
         if (results.length === 0) {
           Log.Info('No references found in workspace.');
-          return 0;
+          return {
+            Code: 0,
+            Message: 'No references found in workspace',
+            Data: output,
+          };
         }
 
         Log.Info(`Found ${results.length} reference(s) in workspace:`);
@@ -348,10 +377,21 @@ export default Command(
         }
       }
 
-      return failedCount > 0 ? 1 : 0;
+      const exitCode = failedCount > 0 ? 1 : 0;
+      return {
+        Code: exitCode,
+        Message: exitCode === 0
+          ? `Upgraded ${successCount} reference(s) for ${packageName}`
+          : `Upgrade completed with ${failedCount} failure(s)`,
+        Data: output,
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Upgrade failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: emptyOutput,
+      };
     }
   });
 

@@ -15,9 +15,21 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import { z } from 'zod';
 import { ConfigFileService } from '../../../src/services/ConfigFileService.ts';
+
+/**
+ * Result data for the config set command.
+ */
+export interface ConfigSetResult {
+  /** The config file path */
+  file: string;
+  /** The key that was set */
+  key: string;
+  /** The value that was set */
+  value: string;
+}
 
 const ArgsSchema = z.tuple([
   z.string().describe('Config file path (relative to ConfigDFS)'),
@@ -61,7 +73,13 @@ export default Command('cli/config/set', 'Set a value in a JSON config file')
 
     return { configService: configService! };
   })
-  .Run(async ({ Params, Services, Log }) => {
+  .Run(async ({ Params, Services, Log }): Promise<CommandStatus<ConfigSetResult>> => {
     await Services.configService.set(Params.FilePath, Params.Key, Params.Value);
     Log.Info(`Set ${Params.Key} in ${Params.FilePath}`);
+
+    return {
+      Code: 0,
+      Message: `Set ${Params.Key} in ${Params.FilePath}`,
+      Data: { file: Params.FilePath, key: Params.Key, value: Params.Value },
+    };
   });

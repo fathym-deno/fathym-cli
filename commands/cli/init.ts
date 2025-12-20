@@ -63,10 +63,23 @@ import {
   CLIDFSContextManager,
   Command,
   CommandParams,
+  type CommandStatus,
   TemplateLocator,
   TemplateScaffolder,
 } from '@fathym/cli';
 import { join } from '@std/path';
+
+/**
+ * Result data for the init command.
+ */
+export interface InitResult {
+  /** The project name/path */
+  projectName: string;
+  /** The template used */
+  template: string;
+  /** The full path to the initialized project */
+  projectPath: string;
+}
 
 /**
  * Zod schema for init command positional arguments.
@@ -186,7 +199,7 @@ export default Command('init', 'Initialize a new CLI project')
       ),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<InitResult>> => {
     const { Name, Template } = Params;
 
     await Services.Scaffolder.Scaffold({
@@ -198,4 +211,10 @@ export default Command('init', 'Initialize a new CLI project')
 
     Log.Success(`Project created from "${Template}" template.`);
     Log.Info(`📂 Initialized at: ${fullPath}`);
+
+    return {
+      Code: 0,
+      Message: `Project initialized from "${Template}" template`,
+      Data: { projectName: Name, template: Template, projectPath: fullPath },
+    };
   });

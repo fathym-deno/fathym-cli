@@ -103,14 +103,14 @@ export default Command('greet', 'Prints a greeting.')
 Create `intents/greet.intents.ts`:
 
 ```typescript
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import GreetCommand from '../commands/greet.ts';
 import initFn from '../.cli.init.ts';
 
 const cmd = GreetCommand.Build();
 const origin = import.meta.resolve('../.cli.json');
 
-CommandIntents('Greet Command Suite', cmd, origin)
+CommandIntentSuite('Greet Command Suite', cmd, origin)
   .WithInit(initFn)
   .Intent('Greet default world', (int) =>
     int
@@ -498,7 +498,7 @@ export default Command('generate', 'Generate a component')
 ### Suite Pattern (Recommended)
 
 ```typescript
-CommandIntents('Suite Name', command.Build(), configPath)
+CommandIntentSuite('Suite Name', command.Build(), configPath)
   .WithInit(initFn)
   .BeforeAll(async () => { /* Setup */ })
   .Intent('test description', (int) =>
@@ -521,7 +521,7 @@ CommandIntents('Suite Name', command.Build(), configPath)
 ### Service Mocking
 
 ```typescript
-CommandIntents('With Mocks', cmd, configPath)
+CommandIntentSuite('With Mocks', cmd, configPath)
   .WithServices({
     MyService: {
       DoWork: async () => 'mocked result',

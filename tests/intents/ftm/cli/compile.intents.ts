@@ -1,7 +1,7 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import CompileCommand from '../../../../commands/cli/compile.ts';
 
-CommandIntents(
+CommandIntentSuite(
   'Compile Command Suite',
   CompileCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

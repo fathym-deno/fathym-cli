@@ -1,10 +1,10 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import TaskCommand from '../../../commands/task.ts';
 
 const cmd = TaskCommand.Build();
 const origin = import.meta.resolve('../../../.cli.ts');
 
-CommandIntents('task Command Suite', cmd, origin)
+CommandIntentSuite('task Command Suite', cmd, origin)
   .Intent('Fails when project not found', (int) =>
     int
       .Args(['@nonexistent/package', 'build'])

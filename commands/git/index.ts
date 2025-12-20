@@ -13,9 +13,23 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { z } from 'zod';
+
+/**
+ * Result data for the git command (workflow).
+ */
+export interface GitWorkflowResult {
+  /** The current branch */
+  branch: string;
+  /** Whether changes were committed */
+  committed: boolean;
+  /** The commit message if committed */
+  commitMessage?: string;
+  /** Whether changes were pushed */
+  pushed: boolean;
+}
 import {
   CliffyPromptService,
   type GitRunOptions,
@@ -108,7 +122,7 @@ export default Command('Git Workflow', 'Commit changes and sync with integration
       Prompt: promptService,
     };
   })
-  .Run(async ({ Services, Log, Params }) => {
+  .Run(async ({ Services, Log, Params }): Promise<CommandStatus<GitWorkflowResult>> => {
     const cwd = Services.DFS.Root ?? Deno.cwd();
     const git = Services.Git.WithLogger(Log);
 
@@ -121,7 +135,18 @@ export default Command('Git Workflow', 'Commit changes and sync with integration
 
     await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-    return 0;
+    return {
+      Code: 0,
+      Message: ctx.hasChanges
+        ? `Committed and synced on ${ctx.currentBranch}`
+        : `Synced on ${ctx.currentBranch}`,
+      Data: {
+        branch: ctx.currentBranch!,
+        committed: ctx.hasChanges ?? false,
+        commitMessage: ctx.commitMessage,
+        pushed: !Params.NoPush,
+      },
+    };
   });
 
 function buildTasks(): TaskDefinition<GitPipelineContext>[] {

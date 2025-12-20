@@ -7,10 +7,20 @@
  * @module
  */
 
-import { Command, CommandParams } from '@fathym/cli';
+import { Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import { z } from 'zod';
 import { UrlOpener } from '../../src/services/UrlOpener.ts';
 import { FathymApiClient, FathymConfigStore } from '../../src/services/.exports.ts';
+
+/**
+ * Result data for the git auth command.
+ */
+export interface GitAuthResult {
+  /** The URL that was opened */
+  url: string;
+  /** Whether the URL was successfully opened */
+  opened: boolean;
+}
 
 const AuthArgsSchema = z.tuple([]);
 
@@ -74,7 +84,7 @@ export default Command(
 
     return { Config: config, Api: api, Opener: opener };
   })
-  .Run(async ({ Services, Params, Log }) => {
+  .Run(async ({ Services, Params, Log }): Promise<CommandStatus<GitAuthResult>> => {
     const activeLookup = await Services.Config.GetActiveEnterpriseLookup();
     if (!activeLookup) {
       throw new Error(
@@ -98,7 +108,14 @@ export default Command(
     Log.Info(`Opening GitHub OAuth flow: ${url}`);
     await Services.Opener.Open(url);
 
-    return 0;
+    return {
+      Code: 0,
+      Message: `Opened GitHub OAuth flow`,
+      Data: {
+        url,
+        opened: true,
+      },
+    };
   });
 
 async function resolveTargetEnterprise(

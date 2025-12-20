@@ -18,9 +18,21 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
+
+/**
+ * Result data for the lint command.
+ */
+export interface ProjectLintResult {
+  /** The project that was linted */
+  project: string;
+  /** Whether linting passed */
+  success: boolean;
+  /** Exit code from deno lint */
+  exitCode: number;
+}
 
 /**
  * Segments schema for the lint command.
@@ -85,12 +97,16 @@ export default Command(
       ProjectResolver: new DFSProjectResolver(dfs as unknown as DFSFileHandler),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<ProjectLintResult>> => {
     const resolver = Services.ProjectResolver;
 
     if (!Params.ProjectRef) {
       Log.Error('No project reference provided.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No project reference provided',
+        Data: { project: '', success: false, exitCode: 1 },
+      };
     }
 
     try {
@@ -98,7 +114,11 @@ export default Command(
 
       if (projects.length === 0) {
         Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
-        return 1;
+        return {
+          Code: 1,
+          Message: `No projects found matching '${Params.ProjectRef}'`,
+          Data: { project: Params.ProjectRef, success: false, exitCode: 1 },
+        };
       }
 
       if (projects.length > 1) {
@@ -106,7 +126,11 @@ export default Command(
           `Found ${projects.length} projects. Please specify a single project:\n` +
             projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
         );
-        return 1;
+        return {
+          Code: 1,
+          Message: `Found ${projects.length} projects, please specify a single project`,
+          Data: { project: Params.ProjectRef, success: false, exitCode: 1 },
+        };
       }
 
       const project = projects[0];
@@ -122,7 +146,11 @@ export default Command(
         Log.Info(
           `[DRY RUN] Would run: deno ${args.join(' ')} in ${project.dir}`,
         );
-        return 0;
+        return {
+          Code: 0,
+          Message: `[DRY RUN] Would lint ${projectName}`,
+          Data: { project: projectName, success: true, exitCode: 0 },
+        };
       }
 
       const cmd = new Deno.Command('deno', {
@@ -134,14 +162,25 @@ export default Command(
       });
 
       const { code } = await cmd.output();
+      const success = code === 0;
 
-      if (Params.Verbose && code === 0) {
+      if (Params.Verbose && success) {
         Log.Info(`Linting complete.`);
       }
 
-      return code;
+      return {
+        Code: code,
+        Message: success
+          ? `Linting passed for ${projectName}`
+          : `Linting failed for ${projectName}`,
+        Data: { project: projectName, success, exitCode: code },
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Linting failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: { project: Params.ProjectRef, success: false, exitCode: 1 },
+      };
     }
   });

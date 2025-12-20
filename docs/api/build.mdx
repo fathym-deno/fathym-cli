@@ -36,6 +36,7 @@ The build command takes no positional arguments.
 |------|------|---------|-------------|
 | `--config` | string | `./.cli.json` | Path to CLI configuration file |
 | `--templates` | string | `./templates` | Path to templates directory |
+| `--version` | string | `0.0.0` | Version to embed in the build |
 
 ## Examples
 
@@ -48,6 +49,9 @@ ftm build --config=./my-cli/.cli.json
 
 # Build with custom templates directory
 ftm build --templates=./src/templates
+
+# Build with embedded version
+ftm build --version=1.2.3
 ```
 
 ## Generated Artifacts

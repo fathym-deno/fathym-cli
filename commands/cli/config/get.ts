@@ -15,9 +15,23 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import { z } from 'zod';
 import { ConfigFileService } from '../../../src/services/ConfigFileService.ts';
+
+/**
+ * Result data for the config get command.
+ */
+export interface ConfigGetResult {
+  /** The config file path */
+  file: string;
+  /** The key that was requested */
+  key: string;
+  /** The value at the key (undefined if not found) */
+  value: unknown;
+  /** Whether the key was found */
+  found: boolean;
+}
 
 const ArgsSchema = z.tuple([
   z.string().describe('Config file path (relative to ConfigDFS)'),
@@ -57,11 +71,19 @@ export default Command('cli/config/get', 'Get a value from a JSON config file')
 
     return { configService: configService! };
   })
-  .Run(async ({ Params, Services, Log }) => {
+  .Run(async ({ Params, Services, Log }): Promise<CommandStatus<ConfigGetResult>> => {
     const value = await Services.configService.get(Params.FilePath, Params.Key);
-    if (value === undefined) {
+    const found = value !== undefined;
+
+    if (!found) {
       Log.Info(`Key "${Params.Key}" not found in ${Params.FilePath}`);
     } else {
       Log.Info(JSON.stringify(value, null, 2));
     }
+
+    return {
+      Code: 0,
+      Message: found ? `Found ${Params.Key}` : `Key "${Params.Key}" not found`,
+      Data: { file: Params.FilePath, key: Params.Key, value, found },
+    };
   });

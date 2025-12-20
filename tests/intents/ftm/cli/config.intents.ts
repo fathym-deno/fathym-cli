@@ -1,4 +1,4 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import ConfigSetCommand from '../../../../commands/cli/config/set.ts';
 import ConfigGetCommand from '../../../../commands/cli/config/get.ts';
 import type { ConfigFileService } from '../../../../src/services/ConfigFileService.ts';
@@ -58,7 +58,7 @@ function setNestedValue(
 
 const CONFIG_FILE = 'test-config.json';
 
-CommandIntents(
+CommandIntentSuite(
   'Config Set Command Suite',
   ConfigSetCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),
@@ -83,7 +83,7 @@ CommandIntents(
       .ExpectExit(0))
   .Run();
 
-CommandIntents(
+CommandIntentSuite(
   'Config Get Command Suite',
   ConfigGetCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

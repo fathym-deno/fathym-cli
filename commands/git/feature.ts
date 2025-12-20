@@ -12,9 +12,21 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { z } from 'zod';
+
+/**
+ * Result data for the git feature command.
+ */
+export interface GitFeatureResult {
+  /** The branch that was created */
+  branch: string;
+  /** The base ref it was created from */
+  baseRef: string;
+  /** Whether the branch was pushed */
+  pushed: boolean;
+}
 import {
   CliffyPromptService,
   type GitRunOptions,
@@ -111,7 +123,7 @@ export default Command('Create Feature Branch', 'Create a feature branch from or
       Prompt: promptService,
     };
   })
-  .Run(async ({ Services, Params, Log }) => {
+  .Run(async ({ Services, Params, Log }): Promise<CommandStatus<GitFeatureResult>> => {
     const cwd = Services.DFS.Root ?? Deno.cwd();
     const git = Services.Git.WithLogger(Log);
 
@@ -125,7 +137,15 @@ export default Command('Create Feature Branch', 'Create a feature branch from or
 
     await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-    return 0;
+    return {
+      Code: 0,
+      Message: `Created feature branch ${ctx.branchName}`,
+      Data: {
+        branch: ctx.branchName!,
+        baseRef: ctx.baseRef,
+        pushed: !Params.NoPush,
+      },
+    };
   });
 
 function buildTasks(): TaskDefinition<FeaturePipelineContext>[] {

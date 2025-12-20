@@ -78,8 +78,19 @@ import {
   Command,
   CommandContext,
   CommandParams,
+  type CommandStatus,
   runCommandWithLogs,
 } from '@fathym/cli';
+
+/**
+ * Result data for the test command.
+ */
+export interface TestResult {
+  /** The test file that was run */
+  testFile: string;
+  /** Flags passed to deno test */
+  denoFlags: string[];
+}
 
 /**
  * Zod schema for test command positional arguments.
@@ -205,7 +216,9 @@ export default Command('test', 'Run CLI tests using Deno')
       Params,
       Log,
       Services,
-    }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>) => {
+    }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>): Promise<
+      CommandStatus<TestResult>
+    > => {
       const rootPath = Services.CLIDFS.Root.replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         '\\$&',
@@ -228,5 +241,11 @@ export default Command('test', 'Run CLI tests using Deno')
       });
 
       Log.Success('✅ Tests passed successfully');
+
+      return {
+        Code: 0,
+        Message: 'Tests passed successfully',
+        Data: { testFile: testFileRel, denoFlags },
+      };
     },
   );

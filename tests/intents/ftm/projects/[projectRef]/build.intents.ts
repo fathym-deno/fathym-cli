@@ -1,4 +1,4 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import BuildCommand from '../../../../../commands/projects/[projectRef]/build.ts';
 
 const cmd = BuildCommand.Build();
@@ -12,7 +12,7 @@ const origin = import.meta.resolve('../../../../../.cli.ts');
 // thrown during service initialization, which doesn't integrate cleanly with
 // the intent testing framework. This is tested via the CascadeRunner unit tests.
 
-CommandIntents('projects:[projectRef]:build Command Suite', cmd, origin)
+CommandIntentSuite('projects:[projectRef]:build Command Suite', cmd, origin)
   .Intent('Dry run with full override shows task delegation', (int) =>
     int
       .Segments({ projectRef: './deno.jsonc' })

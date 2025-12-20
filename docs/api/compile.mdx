@@ -41,6 +41,8 @@ The compile command takes no positional arguments.
 | `--output` | string | `./.dist` | Output directory for binary |
 | `--permissions` | string | (full access) | Space-separated Deno permission flags |
 | `--target` | string | (current platform) | Cross-compilation target (e.g., `x86_64-pc-windows-msvc`) |
+| `--all` | boolean | `false` | Compile for all 5 supported targets |
+| `--version` | string | `0.0.0` | Version to embed in the compiled binary |
 
 ## Examples
 
@@ -62,6 +64,12 @@ ftm compile --permissions="--allow-read --allow-env"
 
 # Compile to custom output directory
 ftm compile --output=./bin
+
+# Compile for all platforms at once
+ftm compile --all
+
+# Compile with embedded version (for CI/CD)
+ftm compile --all --version=1.2.3
 ```
 
 ## Default Permissions

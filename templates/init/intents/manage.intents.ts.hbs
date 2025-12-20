@@ -1,10 +1,10 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import ManageCommand from '../commands/manage.ts';
 
 const cmd = ManageCommand.Build();
 const origin = import.meta.resolve('../.cli.ts');
 
-CommandIntents('Manage Command Suite', cmd, origin)
+CommandIntentSuite('Manage Command Suite', cmd, origin)
   .Intent('Show management status', (int) =>
     int
       .Args([])

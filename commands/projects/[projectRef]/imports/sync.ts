@@ -56,10 +56,24 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
 import { type ImportsSyncMode, syncImports } from '../../../../src/projects/ImportsSync.ts';
+
+/**
+ * Result data for the imports:sync command.
+ */
+export interface ImportsSyncResult {
+  /** The project reference that was synced */
+  target: string;
+  /** Sync mode used */
+  mode: ImportsSyncMode;
+  /** Number of config files that were synced */
+  configsSynced: number;
+  /** Whether sync was successful */
+  success: boolean;
+}
 
 /**
  * Segments schema for the imports:sync command.
@@ -129,10 +143,14 @@ export default Command(
       ProjectResolver: new DFSProjectResolver(dfs as unknown as DFSFileHandler),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<ImportsSyncResult>> => {
     if (!Params.Target) {
       Log.Error('No project reference provided.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No project reference provided',
+        Data: { target: '', mode: Params.Mode, configsSynced: 0, success: false },
+      };
     }
 
     try {
@@ -145,12 +163,29 @@ export default Command(
 
       if (result.targetConfigs.length === 0) {
         Log.Error('No deno.jsonc targets were resolved.');
-        return 1;
+        return {
+          Code: 1,
+          Message: 'No deno.jsonc targets were resolved',
+          Data: { target: Params.Target, mode: Params.Mode, configsSynced: 0, success: false },
+        };
       }
 
-      return 0;
+      return {
+        Code: 0,
+        Message: `Synced ${result.targetConfigs.length} config(s) to ${Params.Mode} mode`,
+        Data: {
+          target: Params.Target,
+          mode: Params.Mode,
+          configsSynced: result.targetConfigs.length,
+          success: true,
+        },
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: { target: Params.Target, mode: Params.Mode, configsSynced: 0, success: false },
+      };
     }
   });

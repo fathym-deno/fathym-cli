@@ -64,10 +64,23 @@ import {
   CLIDFSContextManager,
   Command,
   CommandParams,
+  type CommandStatus,
   runCommandWithLogs,
   TemplateLocator,
   TemplateScaffolder,
 } from '@fathym/cli';
+
+/**
+ * Result data for the run command.
+ */
+export interface RunResult {
+  /** The command that was executed */
+  command: string;
+  /** Arguments passed to the command */
+  args: string[];
+  /** Flags passed to the command */
+  flags: string[];
+}
 
 /**
  * Zod schema for run command positional arguments.
@@ -169,7 +182,7 @@ export default Command('run', 'Run a specific command in a CLI project')
       ),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<RunResult>> => {
     const outputFile = './.temp/dev.ts';
 
     Log.Info(`📦 Scaffolding dev runner → ${outputFile}`);
@@ -196,4 +209,11 @@ export default Command('run', 'Run a specific command in a CLI project')
     });
 
     Log.Success('🎉 CLI run completed');
+
+    const command = Params.ForwardedArgs[0] ?? '';
+    return {
+      Code: 0,
+      Message: `CLI run completed: ${command}`,
+      Data: { command, args: Params.ForwardedArgs.slice(1), flags: Params.ForwardedFlags },
+    };
   });

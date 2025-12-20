@@ -4,7 +4,7 @@ DocumentType: Guide
 Title: Git Commands Migration Plan
 Summary: Phased plan for porting the legacy OCLIF git commands into the new Fathym CLI runtime.
 Created: 2025-12-17
-Updated: 2025-12-18
+Updated: 2025-12-19
 Owners:
   - fathym
 References:
@@ -95,7 +95,7 @@ Deliverable: commands that only touch local git state.
 
 ```typescript
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import { GitService, TaskPipeline } from '../../src/services/.exports.ts';
 
 const Args = z.tuple([]);
@@ -104,6 +104,13 @@ const Flags = z.object({
   rebase: z.boolean().optional(),
   'dry-run': z.boolean().optional(),
 });
+
+/** Result data for the git sync command */
+export interface GitSyncResult {
+  branch: string;
+  committed: boolean;
+  pushed: boolean;
+}
 
 class GitParams extends CommandParams<z.infer<typeof Args>, z.infer<typeof Flags>> {
   get Message() {
@@ -130,9 +137,11 @@ export default Command('git', 'Commit and sync with integration')
       Pipeline: TaskPipeline,
     };
   })
-  .Run(async ({ Log, Services, Params }) => {
+  .Run(async ({ Log, Services, Params }): Promise<CommandStatus<GitSyncResult>> => {
+    const ctx = { dfs: Services.DFS, params: Params, branch: '', committed: false };
+
     await Services.Pipeline.Run(
-      { dfs: Services.DFS, params: Params },
+      ctx,
       [
         { title: 'Verify git repository', run: async (_, task) => {/* ... */} },
         { title: 'Stage & commit changes', run: async () => {/* ... */} },
@@ -146,7 +155,16 @@ export default Command('git', 'Commit and sync with integration')
       ],
       Log,
     );
-    return 0;
+
+    return {
+      Code: 0,
+      Message: `Synced on ${ctx.branch}`,
+      Data: {
+        branch: ctx.branch,
+        committed: ctx.committed,
+        pushed: true,
+      },
+    };
   });
 ```
 
@@ -184,13 +202,25 @@ Deliverable: commands that require the backend APIs & OAuth.
   - [x] Emit structured `CommandStatus` metadata and intent suites for mirror success, prompts, dry-run, and gating.
 - [ ] Prompt helper parity (`ensurePromptValue` equivalent, with DFS/local defaults).
 
-### Phase 3 – Polish & Parity
+### Phase 3 - Polish & Parity
 
-- [ ] Add post-command instruction renderer (success log + follow-up steps).
-- [ ] Expand intent tests to cover backend-backed commands (mock responses/dry-run).
-- [ ] Run workspace deploy scripts that call `fathym git` using the new CLI (manual verification).
-- [ ] Update docs (legacy walkthroughs, README, docs/guides) to reference the new commands.
-- [ ] Track open questions (spinner lib choice, auth variants, clone gating) and document decisions.
+- **Instruction renderer**
+  - [ ] Define reusable `InstructionRenderer`/`Instruction` model in `src/services`.
+  - [ ] Update git commands (commit/feature/hotfix/home/configure/clone/import) to emit structured instructions.
+  - [ ] Ensure renderer respects JSON output (attach to `CommandStatus` instead of console spam).
+- **Intent coverage expansion**
+  - [ ] Extend git backend command suites (configure/clone/import/repos) with success + failure JSON assertions.
+  - [ ] Add fixtures/mocks for common API payloads so suites remain deterministic.
+  - [ ] Add regression tests around DFS target handling (`--target`, `--dir`) for clone/import.
+- **End-to-end verification**
+  - [ ] Identify workspace scripts/jobs that currently call `fathym git ...`.
+  - [ ] Run those flows using the new CLI (dry-run first, then live) and capture issues.
+  - [ ] Document any manual steps that still rely on the legacy CLI.
+- **Docs & hand-off**
+  - [ ] Update project README/guide + workspace docs to reference the ported commands and new flags.
+  - [ ] Add migration notes comparing old vs new usage (tokens, DFS behavior, command status JSON).
+- **Decision log**
+  - [ ] Finalize outstanding questions (spinner/prompt lib, PAT fallback, clone gate) and capture rationale in `/docs`.
 
 ## Open Questions & Decisions Needed
 
@@ -208,7 +238,7 @@ Deliverable: commands that require the backend APIs & OAuth.
 - [x] Add HTTP client + auth store; port `git auth`.
 - [x] Implement git lookup helpers + `git repos` command/tests.
 - [x] Implement `git configure -s` using the new client.
-- [ ] Wire `git import` using the new services (git clone complete).
+- [x] Wire `git import` using the new services (git clone complete).
 - [ ] Run deploy scripts (or intent tests) to validate real workflows.
 
 Progress updates and future phases should be logged here so contributors have a single source of truth for the git migration effort.

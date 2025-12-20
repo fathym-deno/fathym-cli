@@ -37,7 +37,7 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { dirname, relative } from '@std/path';
 import { parse as parseJsonc } from '@std/jsonc';
@@ -48,6 +48,20 @@ import { VersionResolver } from '../../../../src/deps/VersionResolver.ts';
 
 /** Upgrade mode options */
 type UpgradeMode = 'all' | 'jsr' | 'npm' | 'local-only';
+
+/**
+ * Result data for the deps:upgrade command.
+ */
+export interface DepsUpgradeResult {
+  /** Number of upgrades applied */
+  totalUpgrades: number;
+  /** Number of upgrades skipped (interactive mode) */
+  totalSkipped: number;
+  /** Whether the upgrade was successful */
+  success: boolean;
+  /** Whether this was a dry run */
+  dryRun: boolean;
+}
 
 /**
  * Segments schema for the deps:upgrade command.
@@ -157,12 +171,16 @@ export default Command(
       VersionResolver: new VersionResolver(),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<DepsUpgradeResult>> => {
     const { ProjectResolver, DFS, DepsParser, VersionComparator, VersionResolver } = Services;
 
     if (!Params.ProjectRef) {
       Log.Error('No project reference provided.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No project reference provided',
+        Data: { totalUpgrades: 0, totalSkipped: 0, success: false, dryRun: Params.DryRun },
+      };
     }
 
     try {
@@ -171,7 +189,11 @@ export default Command(
 
       if (projects.length === 0) {
         Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
-        return 1;
+        return {
+          Code: 1,
+          Message: `No projects found matching '${Params.ProjectRef}'`,
+          Data: { totalUpgrades: 0, totalSkipped: 0, success: false, dryRun: Params.DryRun },
+        };
       }
 
       if (Params.Verbose) {
@@ -295,10 +317,20 @@ export default Command(
         }
       }
 
-      return 0;
+      return {
+        Code: 0,
+        Message: Params.DryRun
+          ? `[DRY RUN] ${totalUpgrades} upgrade(s) would be applied`
+          : `${totalUpgrades} upgrade(s) applied`,
+        Data: { totalUpgrades, totalSkipped, success: true, dryRun: Params.DryRun },
+      };
     } catch (error) {
       Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      return {
+        Code: 1,
+        Message: `Deps upgrade failed: ${error instanceof Error ? error.message : String(error)}`,
+        Data: { totalUpgrades: 0, totalSkipped: 0, success: false, dryRun: Params.DryRun },
+      };
     }
   });
 

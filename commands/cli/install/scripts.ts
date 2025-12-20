@@ -56,9 +56,19 @@
 import { join } from '@std/path';
 import { parse as parseJsonc } from '@std/jsonc';
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DEFAULT_INSTALL_DIR } from '../../../src/config/FathymCLIConfig.ts';
+
+/**
+ * Result data for the scripts command.
+ */
+export interface ScriptsResult {
+  /** List of generated scripts */
+  scripts: string[];
+  /** GitHub repository used */
+  repo: string;
+}
 
 /**
  * Zod schema for scripts command positional arguments.
@@ -551,7 +561,7 @@ export default Command(
 
     return { DFS: dfs };
   })
-  .Run(async ({ Params, Log, Services, Config: Config }) => {
+  .Run(async ({ Params, Log, Services, Config: Config }): Promise<CommandStatus<ScriptsResult>> => {
     const { DFS } = Services;
 
     // Load config
@@ -591,13 +601,19 @@ export default Command(
       if (!repo) {
         Log.Error('❌ Could not detect GitHub repository from .git/config');
         Log.Error('   Use --repo=owner/repo to specify manually');
-        Deno.exit(1);
+        return {
+          Code: 1,
+          Message: 'Could not detect GitHub repository from .git/config',
+          Data: { scripts: [], repo: '' },
+        };
       }
       Log.Info(`📦 Detected GitHub repo: ${repo}`);
     }
 
     const outputDir = await DFS.ResolvePath(Params.OutputDir);
     await Deno.mkdir(outputDir, { recursive: true });
+
+    const generatedScripts: string[] = [];
 
     // Generate bash script
     const bashScript = generateBashScript(
@@ -609,6 +625,7 @@ export default Command(
     const bashPath = join(outputDir, 'install.sh');
     await Deno.writeTextFile(bashPath, bashScript);
     Log.Success(`✅ Generated: ${bashPath}`);
+    generatedScripts.push('install.sh');
 
     // Generate PowerShell script
     const psScript = generatePowerShellScript(
@@ -620,6 +637,7 @@ export default Command(
     const psPath = join(outputDir, 'install.ps1');
     await Deno.writeTextFile(psPath, psScript);
     Log.Success(`✅ Generated: ${psPath}`);
+    generatedScripts.push('install.ps1');
 
     // Read version from deno.jsonc for the GitHub release tag
     let packageVersion = '0.0.0'; // fallback
@@ -658,6 +676,7 @@ export default Command(
     const denoPath = join(outputDir, 'install.ts');
     await Deno.writeTextFile(denoPath, denoScript);
     Log.Success(`✅ Generated: ${denoPath}`);
+    generatedScripts.push('install.ts');
 
     // Update deno.jsonc exports to include ./install
     const exportResult = await updateDenoJsoncExports(DFS, Params.OutputDir);
@@ -686,4 +705,10 @@ export default Command(
     Log.Info('');
     Log.Info('   # Deno (cross-platform)');
     Log.Info(`   deno run -A jsr:${packageName}/install`);
+
+    return {
+      Code: 0,
+      Message: `Generated ${generatedScripts.length} install scripts`,
+      Data: { scripts: generatedScripts, repo },
+    };
   });

@@ -47,9 +47,21 @@
  */
 
 import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { DFSProjectResolver } from '../src/projects/ProjectResolver.ts';
+
+/**
+ * Result data for the task command.
+ */
+export interface TaskResult {
+  /** The task that was executed */
+  task: string;
+  /** The resolved project name or path */
+  project: string;
+  /** The exit code from deno task */
+  exitCode: number;
+}
 
 /**
  * Zod schema for task command flags.
@@ -119,15 +131,21 @@ export default Command('task', 'Run a deno task from a resolved project.')
       ProjectResolver: new DFSProjectResolver(dfs as unknown as DFSFileHandler),
     };
   })
-  .Run(async ({ Params, Log, Services }) => {
+  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<TaskResult>> => {
     const resolver = Services.ProjectResolver;
+    const taskName = Params.TaskName;
+    const projectRef = Params.ProjectRef;
 
     try {
-      const projects = await resolver.Resolve(Params.ProjectRef);
+      const projects = await resolver.Resolve(projectRef);
 
       if (projects.length === 0) {
-        Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
-        return 1;
+        Log.Error(`No projects found matching '${projectRef}'.`);
+        return {
+          Code: 1,
+          Message: `No projects found matching '${projectRef}'`,
+          Data: { task: taskName, project: projectRef, exitCode: 1 },
+        };
       }
 
       if (projects.length > 1) {
@@ -135,11 +153,15 @@ export default Command('task', 'Run a deno task from a resolved project.')
           `Found ${projects.length} projects. Please specify a single project:\n` +
             projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
         );
-        return 1;
+        return {
+          Code: 1,
+          Message: `Found ${projects.length} projects. Please specify a single project.`,
+          Data: { task: taskName, project: projectRef, exitCode: 1 },
+        };
       }
 
       const project = projects[0];
-      const taskName = Params.TaskName;
+      const projectName = project.name ?? project.dir;
 
       // Check if the task exists in the project
       if (!project.tasks || !Object.hasOwn(project.tasks, taskName)) {
@@ -156,14 +178,22 @@ export default Command('task', 'Run a deno task from a resolved project.')
               `No tasks are defined in this project.`,
           );
         }
-        return 1;
+        return {
+          Code: 1,
+          Message: `Task '${taskName}' not found in ${project.configPath}`,
+          Data: { task: taskName, project: projectName, exitCode: 1 },
+        };
       }
 
       if (Params.DryRun) {
         Log.Info(
           `Dry run: Would run 'deno task ${taskName}' in ${project.dir} (${project.configPath}).`,
         );
-        return 0;
+        return {
+          Code: 0,
+          Message: `Dry run: Would run 'deno task ${taskName}'`,
+          Data: { task: taskName, project: projectName, exitCode: 0 },
+        };
       }
 
       Log.Info(
@@ -180,9 +210,20 @@ export default Command('task', 'Run a deno task from a resolved project.')
 
       const { code } = await cmd.output();
 
-      return code;
+      return {
+        Code: code,
+        Message: code === 0
+          ? `Task '${taskName}' completed successfully`
+          : `Task '${taskName}' failed with exit code ${code}`,
+        Data: { task: taskName, project: projectName, exitCode: code },
+      };
     } catch (error) {
-      Log.Error(error instanceof Error ? error.message : String(error));
-      return 1;
+      const message = error instanceof Error ? error.message : String(error);
+      Log.Error(message);
+      return {
+        Code: 1,
+        Message: message,
+        Data: { task: taskName, project: projectRef, exitCode: 1 },
+      };
     }
   });

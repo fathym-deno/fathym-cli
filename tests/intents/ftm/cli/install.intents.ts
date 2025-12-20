@@ -1,7 +1,7 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import InstallCommand from '../../../../commands/cli/install.ts';
 
-CommandIntents(
+CommandIntentSuite(
   'Install Command Suite',
   InstallCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

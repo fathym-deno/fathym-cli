@@ -69,9 +69,24 @@ import {
   Command,
   CommandLog,
   CommandParams,
+  type CommandStatus,
   TemplateLocator,
   TemplateScaffolder,
 } from '@fathym/cli';
+
+/**
+ * Result data for the build command.
+ */
+export interface BuildResult {
+  /** The output directory */
+  outDir: string;
+  /** The version embedded in the build */
+  version: string;
+  /** Number of commands collected */
+  commandCount: number;
+  /** Number of templates embedded */
+  templateCount: number;
+}
 
 /**
  * Zod schema for build command positional arguments.
@@ -95,6 +110,10 @@ export const BuildFlagsSchema = z
       .string()
       .optional()
       .describe('Path to templates/ folder (default: ./templates)'),
+    version: z
+      .string()
+      .optional()
+      .describe('Version to embed in the build (default: 0.0.0)'),
   })
   .passthrough();
 
@@ -129,6 +148,14 @@ export class BuildParams extends CommandParams<
    */
   get ConfigOverride(): string | undefined {
     return this.Flag('config');
+  }
+
+  /**
+   * Version to embed in the build.
+   * Defaults to '0.0.0' if --version flag not provided.
+   */
+  get Version(): string {
+    return this.Flag('version') ?? '0.0.0';
   }
 }
 
@@ -168,11 +195,11 @@ export default Command('build', 'Prepare static CLI build folder')
       ),
     };
   })
-  .Run(async ({ Log, Services }) => {
+  .Run(async ({ Log, Services, Params }): Promise<CommandStatus<BuildResult>> => {
     const { outDir, templatesDir } = Services.Details;
     const { BuildDFS, Scaffolder } = Services;
 
-    const embeddedTemplatesPath = await collectTemplates(
+    const { embeddedTemplatesPath, templateCount } = await collectTemplates(
       templatesDir,
       outDir,
       BuildDFS,
@@ -212,6 +239,7 @@ export default Command('build', 'Prepare static CLI build folder')
         embeddedEntriesPath,
         imports,
         modules,
+        Version: Params.Version,
       },
     });
 
@@ -219,6 +247,17 @@ export default Command('build', 'Prepare static CLI build folder')
     Log.Success(
       `Build complete! Run \`ftm compile\` on .build/main.ts to finalize.`,
     );
+
+    return {
+      Code: 0,
+      Message: 'Build complete',
+      Data: {
+        outDir,
+        version: Params.Version,
+        commandCount: Object.keys(commandEntries).length,
+        templateCount,
+      },
+    };
   });
 
 /**
@@ -276,7 +315,7 @@ async function collectTemplates(
   fromDFS: DFSFileHandler,
   toDFS: DFSFileHandler,
   log: CommandLog,
-): Promise<string> {
+): Promise<{ embeddedTemplatesPath: string; templateCount: number }> {
   const paths = await fromDFS.LoadAllPaths();
   const templateFiles = paths.filter(
     (p) => p.startsWith(templatesDir) && !p.endsWith('/'),
@@ -294,7 +333,7 @@ async function collectTemplates(
   const stream = new Response(JSON.stringify(templates, null, 2)).body!;
   await toDFS.WriteFile(outputPath, stream);
   log.Info(`📦 Embedded templates → ${outputPath}`);
-  return outputPath;
+  return { embeddedTemplatesPath: outputPath, templateCount: Object.keys(templates).length };
 }
 
 /**

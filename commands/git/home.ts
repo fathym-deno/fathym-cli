@@ -9,9 +9,23 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams } from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import type { DFSFileHandler } from '@fathym/dfs';
 import { z } from 'zod';
+
+/**
+ * Result data for the git home command.
+ */
+export interface GitHomeResult {
+  /** The URL that was opened */
+  url: string;
+  /** The organization */
+  organization: string;
+  /** The repository */
+  repository: string;
+  /** Whether the URL was opened */
+  opened: boolean;
+}
 import {
   CliffyPromptService,
   GitConfigStore,
@@ -117,7 +131,7 @@ export default Command('Open Repo Home', 'Open the configured GitHub repository 
       Urls: urls,
     };
   })
-  .Run(async ({ Services, Params, Log }) => {
+  .Run(async ({ Services, Params, Log }): Promise<CommandStatus<GitHomeResult>> => {
     const cwd = Services.DFS.Root ?? Deno.cwd();
     const defaults = await Services.Config.GetDefaults();
 
@@ -133,7 +147,16 @@ export default Command('Open Repo Home', 'Open the configured GitHub repository 
 
     await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-    return 0;
+    return {
+      Code: 0,
+      Message: `Opened ${ctx.finalUrl}`,
+      Data: {
+        url: ctx.finalUrl!,
+        organization: ctx.organization!,
+        repository: ctx.repository!,
+        opened: true,
+      },
+    };
   });
 
 function buildTasks(): TaskDefinition<GitHomePipelineContext>[] {

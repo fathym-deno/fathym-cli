@@ -1,4 +1,4 @@
-import { CLIIntent, CLIIntents } from '@fathym/cli';
+import { CLIIntent, CLIIntentSuite } from '@fathym/cli';
 
 const origin = './.cli.ts';
 
@@ -22,7 +22,7 @@ CLIIntent('Fathym CLI – shows available commands', origin)
 // CLI Command Group Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – cli command group', origin)
+CLIIntentSuite('Fathym CLI – cli command group', origin)
   .Intent('cli build help shows description', (int) =>
     int
       .Args(['cli', 'build', '--help'])
@@ -64,7 +64,7 @@ CLIIntents('Fathym CLI – cli command group', origin)
 // CLI Config Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – cli config commands', origin)
+CLIIntentSuite('Fathym CLI – cli config commands', origin)
   .Intent('cli config get help', (int) =>
     int
       .Args(['cli', 'config', 'get', '--help'])
@@ -81,7 +81,7 @@ CLIIntents('Fathym CLI – cli config commands', origin)
 // CLI Install Subcommands Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – cli install subcommands', origin)
+CLIIntentSuite('Fathym CLI – cli install subcommands', origin)
   .Intent('cli install scripts help', (int) =>
     int
       .Args(['cli', 'install', 'scripts', '--help'])
@@ -93,7 +93,7 @@ CLIIntents('Fathym CLI – cli install subcommands', origin)
 // Projects Command Group Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – projects command group help', origin)
+CLIIntentSuite('Fathym CLI – projects command group help', origin)
   .Intent('projects help shows dynamic segment', (int) =>
     int
       .Args(['projects', '--help'])
@@ -105,7 +105,7 @@ CLIIntents('Fathym CLI – projects command group help', origin)
 // Task Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – task command', origin)
+CLIIntentSuite('Fathym CLI – task command', origin)
   .Intent('task help shows description', (int) =>
     int
       .Args(['task', '--help'])
@@ -117,7 +117,7 @@ CLIIntents('Fathym CLI – task command', origin)
 // Upgrade Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – upgrade command', origin)
+CLIIntentSuite('Fathym CLI – upgrade command', origin)
   .Intent('upgrade help shows description', (int) =>
     int
       .Args(['upgrade', '--help'])
@@ -129,7 +129,7 @@ CLIIntents('Fathym CLI – upgrade command', origin)
 // Error Handling Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntents('Fathym CLI – error handling', origin)
+CLIIntentSuite('Fathym CLI – error handling', origin)
   .Intent('unknown command shows error', (int) =>
     int
       .Args(['notfound'])

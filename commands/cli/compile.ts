@@ -111,10 +111,21 @@ import {
   CLIModuleBuilder,
   Command,
   CommandParams,
+  type CommandStatus,
   runCommandWithLogs,
 } from '@fathym/cli';
 import BuildCommand from './build.ts';
 import { getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
+
+/**
+ * Result data for the compile command.
+ */
+export interface CompileResult {
+  /** List of compiled binaries */
+  binaries: { target: string; path: string }[];
+  /** The version embedded */
+  version: string;
+}
 
 /**
  * Zod schema for compile command positional arguments.
@@ -166,6 +177,10 @@ export const CompileFlagsSchema = z
       .boolean()
       .optional()
       .describe('Compile for all supported targets'),
+    version: z
+      .string()
+      .optional()
+      .describe('Version to embed in the compiled binary (default: 0.0.0)'),
   })
   .passthrough();
 
@@ -255,6 +270,14 @@ export class CompileParams extends CommandParams<
   get All(): boolean {
     return this.Flag('all') ?? false;
   }
+
+  /**
+   * Version to embed in the compiled binary.
+   * Defaults to '0.0.0' if --version flag not provided.
+   */
+  get Version(): string {
+    return this.Flag('version') ?? '0.0.0';
+  }
 }
 
 /**
@@ -280,7 +303,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
       CLIRoot: cliRoot,
     };
   })
-  .Run(async ({ Params, Log, Commands, Services }) => {
+  .Run(async ({ Params, Log, Commands, Services }): Promise<CommandStatus<CompileResult>> => {
     const { CLIDFS } = Services;
 
     const relativeEntry = Params.Entry.replace(
@@ -296,7 +319,11 @@ export default Command('compile', 'Compile the CLI into a native binary')
     const cliModuleInfo = await CLIDFS.GetFileInfo('./.cli.ts');
     if (!cliModuleInfo) {
       Log.Error(`❌ Could not find CLI config at: ./.cli.ts`);
-      Deno.exit(1);
+      return {
+        Code: 1,
+        Message: 'Could not find CLI config at: ./.cli.ts',
+        Data: { binaries: [], version: Params.Version },
+      };
     }
 
     const cliModuleUrl = toFileUrl(cliModulePath).href;
@@ -310,17 +337,25 @@ export default Command('compile', 'Compile the CLI into a native binary')
 
     if (!tokens.length) {
       Log.Error('❌ No tokens specified in CLI config.');
-      Deno.exit(1);
+      return {
+        Code: 1,
+        Message: 'No tokens specified in CLI config',
+        Data: { binaries: [], version: Params.Version },
+      };
     }
 
     const primaryToken = tokens[0];
 
     // Run build once before compilation
     const { Build } = Commands!;
-    await Build([], { config: join(Services.CLIRoot, cliModuleInfo.Path) });
+    await Build([], {
+      config: join(Services.CLIRoot, cliModuleInfo.Path),
+      version: Params.Version,
+    });
 
     // Determine which targets to compile
     const targets: (string | undefined)[] = Params.All ? [...COMPILE_TARGETS] : [Params.Target];
+    const compiledBinaries: { target: string; path: string }[] = [];
 
     if (Params.All) {
       Log.Info(`🔧 Compiling CLI for all ${COMPILE_TARGETS.length} targets...`);
@@ -382,6 +417,8 @@ export default Command('compile', 'Compile the CLI into a native binary')
       if (target) {
         Log.Info(`📦 Cross-compiled for: ${target}`);
       }
+
+      compiledBinaries.push({ target: target ?? 'local', path: outputBinaryWithExt });
     }
 
     if (Params.All) {
@@ -394,4 +431,10 @@ export default Command('compile', 'Compile the CLI into a native binary')
         }\``,
       );
     }
+
+    return {
+      Code: 0,
+      Message: `Compiled ${compiledBinaries.length} binary(ies)`,
+      Data: { binaries: compiledBinaries, version: Params.Version },
+    };
   });

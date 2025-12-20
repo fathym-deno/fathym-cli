@@ -25,11 +25,25 @@
  */
 
 import { z } from 'zod';
-import { Command, CommandParams } from '@fathym/cli';
+import { Command, CommandParams, type CommandStatus } from '@fathym/cli';
 import { VersionResolver } from '../src/deps/VersionResolver.ts';
 import { VersionComparator } from '../src/deps/VersionComparator.ts';
 
 const PACKAGE_NAME = '@fathym/ftm';
+
+/**
+ * Result data for the upgrade command.
+ */
+export interface UpgradeResult {
+  /** Version before upgrade */
+  from: string;
+  /** Target version */
+  to: string;
+  /** Whether upgrade was performed */
+  upgraded: boolean;
+  /** Whether an upgrade is available (for --audit mode) */
+  upgradeAvailable?: boolean;
+}
 
 /**
  * Zod schema for upgrade command flags.
@@ -85,7 +99,7 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
       VersionComparator: new VersionComparator(),
     };
   })
-  .Run(async ({ Params, Log, Services, Config }) => {
+  .Run(async ({ Params, Log, Services, Config }): Promise<CommandStatus<UpgradeResult>> => {
     const { VersionResolver, VersionComparator } = Services;
 
     // Get current version directly from Config (embedded in .cli.ts at compile time)
@@ -104,14 +118,24 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
     if (Params.Audit) {
       if (!latestProduction) {
         Log.Info('No production version available.');
-        return 0;
+        return {
+          Code: 0,
+          Message: 'No production version available',
+          Data: {
+            from: currentVersion,
+            to: currentVersion,
+            upgraded: false,
+            upgradeAvailable: false,
+          },
+        };
       }
 
       const comparison = VersionComparator.compare(
         currentVersion,
         latestProduction,
       );
-      if (comparison < 0) {
+      const upgradeAvailable = comparison < 0;
+      if (upgradeAvailable) {
         Log.Warn(`A newer version is available: ${latestProduction}`);
         Log.Warn(`   Current version: ${currentVersion}`);
         Log.Warn(`   To upgrade: ftm upgrade --version=${latestProduction}`);
@@ -121,7 +145,13 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
           `You are on the latest production version (${currentVersion})`,
         );
       }
-      return 0;
+      return {
+        Code: 0,
+        Message: upgradeAvailable
+          ? `Upgrade available: ${currentVersion} → ${latestProduction}`
+          : `On latest version (${currentVersion})`,
+        Data: { from: currentVersion, to: latestProduction, upgraded: false, upgradeAvailable },
+      };
     }
 
     // --list mode: show versions and let user select
@@ -147,7 +177,11 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
       Log.Info('');
       Log.Info('To install a specific version:');
       Log.Info(`  ftm upgrade --version=<version>`);
-      return 0;
+      return {
+        Code: 0,
+        Message: 'Listed available versions',
+        Data: { from: currentVersion, to: currentVersion, upgraded: false },
+      };
     }
 
     // Determine target version
@@ -156,7 +190,11 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
     if (!targetVersion) {
       Log.Error('No version specified and no production version available.');
       Log.Info('Use --list to see available versions.');
-      return 1;
+      return {
+        Code: 1,
+        Message: 'No version specified and no production version available',
+        Data: { from: currentVersion, to: currentVersion, upgraded: false },
+      };
     }
 
     // Verify target version exists
@@ -168,13 +206,21 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
     if (!exists) {
       Log.Error(`Version ${targetVersion} not found.`);
       Log.Info('Use --list to see available versions.');
-      return 1;
+      return {
+        Code: 1,
+        Message: `Version ${targetVersion} not found`,
+        Data: { from: currentVersion, to: targetVersion, upgraded: false },
+      };
     }
 
     // Check if already on target version
     if (targetVersion === currentVersion) {
       Log.Info(`Already on version ${currentVersion}.`);
-      return 0;
+      return {
+        Code: 0,
+        Message: `Already on version ${currentVersion}`,
+        Data: { from: currentVersion, to: currentVersion, upgraded: false },
+      };
     }
 
     // Run the install script for the target version
@@ -194,5 +240,11 @@ export default Command('upgrade', 'Upgrade ftm CLI to a different version.')
       Log.Info('   Restart your terminal to use the new version.');
     }
 
-    return code;
+    return {
+      Code: code,
+      Message: code === 0
+        ? `Successfully upgraded from ${currentVersion} to ${targetVersion}`
+        : `Upgrade failed with exit code ${code}`,
+      Data: { from: currentVersion, to: targetVersion, upgraded: code === 0 },
+    };
   });

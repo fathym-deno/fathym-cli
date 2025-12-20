@@ -1,7 +1,7 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import RunCommand from '../../../../commands/cli/run.ts';
 
-CommandIntents(
+CommandIntentSuite(
   'Run Command Suite',
   RunCommand.Build(),
   import.meta.resolve('../../../../.cli.ts'),

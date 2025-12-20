@@ -143,7 +143,7 @@ get Verbose(): boolean {
 ### Every Command Needs Tests
 
 ```typescript
-CommandIntents('Command Suite', cmd.Build(), origin)
+CommandIntentSuite('Command Suite', cmd.Build(), origin)
   .WithInit(initFn)
   .Intent('default behavior', (int) =>
     int.Args([]).Flags({}).ExpectLogs('...').ExpectExit(0))

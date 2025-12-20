@@ -1,4 +1,4 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import UpgradeCommand from '../../../../../commands/projects/[projectRef]/upgrade.ts';
 
 const cmd = UpgradeCommand.Build();
@@ -11,7 +11,7 @@ const origin = import.meta.resolve('../../../../../.cli.ts');
 // With dynamic routing, the project reference comes from [projectRef] segment,
 // and the version comes from positional args.
 
-CommandIntents('projects:[projectRef]:upgrade Command Suite', cmd, origin)
+CommandIntentSuite('projects:[projectRef]:upgrade Command Suite', cmd, origin)
   .Intent('Dry run shows what would be upgraded', (int) =>
     int
       .Segments({ projectRef: './tests/fixtures/ref-workspace/lib-a/deno.jsonc' })

@@ -1,4 +1,4 @@
-import { CommandIntents } from '@fathym/cli';
+import { CommandIntentSuite } from '@fathym/cli';
 import UpgradeCommand from '../../../../../../commands/projects/[projectRef]/deps/upgrade.ts';
 
 const cmd = UpgradeCommand.Build();
@@ -8,7 +8,7 @@ const origin = import.meta.resolve('../../../../../../.cli.ts');
 // so most tests use dry-run mode to verify command structure without making
 // actual network requests.
 
-CommandIntents('projects:[projectRef]:deps:upgrade Command Suite', cmd, origin)
+CommandIntentSuite('projects:[projectRef]:deps:upgrade Command Suite', cmd, origin)
   .Intent('Fails when project not found', (int) =>
     int
       .Segments({ projectRef: '@nonexistent/package' })
