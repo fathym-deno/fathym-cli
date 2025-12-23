@@ -12,9 +12,14 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { z } from 'zod';
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { z } from "zod";
 
 /**
  * Result data for the git feature command.
@@ -34,20 +39,20 @@ import {
   type PromptService,
   type TaskDefinition,
   TaskPipeline,
-} from '../../src/services/.exports.ts';
+} from "../../src/services/.exports.ts";
 import {
   EnsureBranchPrefix,
   GitTargetFlagSchema,
   NormalizeBranchInput,
   ResolveGitOpsWorkingDFS,
-} from '../../src/git/.exports.ts';
+} from "../../src/git/.exports.ts";
 
 const FeatureArgsSchema = z.tuple([
   z
     .string()
-    .describe('Name for the feature branch (without prefix)')
+    .describe("Name for the feature branch (without prefix)")
     .optional()
-    .meta({ argName: 'name' }),
+    .meta({ argName: "name" }),
 ]);
 
 const FeatureFlagsSchema = z.object({
@@ -55,8 +60,12 @@ const FeatureFlagsSchema = z.object({
     .string()
     .optional()
     .describe("Base ref to branch from (default: 'origin/integration')"),
-  'no-push': z.boolean().optional().describe('Skip pushing the branch to origin'),
-  'dry-run': z.boolean().optional().describe('Preview commands without executing them'),
+  "no-push": z.boolean().optional().describe(
+    "Skip pushing the branch to origin",
+  ),
+  "dry-run": z.boolean().optional().describe(
+    "Preview commands without executing them",
+  ),
 }).merge(GitTargetFlagSchema);
 
 class FeatureCommandParams extends CommandParams<
@@ -68,15 +77,15 @@ class FeatureCommandParams extends CommandParams<
   }
 
   get BaseRef(): string {
-    return this.Flag('base') ?? 'origin/integration';
+    return this.Flag("base") ?? "origin/integration";
   }
 
   get NoPush(): boolean {
-    return this.Flag('no-push') ?? false;
+    return this.Flag("no-push") ?? false;
   }
 
   override get DryRun(): boolean {
-    return this.Flag('dry-run') ?? false;
+    return this.Flag("dry-run") ?? false;
   }
 }
 
@@ -95,7 +104,10 @@ type FeaturePipelineContext = {
   branchName?: string;
 };
 
-export default Command('Create Feature Branch', 'Create a feature branch from origin/integration')
+export default Command(
+  "Create Feature Branch",
+  "Create a feature branch from origin/integration",
+)
   .Args(FeatureArgsSchema)
   .Flags(FeatureFlagsSchema)
   .Params(FeatureCommandParams)
@@ -123,99 +135,107 @@ export default Command('Create Feature Branch', 'Create a feature branch from or
       Prompt: promptService,
     };
   })
-  .Run(async ({ Services, Params, Log }): Promise<CommandStatus<GitFeatureResult>> => {
-    const cwd = Services.DFS.Root ?? Deno.cwd();
-    const git = Services.Git.WithLogger(Log);
+  .Run(
+    async (
+      { Services, Params, Log },
+    ): Promise<CommandStatus<GitFeatureResult>> => {
+      const cwd = Services.DFS.Root ?? Deno.cwd();
+      const git = Services.Git.WithLogger(Log);
 
-    const ctx: FeaturePipelineContext = {
-      cwd,
-      git,
-      prompt: Services.Prompt,
-      params: Params,
-      baseRef: Params.BaseRef,
-    };
+      const ctx: FeaturePipelineContext = {
+        cwd,
+        git,
+        prompt: Services.Prompt,
+        params: Params,
+        baseRef: Params.BaseRef,
+      };
 
-    await TaskPipeline.Run(ctx, buildTasks(), Log);
+      await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-    return {
-      Code: 0,
-      Message: `Created feature branch ${ctx.branchName}`,
-      Data: {
-        branch: ctx.branchName!,
-        baseRef: ctx.baseRef,
-        pushed: !Params.NoPush,
-      },
-    };
-  });
+      return {
+        Code: 0,
+        Message: `Created feature branch ${ctx.branchName}`,
+        Data: {
+          branch: ctx.branchName!,
+          baseRef: ctx.baseRef,
+          pushed: !Params.NoPush,
+        },
+      };
+    },
+  );
 
 function buildTasks(): TaskDefinition<FeaturePipelineContext>[] {
   return [
     {
-      title: 'Verify git repository',
+      title: "Verify git repository",
       run: async (ctx) => {
         const isRepo = await ctx.git.IsRepository({ cwd: ctx.cwd });
         if (!isRepo) {
           throw new Error(
-            'Not a git repository. Run inside a repository or set --config to target one.',
+            "Not a git repository. Run inside a repository or set --config to target one.",
           );
         }
       },
     },
     {
-      title: 'Ensure clean working tree',
+      title: "Ensure clean working tree",
       run: async (ctx) => {
-        const hasChanges = await ctx.git.HasUncommittedChanges({ cwd: ctx.cwd });
+        const hasChanges = await ctx.git.HasUncommittedChanges({
+          cwd: ctx.cwd,
+        });
         if (hasChanges) {
           throw new Error(
-            'Working tree has uncommitted changes. Run `ftm git` (or stash/commit) before creating a feature branch.',
+            "Working tree has uncommitted changes. Run `ftm git` (or stash/commit) before creating a feature branch.",
           );
         }
       },
     },
     {
-      title: 'Determine feature branch name',
+      title: "Determine feature branch name",
       run: async (ctx, runtime) => {
         let name = ctx.params.FeatureName?.trim();
 
         if (!name || name.length === 0) {
           if (ctx.params.DryRun) {
-            name = 'dry-run-feature';
+            name = "dry-run-feature";
           } else {
-            name = (await ctx.prompt.Input('What is the name of the feature branch?')).trim();
+            name = (await ctx.prompt.Input(
+              "What is the name of the feature branch?",
+            )).trim();
           }
         }
 
         const normalized = NormalizeBranchInput(name);
         if (!normalized) {
-          throw new Error('Feature branch name is required.');
+          throw new Error("Feature branch name is required.");
         }
 
-        ctx.branchName = EnsureBranchPrefix(normalized, 'feature');
+        ctx.branchName = EnsureBranchPrefix(normalized, "feature");
         runtime.UpdateTitle(`Using branch ${ctx.branchName}`);
       },
     },
     {
-      title: 'Create feature branch',
+      title: "Create feature branch",
       run: async (ctx, runtime) => {
         runtime.UpdateTitle(`Create feature branch ${ctx.branchName}`);
         await ctx.git.RunChecked(
-          ['checkout', '-b', ctx.branchName!, ctx.baseRef],
+          ["checkout", "-b", ctx.branchName!, ctx.baseRef],
           gitOptions(ctx),
         );
       },
     },
     {
-      title: 'Push feature branch to origin',
-      skip: (ctx) => (ctx.params.NoPush ? '--no-push flag set' : false),
+      title: "Push feature branch to origin",
+      skip: (ctx) => (ctx.params.NoPush ? "--no-push flag set" : false),
       run: async (ctx, runtime) => {
         runtime.UpdateTitle(`Push ${ctx.branchName} to origin`);
         await ctx.git.PushWithUpstream(ctx.branchName!, gitOptions(ctx));
       },
     },
     {
-      title: 'Fetch prune',
+      title: "Fetch prune",
       run: async (ctx) => {
-        await ctx.git.RunChecked(['fetch', '--prune'], gitOptions(ctx));
+        await ctx.git.RunChecked(["fetch", "--prune"], gitOptions(ctx));
       },
     },
   ];

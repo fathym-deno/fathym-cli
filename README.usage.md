@@ -21,7 +21,8 @@ References:
 ## Prereqs
 
 - Deno installed.
-- Access to the ref-arch CLI runtime (imported via `@fathym/cli` path in `deno.jsonc`).
+- Access to the ref-arch CLI runtime (imported via `@fathym/cli` path in
+  `deno.jsonc`).
 
 ## Commands
 
@@ -35,5 +36,6 @@ References:
 ## Development
 
 - Format/lint/test: `deno task fmt && deno task lint && deno task test`
-- Templates live under `./templates`; commands under `./commands`; root config in `.cli.json`.
+- Templates live under `./templates`; commands under `./commands`; root config
+  in `.cli.json`.
 - Uses telemetry-backed logging from the shared `@fathym/cli` runtime.

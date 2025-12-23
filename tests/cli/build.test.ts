@@ -1,5 +1,5 @@
-import { assertEquals, assertNotEquals } from '@std/assert';
-import { pascalCase } from '@luca/cases';
+import { assertEquals, assertNotEquals } from "@std/assert";
+import { pascalCase } from "@luca/cases";
 
 /**
  * Tests for the alias generation logic in commands/cli/build.ts
@@ -15,7 +15,7 @@ import { pascalCase } from '@luca/cases';
  */
 function generateAlias(key: string, isMeta: boolean): string {
   // This is the FIXED logic - uses full path
-  const baseName = pascalCase(key.replace(/\//g, '-'));
+  const baseName = pascalCase(key.replace(/\//g, "-"));
   return isMeta ? `${baseName}Group` : `${baseName}Command`;
 }
 
@@ -24,7 +24,7 @@ function generateAlias(key: string, isMeta: boolean): string {
  */
 function generateAliasOld(key: string, isMeta: boolean): string {
   // This was the BROKEN logic - only used filename
-  const baseName = pascalCase(key.split('/').pop()!);
+  const baseName = pascalCase(key.split("/").pop()!);
   return isMeta ? `${baseName}Group` : `${baseName}Command`;
 }
 
@@ -32,36 +32,40 @@ function generateAliasOld(key: string, isMeta: boolean): string {
 // Alias Uniqueness Tests
 // =============================================================================
 
-Deno.test('Build alias generation - Same filename in different directories produces unique aliases', () => {
-  const alias1 = generateAlias('cli/build', false);
-  const alias2 = generateAlias('projects/build', false);
-
-  assertNotEquals(alias1, alias2, 'cli/build and projects/build should have different aliases');
-  assertEquals(alias1, 'CliBuildCommand');
-  assertEquals(alias2, 'ProjectsBuildCommand');
-});
-
-Deno.test('Build alias generation - Nested paths produce unique aliases', () => {
-  const alias1 = generateAlias('projects/check', false);
-  const alias2 = generateAlias('projects/publish/check', false);
+Deno.test("Build alias generation - Same filename in different directories produces unique aliases", () => {
+  const alias1 = generateAlias("cli/build", false);
+  const alias2 = generateAlias("projects/build", false);
 
   assertNotEquals(
     alias1,
     alias2,
-    'projects/check and projects/publish/check should have different aliases',
+    "cli/build and projects/build should have different aliases",
   );
-  assertEquals(alias1, 'ProjectsCheckCommand');
-  assertEquals(alias2, 'ProjectsPublishCheckCommand');
+  assertEquals(alias1, "CliBuildCommand");
+  assertEquals(alias2, "ProjectsBuildCommand");
 });
 
-Deno.test('Build alias generation - Multiple same-named commands all get unique aliases', () => {
+Deno.test("Build alias generation - Nested paths produce unique aliases", () => {
+  const alias1 = generateAlias("projects/check", false);
+  const alias2 = generateAlias("projects/publish/check", false);
+
+  assertNotEquals(
+    alias1,
+    alias2,
+    "projects/check and projects/publish/check should have different aliases",
+  );
+  assertEquals(alias1, "ProjectsCheckCommand");
+  assertEquals(alias2, "ProjectsPublishCheckCommand");
+});
+
+Deno.test("Build alias generation - Multiple same-named commands all get unique aliases", () => {
   const testCases = [
-    'cli/test',
-    'projects/test',
-    'cli/build',
-    'projects/build',
-    'projects/check',
-    'projects/publish/check',
+    "cli/test",
+    "projects/test",
+    "cli/build",
+    "projects/build",
+    "projects/check",
+    "projects/publish/check",
   ];
 
   const aliases = testCases.map((key) => generateAlias(key, false));
@@ -71,59 +75,63 @@ Deno.test('Build alias generation - Multiple same-named commands all get unique 
     aliases.length,
     uniqueAliases.size,
     `Expected ${aliases.length} unique aliases but got ${uniqueAliases.size}. Duplicates found: ${
-      aliases.filter((a, i) => aliases.indexOf(a) !== i).join(', ')
+      aliases.filter((a, i) => aliases.indexOf(a) !== i).join(", ")
     }`,
   );
 });
 
-Deno.test('Build alias generation - Group metadata gets unique aliases too', () => {
-  const alias1 = generateAlias('cli/config', true);
-  const alias2 = generateAlias('projects/imports', true);
+Deno.test("Build alias generation - Group metadata gets unique aliases too", () => {
+  const alias1 = generateAlias("cli/config", true);
+  const alias2 = generateAlias("projects/imports", true);
 
-  assertEquals(alias1, 'CliConfigGroup');
-  assertEquals(alias2, 'ProjectsImportsGroup');
+  assertEquals(alias1, "CliConfigGroup");
+  assertEquals(alias2, "ProjectsImportsGroup");
 });
 
-Deno.test('Build alias generation - Top-level commands work correctly', () => {
-  const alias = generateAlias('task', false);
+Deno.test("Build alias generation - Top-level commands work correctly", () => {
+  const alias = generateAlias("task", false);
 
-  assertEquals(alias, 'TaskCommand');
+  assertEquals(alias, "TaskCommand");
 });
 
 // =============================================================================
 // Regression Tests - Verify old logic was broken
 // =============================================================================
 
-Deno.test('Build alias generation - Old logic would have produced duplicates (regression test)', () => {
+Deno.test("Build alias generation - Old logic would have produced duplicates (regression test)", () => {
   // This test documents WHY the fix was needed
-  const oldAlias1 = generateAliasOld('cli/build', false);
-  const oldAlias2 = generateAliasOld('projects/build', false);
+  const oldAlias1 = generateAliasOld("cli/build", false);
+  const oldAlias2 = generateAliasOld("projects/build", false);
 
   // Old logic produced the SAME alias - this was the bug!
   assertEquals(
     oldAlias1,
     oldAlias2,
-    'Old logic should produce duplicates (this is the bug we fixed)',
+    "Old logic should produce duplicates (this is the bug we fixed)",
   );
-  assertEquals(oldAlias1, 'BuildCommand');
+  assertEquals(oldAlias1, "BuildCommand");
 
   // New logic produces DIFFERENT aliases
-  const newAlias1 = generateAlias('cli/build', false);
-  const newAlias2 = generateAlias('projects/build', false);
+  const newAlias1 = generateAlias("cli/build", false);
+  const newAlias2 = generateAlias("projects/build", false);
 
-  assertNotEquals(newAlias1, newAlias2, 'New logic should produce unique aliases');
+  assertNotEquals(
+    newAlias1,
+    newAlias2,
+    "New logic should produce unique aliases",
+  );
 });
 
 // =============================================================================
 // Valid Identifier Tests
 // =============================================================================
 
-Deno.test('Build alias generation - Produces valid JavaScript identifiers', () => {
+Deno.test("Build alias generation - Produces valid JavaScript identifiers", () => {
   const testCases = [
-    'cli/build',
-    'cli/config/get',
-    'projects/deps/upgrade',
-    'projects/imports/sync',
+    "cli/build",
+    "cli/config/get",
+    "projects/deps/upgrade",
+    "projects/imports/sync",
   ];
 
   const validIdentifierRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
@@ -138,9 +146,9 @@ Deno.test('Build alias generation - Produces valid JavaScript identifiers', () =
   }
 });
 
-Deno.test('Build alias generation - No slashes in generated aliases', () => {
-  const alias = generateAlias('cli/config/get', false);
+Deno.test("Build alias generation - No slashes in generated aliases", () => {
+  const alias = generateAlias("cli/config/get", false);
 
-  assertEquals(alias.includes('/'), false, 'Alias should not contain slashes');
-  assertEquals(alias, 'CliConfigGetCommand');
+  assertEquals(alias.includes("/"), false, "Alias should not contain slashes");
+  assertEquals(alias, "CliConfigGetCommand");
 });

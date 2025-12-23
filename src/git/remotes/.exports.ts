@@ -1,1 +1,1 @@
-export * from './resolveGitHubRemote.ts';
+export * from "./resolveGitHubRemote.ts";

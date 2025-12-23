@@ -10,9 +10,14 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { z } from 'zod';
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { z } from "zod";
 import {
   CliffyPromptService,
   GitConfigStore,
@@ -22,46 +27,55 @@ import {
   type PromptService,
   type TaskDefinition,
   TaskPipeline,
-} from '../../src/services/.exports.ts';
-import { GitTargetFlagSchema, ResolveGitOpsWorkingDFS } from '../../src/git/.exports.ts';
+} from "../../src/services/.exports.ts";
+import {
+  GitTargetFlagSchema,
+  ResolveGitOpsWorkingDFS,
+} from "../../src/git/.exports.ts";
 
 const GitCloneArgsSchema = z.tuple([
   z
     .string()
-    .describe('GitHub organization (e.g., fathym)')
+    .describe("GitHub organization (e.g., fathym)")
     .optional()
-    .meta({ argName: 'organization' }),
+    .meta({ argName: "organization" }),
   z
     .string()
-    .describe('Repository name (e.g., cli)')
+    .describe("Repository name (e.g., cli)")
     .optional()
-    .meta({ argName: 'repository' }),
+    .meta({ argName: "repository" }),
 ]);
 
 const GitCloneFlagsSchema = z.object({
   branch: z
     .string()
     .optional()
-    .describe('Branch to check out after cloning (defaults to the repo default branch)'),
+    .describe(
+      "Branch to check out after cloning (defaults to the repo default branch)",
+    ),
   depth: z
     .coerce
     .number()
     .int()
     .positive()
     .optional()
-    .describe('Perform a shallow clone with the provided depth'),
+    .describe("Perform a shallow clone with the provided depth"),
   dir: z
     .string()
     .optional()
-    .describe('Directory name relative to the target DFS root (defaults to the repository name)'),
+    .describe(
+      "Directory name relative to the target DFS root (defaults to the repository name)",
+    ),
   force: z
     .boolean()
     .optional()
-    .describe('Bypass the configured-repo gate (unsafe unless you know the repo is provisioned)'),
-  'dry-run': z
+    .describe(
+      "Bypass the configured-repo gate (unsafe unless you know the repo is provisioned)",
+    ),
+  "dry-run": z
     .boolean()
     .optional()
-    .describe('Preview git commands without running them'),
+    .describe("Preview git commands without running them"),
 }).merge(GitTargetFlagSchema);
 
 class GitCloneParams extends CommandParams<
@@ -77,23 +91,23 @@ class GitCloneParams extends CommandParams<
   }
 
   public get Branch(): string | undefined {
-    return this.Flag('branch');
+    return this.Flag("branch");
   }
 
   public get Depth(): number | undefined {
-    return this.Flag('depth');
+    return this.Flag("depth");
   }
 
   public get Directory(): string | undefined {
-    return this.Flag('dir');
+    return this.Flag("dir");
   }
 
   public get Force(): boolean {
-    return this.Flag('force') ?? false;
+    return this.Flag("force") ?? false;
   }
 
   public override get DryRun(): boolean {
-    return this.Flag('dry-run') ?? false;
+    return this.Flag("dry-run") ?? false;
   }
 }
 
@@ -134,8 +148,8 @@ type GitCloneResult = {
 };
 
 export default Command(
-  'Clone Repository',
-  'Clone a configured GitHub repository into the target workspace',
+  "Clone Repository",
+  "Clone a configured GitHub repository into the target workspace",
 )
   .Args(GitCloneArgsSchema)
   .Flags(GitCloneFlagsSchema)
@@ -151,57 +165,65 @@ export default Command(
       Prompt: await ioc.Resolve(CliffyPromptService),
     };
   })
-  .Run(async ({ Services, Params, Log }): Promise<CommandStatus<GitCloneResult>> => {
-    const cwd = Services.DFS.Root ?? Deno.cwd();
-    const defaults = await Services.Config.GetDefaults();
+  .Run(
+    async (
+      { Services, Params, Log },
+    ): Promise<CommandStatus<GitCloneResult>> => {
+      const cwd = Services.DFS.Root ?? Deno.cwd();
+      const defaults = await Services.Config.GetDefaults();
 
-    const ctx: GitClonePipelineContext = {
-      dfs: Services.DFS,
-      git: Services.Git.WithLogger(Log),
-      config: Services.Config,
-      prompt: Services.Prompt,
-      params: Params,
-      defaults,
-      cwd,
-      branch: Params.Branch?.trim(),
-    };
+      const ctx: GitClonePipelineContext = {
+        dfs: Services.DFS,
+        git: Services.Git.WithLogger(Log),
+        config: Services.Config,
+        prompt: Services.Prompt,
+        params: Params,
+        defaults,
+        cwd,
+        branch: Params.Branch?.trim(),
+      };
 
-    await TaskPipeline.Run(ctx, buildTasks(), Log);
+      await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-    Log.Info('');
-    Log.Info(`Cloned ${ctx.organization}/${ctx.repository} → ${ctx.destinationPath}`);
-    Log.Info('Next steps:');
-    Log.Info(`  - cd ${ctx.destinationRelative}`);
-    Log.Info('  - Run `ftm git` regularly to stage, commit, and sync changes.');
+      Log.Info("");
+      Log.Info(
+        `Cloned ${ctx.organization}/${ctx.repository} → ${ctx.destinationPath}`,
+      );
+      Log.Info("Next steps:");
+      Log.Info(`  - cd ${ctx.destinationRelative}`);
+      Log.Info(
+        "  - Run `ftm git` regularly to stage, commit, and sync changes.",
+      );
 
-    return {
-      Code: 0,
-      Message: `Cloned ${ctx.organization}/${ctx.repository}`,
-      Data: {
-        organization: ctx.organization!,
-        repository: ctx.repository!,
-        branch: ctx.branch,
-        destination: ctx.destinationPath!,
-        directory: ctx.destinationRelative!,
-        url: ctx.cloneUrl!,
-        configured: ctx.wasConfigured ?? false,
-        forced: Params.Force,
-        dryRun: Params.DryRun,
-      },
-    };
-  });
+      return {
+        Code: 0,
+        Message: `Cloned ${ctx.organization}/${ctx.repository}`,
+        Data: {
+          organization: ctx.organization!,
+          repository: ctx.repository!,
+          branch: ctx.branch,
+          destination: ctx.destinationPath!,
+          directory: ctx.destinationRelative!,
+          url: ctx.cloneUrl!,
+          configured: ctx.wasConfigured ?? false,
+          forced: Params.Force,
+          dryRun: Params.DryRun,
+        },
+      };
+    },
+  );
 
 function buildTasks(): TaskDefinition<GitClonePipelineContext>[] {
   return [
     {
-      title: 'Resolve organization',
+      title: "Resolve organization",
       run: async (ctx, runtime) => {
         ctx.organization = await resolveOrganization(ctx);
         runtime.UpdateTitle(`Organization: ${ctx.organization}`);
       },
     },
     {
-      title: 'Resolve repository',
+      title: "Resolve repository",
       run: async (ctx, runtime) => {
         ctx.repository = await resolveRepository(ctx);
         ctx.cloneUrl = buildCloneUrl(ctx.organization!, ctx.repository!);
@@ -209,7 +231,7 @@ function buildTasks(): TaskDefinition<GitClonePipelineContext>[] {
       },
     },
     {
-      title: 'Ensure repository configured',
+      title: "Ensure repository configured",
       run: async (ctx, runtime) => {
         const configured = await ctx.config.IsConfigured(
           ctx.organization!,
@@ -221,25 +243,25 @@ function buildTasks(): TaskDefinition<GitClonePipelineContext>[] {
         if (!configured && !ctx.params.Force) {
           throw new Error(
             `Repository ${ctx.organization}/${ctx.repository} has not been configured. Run ` +
-              '`ftm git configure -s` first or pass --force to bypass.',
+              "`ftm git configure -s` first or pass --force to bypass.",
           );
         }
 
         runtime.UpdateTitle(
           configured
             ? `Repository ${ctx.organization}/${ctx.repository} is configured`
-            : 'Proceeding without configure (--force)',
+            : "Proceeding without configure (--force)",
         );
       },
     },
     {
-      title: 'Determine destination directory',
+      title: "Determine destination directory",
       run: async (ctx, runtime) => {
         const dir = ctx.params.Directory?.trim();
         const folder = dir && dir.length > 0 ? dir : ctx.repository;
 
         if (!folder) {
-          throw new Error('Destination directory could not be determined.');
+          throw new Error("Destination directory could not be determined.");
         }
 
         ctx.destinationRelative = folder;
@@ -248,16 +270,20 @@ function buildTasks(): TaskDefinition<GitClonePipelineContext>[] {
       },
     },
     {
-      title: 'Clone repository',
+      title: "Clone repository",
       run: async (ctx, runtime) => {
-        runtime.UpdateTitle(`Clone repository ${ctx.organization}/${ctx.repository}`);
+        runtime.UpdateTitle(
+          `Clone repository ${ctx.organization}/${ctx.repository}`,
+        );
         await ctx.git.RunChecked(buildCloneArgs(ctx), gitOptions(ctx));
       },
     },
   ];
 }
 
-async function resolveOrganization(ctx: GitClonePipelineContext): Promise<string> {
+async function resolveOrganization(
+  ctx: GitClonePipelineContext,
+): Promise<string> {
   const candidates = [ctx.params.Organization, ctx.defaults?.organization];
 
   for (const candidate of candidates) {
@@ -267,15 +293,19 @@ async function resolveOrganization(ctx: GitClonePipelineContext): Promise<string
     }
   }
 
-  const answer = (await ctx.prompt.Input('Which GitHub organization should be cloned?')).trim();
+  const answer =
+    (await ctx.prompt.Input("Which GitHub organization should be cloned?"))
+      .trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error('GitHub organization is required.');
+  throw new Error("GitHub organization is required.");
 }
 
-async function resolveRepository(ctx: GitClonePipelineContext): Promise<string> {
+async function resolveRepository(
+  ctx: GitClonePipelineContext,
+): Promise<string> {
   const candidates = [ctx.params.Repository, ctx.defaults?.repository];
 
   for (const candidate of candidates) {
@@ -285,12 +315,14 @@ async function resolveRepository(ctx: GitClonePipelineContext): Promise<string> 
     }
   }
 
-  const answer = (await ctx.prompt.Input('Which GitHub repository should be cloned?')).trim();
+  const answer =
+    (await ctx.prompt.Input("Which GitHub repository should be cloned?"))
+      .trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error('GitHub repository is required.');
+  throw new Error("GitHub repository is required.");
 }
 
 function buildCloneUrl(organization: string, repository: string): string {
@@ -298,14 +330,14 @@ function buildCloneUrl(organization: string, repository: string): string {
 }
 
 function buildCloneArgs(ctx: GitClonePipelineContext): string[] {
-  const args = ['clone'];
+  const args = ["clone"];
 
   if (ctx.params.Depth) {
-    args.push('--depth', ctx.params.Depth.toString());
+    args.push("--depth", ctx.params.Depth.toString());
   }
 
   if (ctx.branch) {
-    args.push('--branch', ctx.branch);
+    args.push("--branch", ctx.branch);
   }
 
   args.push(ctx.cloneUrl!, ctx.destinationPath!);

@@ -1,20 +1,20 @@
-import { assertEquals } from '@std/assert';
-import { CascadeRunner } from '../../src/pipelines/CascadeRunner.ts';
-import type { CascadeStepDef } from '../../src/pipelines/CascadeTypes.ts';
-import type { ProjectRef } from '../../src/projects/ProjectRef.ts';
+import { assertEquals } from "@std/assert";
+import { CascadeRunner } from "../../src/pipelines/CascadeRunner.ts";
+import type { CascadeStepDef } from "../../src/pipelines/CascadeTypes.ts";
+import type { ProjectRef } from "../../src/projects/ProjectRef.ts";
 
 const BUILD_STEPS: CascadeStepDef[] = [
   {
-    name: 'fmt',
-    overrideTask: 'build:fmt',
-    description: 'Formatting',
-    commandKey: 'Fmt',
+    name: "fmt",
+    overrideTask: "build:fmt",
+    description: "Formatting",
+    commandKey: "Fmt",
   },
   {
-    name: 'lint',
-    overrideTask: 'build:lint',
-    description: 'Linting',
-    commandKey: 'Lint',
+    name: "lint",
+    overrideTask: "build:lint",
+    description: "Linting",
+    commandKey: "Lint",
   },
 ];
 
@@ -22,17 +22,17 @@ function createMockLog() {
   const logs: string[] = [];
   return {
     logs,
-    Info: (...args: unknown[]) => logs.push(args.join(' ')),
-    Warn: (...args: unknown[]) => logs.push(`WARN: ${args.join(' ')}`),
-    Error: (...args: unknown[]) => logs.push(`ERROR: ${args.join(' ')}`),
+    Info: (...args: unknown[]) => logs.push(args.join(" ")),
+    Warn: (...args: unknown[]) => logs.push(`WARN: ${args.join(" ")}`),
+    Error: (...args: unknown[]) => logs.push(`ERROR: ${args.join(" ")}`),
   };
 }
 
 function createProject(tasks: Record<string, string> = {}): ProjectRef {
   return {
-    name: '@test/app',
-    dir: '/projects/app',
-    configPath: '/projects/app/deno.jsonc',
+    name: "@test/app",
+    dir: "/projects/app",
+    configPath: "/projects/app/deno.jsonc",
     hasDev: false,
     tasks,
   };
@@ -42,8 +42,8 @@ function createProject(tasks: Record<string, string> = {}): ProjectRef {
 // CascadeRunner.resolve() Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.resolve - Full override detected when task exists', () => {
-  const project = createProject({ build: 'custom build command' });
+Deno.test("CascadeRunner.resolve - Full override detected when task exists", () => {
+  const project = createProject({ build: "custom build command" });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
     verbose: false,
@@ -52,16 +52,16 @@ Deno.test('CascadeRunner.resolve - Full override detected when task exists', () 
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
 
   assertEquals(resolution.hasFullOverride, true);
   assertEquals(resolution.steps.length, 0);
-  assertEquals(resolution.pipelineName, 'build');
-  assertEquals(resolution.fullOverrideTask, 'build');
+  assertEquals(resolution.pipelineName, "build");
+  assertEquals(resolution.fullOverrideTask, "build");
 });
 
-Deno.test('CascadeRunner.resolve - Step override detected for specific task', () => {
-  const project = createProject({ 'build:fmt': 'custom fmt' });
+Deno.test("CascadeRunner.resolve - Step override detected for specific task", () => {
+  const project = createProject({ "build:fmt": "custom fmt" });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
     verbose: false,
@@ -70,17 +70,17 @@ Deno.test('CascadeRunner.resolve - Step override detected for specific task', ()
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
 
   assertEquals(resolution.hasFullOverride, false);
   assertEquals(resolution.steps.length, 2);
   assertEquals(resolution.steps[0].hasOverride, true);
-  assertEquals(resolution.steps[0].source, 'override');
+  assertEquals(resolution.steps[0].source, "override");
   assertEquals(resolution.steps[1].hasOverride, false);
-  assertEquals(resolution.steps[1].source, 'default');
+  assertEquals(resolution.steps[1].source, "default");
 });
 
-Deno.test('CascadeRunner.resolve - No overrides uses all defaults', () => {
+Deno.test("CascadeRunner.resolve - No overrides uses all defaults", () => {
   const project = createProject({});
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
@@ -90,17 +90,17 @@ Deno.test('CascadeRunner.resolve - No overrides uses all defaults', () => {
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
 
   assertEquals(resolution.hasFullOverride, false);
   assertEquals(resolution.steps.every((s) => !s.hasOverride), true);
-  assertEquals(resolution.steps.every((s) => s.source === 'default'), true);
+  assertEquals(resolution.steps.every((s) => s.source === "default"), true);
 });
 
-Deno.test('CascadeRunner.resolve - Multiple step overrides detected', () => {
+Deno.test("CascadeRunner.resolve - Multiple step overrides detected", () => {
   const project = createProject({
-    'build:fmt': 'custom fmt',
-    'build:lint': 'custom lint',
+    "build:fmt": "custom fmt",
+    "build:lint": "custom lint",
   });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
@@ -110,17 +110,17 @@ Deno.test('CascadeRunner.resolve - Multiple step overrides detected', () => {
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
 
   assertEquals(resolution.hasFullOverride, false);
   assertEquals(resolution.steps[0].hasOverride, true);
   assertEquals(resolution.steps[1].hasOverride, true);
 });
 
-Deno.test('CascadeRunner.resolve - Full override takes priority over step overrides', () => {
+Deno.test("CascadeRunner.resolve - Full override takes priority over step overrides", () => {
   const project = createProject({
-    build: 'full override',
-    'build:fmt': 'ignored step override',
+    build: "full override",
+    "build:fmt": "ignored step override",
   });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
@@ -130,7 +130,7 @@ Deno.test('CascadeRunner.resolve - Full override takes priority over step overri
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
 
   assertEquals(resolution.hasFullOverride, true);
   assertEquals(resolution.steps.length, 0);
@@ -140,8 +140,8 @@ Deno.test('CascadeRunner.resolve - Full override takes priority over step overri
 // CascadeRunner.run() - Explain Mode Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.run - Explain mode prints pipeline without executing', async () => {
-  const project = createProject({ 'build:fmt': 'custom' });
+Deno.test("CascadeRunner.run - Explain mode prints pipeline without executing", async () => {
+  const project = createProject({ "build:fmt": "custom" });
   const log = createMockLog();
   let executed = false;
   const runner = new CascadeRunner(
@@ -159,19 +159,19 @@ Deno.test('CascadeRunner.run - Explain mode prints pipeline without executing', 
     },
   );
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
-  const code = await runner.run(resolution, {}, '@test/app');
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
+  const code = await runner.run(resolution, {}, "@test/app");
 
   assertEquals(code, 0);
   assertEquals(executed, false);
   assertEquals(
-    log.logs.some((l) => l.includes('Pipeline')),
+    log.logs.some((l) => l.includes("Pipeline")),
     true,
   );
 });
 
-Deno.test('CascadeRunner.run - Explain mode shows override status', async () => {
-  const project = createProject({ 'build:fmt': 'custom' });
+Deno.test("CascadeRunner.run - Explain mode shows override status", async () => {
+  const project = createProject({ "build:fmt": "custom" });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
     verbose: false,
@@ -180,15 +180,15 @@ Deno.test('CascadeRunner.run - Explain mode shows override status', async () => 
     explain: true,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
-  await runner.run(resolution, {}, '@test/app');
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
+  await runner.run(resolution, {}, "@test/app");
 
   assertEquals(
-    log.logs.some((l) => l.includes('OVERRIDE')),
+    log.logs.some((l) => l.includes("OVERRIDE")),
     true,
   );
   assertEquals(
-    log.logs.some((l) => l.includes('default')),
+    log.logs.some((l) => l.includes("default")),
     true,
   );
 });
@@ -197,7 +197,7 @@ Deno.test('CascadeRunner.run - Explain mode shows override status', async () => 
 // CascadeRunner.run() - Dry Run Mode Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.run - Dry run shows what would execute without running', async () => {
+Deno.test("CascadeRunner.run - Dry run shows what would execute without running", async () => {
   const project = createProject({});
   const log = createMockLog();
   let executed = false;
@@ -216,7 +216,7 @@ Deno.test('CascadeRunner.run - Dry run shows what would execute without running'
     },
   );
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   const code = await runner.run(
     resolution,
     {
@@ -229,19 +229,19 @@ Deno.test('CascadeRunner.run - Dry run shows what would execute without running'
         return Promise.resolve(0);
       },
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(code, 0);
   assertEquals(executed, false);
   assertEquals(
-    log.logs.some((l) => l.includes('DRY RUN')),
+    log.logs.some((l) => l.includes("DRY RUN")),
     true,
   );
 });
 
-Deno.test('CascadeRunner.run - Dry run with full override shows task name', async () => {
-  const project = createProject({ build: 'custom build' });
+Deno.test("CascadeRunner.run - Dry run with full override shows task name", async () => {
+  const project = createProject({ build: "custom build" });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
     verbose: false,
@@ -250,11 +250,11 @@ Deno.test('CascadeRunner.run - Dry run with full override shows task name', asyn
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
-  await runner.run(resolution, {}, '@test/app');
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
+  await runner.run(resolution, {}, "@test/app");
 
   assertEquals(
-    log.logs.some((l) => l.includes('DRY RUN') && l.includes('build')),
+    log.logs.some((l) => l.includes("DRY RUN") && l.includes("build")),
     true,
   );
 });
@@ -263,8 +263,8 @@ Deno.test('CascadeRunner.run - Dry run with full override shows task name', asyn
 // CascadeRunner.run() - Full Override Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.run - Full override delegates to task invoker', async () => {
-  const project = createProject({ build: 'custom build' });
+Deno.test("CascadeRunner.run - Full override delegates to task invoker", async () => {
+  const project = createProject({ build: "custom build" });
   const log = createMockLog();
   let taskArgs: unknown[] = [];
   const runner = new CascadeRunner(
@@ -282,16 +282,16 @@ Deno.test('CascadeRunner.run - Full override delegates to task invoker', async (
     },
   );
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
-  const code = await runner.run(resolution, {}, '@test/app');
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
+  const code = await runner.run(resolution, {}, "@test/app");
 
   assertEquals(code, 0);
-  assertEquals(taskArgs[0], '@test/app');
-  assertEquals(taskArgs[1], 'build');
+  assertEquals(taskArgs[0], "@test/app");
+  assertEquals(taskArgs[1], "build");
 });
 
-Deno.test('CascadeRunner.run - Full override returns task exit code', async () => {
-  const project = createProject({ build: 'custom build' });
+Deno.test("CascadeRunner.run - Full override returns task exit code", async () => {
+  const project = createProject({ build: "custom build" });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(42), {
     verbose: false,
@@ -300,8 +300,8 @@ Deno.test('CascadeRunner.run - Full override returns task exit code', async () =
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
-  const code = await runner.run(resolution, {}, '@test/app');
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
+  const code = await runner.run(resolution, {}, "@test/app");
 
   assertEquals(code, 42);
 });
@@ -310,7 +310,7 @@ Deno.test('CascadeRunner.run - Full override returns task exit code', async () =
 // CascadeRunner.run() - Step Execution Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.run - Steps execute in order', async () => {
+Deno.test("CascadeRunner.run - Steps execute in order", async () => {
   const project = createProject({});
   const log = createMockLog();
   const executionOrder: string[] = [];
@@ -321,27 +321,27 @@ Deno.test('CascadeRunner.run - Steps execute in order', async () => {
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   await runner.run(
     resolution,
     {
       Fmt: () => {
-        executionOrder.push('fmt');
+        executionOrder.push("fmt");
         return Promise.resolve(0);
       },
       Lint: () => {
-        executionOrder.push('lint');
+        executionOrder.push("lint");
         return Promise.resolve(0);
       },
     },
-    '@test/app',
+    "@test/app",
   );
 
-  assertEquals(executionOrder, ['fmt', 'lint']);
+  assertEquals(executionOrder, ["fmt", "lint"]);
 });
 
-Deno.test('CascadeRunner.run - Step with override delegates to task', async () => {
-  const project = createProject({ 'build:fmt': 'custom fmt' });
+Deno.test("CascadeRunner.run - Step with override delegates to task", async () => {
+  const project = createProject({ "build:fmt": "custom fmt" });
   const log = createMockLog();
   let taskCalled = false;
   let stepCommandCalled = false;
@@ -360,7 +360,7 @@ Deno.test('CascadeRunner.run - Step with override delegates to task', async () =
     },
   );
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   await runner.run(
     resolution,
     {
@@ -370,14 +370,14 @@ Deno.test('CascadeRunner.run - Step with override delegates to task', async () =
       },
       Lint: () => Promise.resolve(0),
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(taskCalled, true); // Override uses task
   assertEquals(stepCommandCalled, false); // Step command not called
 });
 
-Deno.test('CascadeRunner.run - Step failure stops execution without ignoreFaults', async () => {
+Deno.test("CascadeRunner.run - Step failure stops execution without ignoreFaults", async () => {
   const project = createProject({});
   const log = createMockLog();
   let lintExecuted = false;
@@ -388,7 +388,7 @@ Deno.test('CascadeRunner.run - Step failure stops execution without ignoreFaults
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   const code = await runner.run(
     resolution,
     {
@@ -398,7 +398,7 @@ Deno.test('CascadeRunner.run - Step failure stops execution without ignoreFaults
         return Promise.resolve(0);
       },
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(code, 1);
@@ -409,7 +409,7 @@ Deno.test('CascadeRunner.run - Step failure stops execution without ignoreFaults
 // CascadeRunner.run() - Ignore Faults Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.run - Ignore faults continues on step failure', async () => {
+Deno.test("CascadeRunner.run - Ignore faults continues on step failure", async () => {
   const project = createProject({});
   const log = createMockLog();
   let lintExecuted = false;
@@ -420,7 +420,7 @@ Deno.test('CascadeRunner.run - Ignore faults continues on step failure', async (
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   const code = await runner.run(
     resolution,
     {
@@ -430,14 +430,14 @@ Deno.test('CascadeRunner.run - Ignore faults continues on step failure', async (
         return Promise.resolve(0);
       },
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(code, 0); // Returns 0 due to ignoreFaults
   assertEquals(lintExecuted, true); // Lint still ran
 });
 
-Deno.test('CascadeRunner.run - Ignore faults handles thrown errors', async () => {
+Deno.test("CascadeRunner.run - Ignore faults handles thrown errors", async () => {
   const project = createProject({});
   const log = createMockLog();
   let lintExecuted = false;
@@ -448,25 +448,25 @@ Deno.test('CascadeRunner.run - Ignore faults handles thrown errors', async () =>
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   const code = await runner.run(
     resolution,
     {
       Fmt: () => {
-        throw new Error('fmt failed');
+        throw new Error("fmt failed");
       },
       Lint: () => {
         lintExecuted = true;
         return Promise.resolve(0);
       },
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(code, 0);
   assertEquals(lintExecuted, true);
   assertEquals(
-    log.logs.some((l) => l.includes('WARN') && l.includes('Failed')),
+    log.logs.some((l) => l.includes("WARN") && l.includes("Failed")),
     true,
   );
 });
@@ -475,7 +475,7 @@ Deno.test('CascadeRunner.run - Ignore faults handles thrown errors', async () =>
 // CascadeRunner.run() - Verbose Mode Tests
 // =============================================================================
 
-Deno.test('CascadeRunner.run - Verbose mode logs step details', async () => {
+Deno.test("CascadeRunner.run - Verbose mode logs step details", async () => {
   const project = createProject({});
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
@@ -485,32 +485,32 @@ Deno.test('CascadeRunner.run - Verbose mode logs step details', async () => {
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   await runner.run(
     resolution,
     {
       Fmt: () => Promise.resolve(0),
       Lint: () => Promise.resolve(0),
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(
-    log.logs.some((l) => l.includes('pipeline')),
+    log.logs.some((l) => l.includes("pipeline")),
     true,
   );
   assertEquals(
-    log.logs.some((l) => l.includes('Formatting')),
+    log.logs.some((l) => l.includes("Formatting")),
     true,
   );
   assertEquals(
-    log.logs.some((l) => l.includes('Linting')),
+    log.logs.some((l) => l.includes("Linting")),
     true,
   );
 });
 
-Deno.test('CascadeRunner.run - Verbose mode shows override source', async () => {
-  const project = createProject({ 'build:fmt': 'custom' });
+Deno.test("CascadeRunner.run - Verbose mode shows override source", async () => {
+  const project = createProject({ "build:fmt": "custom" });
   const log = createMockLog();
   const runner = new CascadeRunner(project, log, () => Promise.resolve(0), {
     verbose: true,
@@ -519,22 +519,22 @@ Deno.test('CascadeRunner.run - Verbose mode shows override source', async () => 
     explain: false,
   });
 
-  const resolution = runner.resolve('build', 'build', BUILD_STEPS);
+  const resolution = runner.resolve("build", "build", BUILD_STEPS);
   await runner.run(
     resolution,
     {
       Fmt: () => Promise.resolve(0),
       Lint: () => Promise.resolve(0),
     },
-    '@test/app',
+    "@test/app",
   );
 
   assertEquals(
-    log.logs.some((l) => l.includes('override')),
+    log.logs.some((l) => l.includes("override")),
     true,
   );
   assertEquals(
-    log.logs.some((l) => l.includes('default')),
+    log.logs.some((l) => l.includes("default")),
     true,
   );
 });

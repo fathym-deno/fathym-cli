@@ -28,7 +28,8 @@ References:
 
 # Fathym CLI
 
-Open-source CLI framework for building, scaffolding, and distributing command-line interfaces. Built on Deno with the `@fathym/cli` runtime.
+Open-source CLI framework for building, scaffolding, and distributing
+command-line interfaces. Built on Deno with the `@fathym/cli` runtime.
 
 ## Features
 
@@ -83,7 +84,8 @@ my-cli/
 
 ## Project Resolution
 
-The CLI supports flexible project reference resolution for commands that operate on workspace projects.
+The CLI supports flexible project reference resolution for commands that operate
+on workspace projects.
 
 ### Reference Types
 
@@ -123,21 +125,21 @@ Commands using the `DFSProjectResolver` support these options:
 ### API Usage
 
 ```typescript
-import { DFSProjectResolver, parseRefs } from '@fathym/ftm/projects';
+import { DFSProjectResolver, parseRefs } from "@fathym/ftm/projects";
 
 const resolver = new DFSProjectResolver(dfsHandler);
 
 // Resolve multiple refs
-const projects = await resolver.Resolve('@pkg/a,@pkg/b');
+const projects = await resolver.Resolve("@pkg/a,@pkg/b");
 
 // Ensure single project (throws if multiple)
-const [single] = await resolver.Resolve('@pkg', { singleOnly: true });
+const [single] = await resolver.Resolve("@pkg", { singleOnly: true });
 
 // Get first match only
-const [first] = await resolver.Resolve('./packages/', { useFirst: true });
+const [first] = await resolver.Resolve("./packages/", { useFirst: true });
 
 // Parse refs manually
-const refs = parseRefs('@a, @b, @c'); // ['@a', '@b', '@c']
+const refs = parseRefs("@a, @b, @c"); // ['@a', '@b', '@c']
 ```
 
 ## Status
@@ -148,7 +150,8 @@ const refs = parseRefs('@a, @b, @c'); // ['@a', '@b', '@c']
 
 ## How to Work Here
 
-1. Review project guardrails in [`AGENTS.md`](./AGENTS.md) and the playbook in [`GUIDE.md`](./GUIDE.md).
+1. Review project guardrails in [`AGENTS.md`](./AGENTS.md) and the playbook in
+   [`GUIDE.md`](./GUIDE.md).
 2. Keep docs frontmatter-complete; link back to parent guides.
 3. See [`docs/`](./docs/) for detailed documentation.
 4. Run `deno task test` to verify changes.

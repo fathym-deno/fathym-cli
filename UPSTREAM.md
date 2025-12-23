@@ -23,7 +23,8 @@ References:
 ## Provenance
 
 - **Source**: Migrated from `projects/ref-arch/command-line-interface/src/ftm`
-- **Runtime**: `@fathym/cli@0.0.65-integration` (JSR, import-mapped in `deno.jsonc`)
+- **Runtime**: `@fathym/cli@0.0.65-integration` (JSR, import-mapped in
+  `deno.jsonc`)
 - **Related packages**: `@fathym/common`, `@fathym/dfs`, `zod`
 
 ## Versioning

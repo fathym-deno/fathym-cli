@@ -1,1 +1,1 @@
-import './scripts.intents.ts';
+import "./scripts.intents.ts";

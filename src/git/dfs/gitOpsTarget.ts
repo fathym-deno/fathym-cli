@@ -1,8 +1,8 @@
-import { CLIDFSContextManager } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { isAbsolute, normalize } from '@std/path';
+import { CLIDFSContextManager } from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { isAbsolute, normalize } from "@std/path";
 
-export const GitOpsTargetDFSName = 'git-ops-target';
+export const GitOpsTargetDFSName = "git-ops-target";
 
 export async function RegisterGitOpsTargetDFS(
   dfsCtx: CLIDFSContextManager,
@@ -44,7 +44,7 @@ export async function NormalizeGitOpsTargetPath(
 ): Promise<string> {
   const trimmed = targetPath.trim();
   if (!trimmed) {
-    throw new Error('Git target path cannot be empty.');
+    throw new Error("Git target path cannot be empty.");
   }
 
   if (isAbsolute(trimmed)) {

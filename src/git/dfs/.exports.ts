@@ -1,1 +1,1 @@
-export * from './gitOpsTarget.ts';
+export * from "./gitOpsTarget.ts";

@@ -8,4 +8,4 @@ export {
   installBinary,
   type InstallBinaryOptions,
   type InstallLogger,
-} from '../services/InstallService.ts';
+} from "../services/InstallService.ts";

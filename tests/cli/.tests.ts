@@ -1,1 +1,1 @@
-import './build.test.ts';
+import "./build.test.ts";

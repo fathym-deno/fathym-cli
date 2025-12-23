@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Group } from '@fathym/cli';
+import { Group } from "@fathym/cli";
 
-export default Group('deps')
-  .Description('Commands for managing project dependencies');
+export default Group("deps")
+  .Description("Commands for managing project dependencies");

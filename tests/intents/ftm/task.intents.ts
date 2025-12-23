@@ -1,23 +1,23 @@
-import { CommandIntentSuite } from '@fathym/cli';
-import TaskCommand from '../../../commands/task.ts';
+import { CommandIntentSuite } from "@fathym/cli";
+import TaskCommand from "../../../commands/task.ts";
 
 const cmd = TaskCommand.Build();
-const origin = import.meta.resolve('../../../.cli.ts');
+const origin = import.meta.resolve("../../../.cli.ts");
 
-CommandIntentSuite('task Command Suite', cmd, origin)
-  .Intent('Fails when project not found', (int) =>
+CommandIntentSuite("task Command Suite", cmd, origin)
+  .Intent("Fails when project not found", (int) =>
     int
-      .Args(['@nonexistent/package', 'build'])
+      .Args(["@nonexistent/package", "build"])
       .Flags({})
       .ExpectExit(1))
-  .Intent('Fails when task not found in project', (int) =>
+  .Intent("Fails when task not found in project", (int) =>
     int
-      .Args(['./deno.jsonc', 'nonexistent-task'])
+      .Args(["./deno.jsonc", "nonexistent-task"])
       .Flags({})
       .ExpectExit(1))
-  .Intent('Dry run shows what would execute', (int) =>
+  .Intent("Dry run shows what would execute", (int) =>
     int
-      .Args(['./deno.jsonc', 'build'])
-      .Flags({ 'dry-run': true })
+      .Args(["./deno.jsonc", "build"])
+      .Flags({ "dry-run": true })
       .ExpectExit(0))
   .Run();

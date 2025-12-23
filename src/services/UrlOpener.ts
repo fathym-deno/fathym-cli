@@ -9,29 +9,30 @@ export class UrlOpener {
     let command: string;
     let args: string[];
 
-    if (os === 'windows') {
-      command = 'cmd';
-      args = ['/c', 'start', '', url];
-    } else if (os === 'darwin') {
-      command = 'open';
+    if (os === "windows") {
+      command = "cmd";
+      args = ["/c", "start", "", url];
+    } else if (os === "darwin") {
+      command = "open";
       args = [url];
     } else {
-      command = 'xdg-open';
+      command = "xdg-open";
       args = [url];
     }
 
     const process = new Deno.Command(command, {
       args,
-      stdin: 'null',
-      stdout: 'null',
-      stderr: 'piped',
+      stdin: "null",
+      stdout: "null",
+      stderr: "piped",
     });
 
     const result = await process.output();
     if (!result.success) {
-      const errorText = decoder.decode(result.stderr ?? new Uint8Array()).trim();
+      const errorText = decoder.decode(result.stderr ?? new Uint8Array())
+        .trim();
       throw new Error(
-        `Failed to open ${url}${errorText ? `: ${errorText}` : ''}`,
+        `Failed to open ${url}${errorText ? `: ${errorText}` : ""}`,
       );
     }
   }

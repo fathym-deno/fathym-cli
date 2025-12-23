@@ -50,10 +50,10 @@
  * @module
  */
 
-import type { DFSFileHandler } from '@fathym/dfs';
-import { parse as parseJsonc } from '@std/jsonc';
-import { dirname } from '@std/path';
-import type { ProjectRef } from './ProjectRef.ts';
+import type { DFSFileHandler } from "@fathym/dfs";
+import { parse as parseJsonc } from "@std/jsonc";
+import { dirname } from "@std/path";
+import type { ProjectRef } from "./ProjectRef.ts";
 
 /**
  * Options for project resolution.
@@ -103,9 +103,9 @@ export class MultipleProjectsError extends Error {
     public readonly count: number,
   ) {
     super(
-      `Expected single project but found ${count} for ref: ${ref ?? '(all)'}`,
+      `Expected single project but found ${count} for ref: ${ref ?? "(all)"}`,
     );
-    this.name = 'MultipleProjectsError';
+    this.name = "MultipleProjectsError";
   }
 }
 
@@ -167,7 +167,7 @@ export interface ProjectResolver {
  */
 export function parseRefs(ref: string): string[] {
   return ref
-    .split(',')
+    .split(",")
     .map((r) => r.trim())
     .filter((r) => r.length > 0);
 }
@@ -218,10 +218,18 @@ export class DFSProjectResolver implements ProjectResolver {
         results = [];
       } else if (refs.length === 1) {
         // Single ref - use existing logic
-        results = await this.resolveSingleRef(refs[0], includeNameless, useFirst);
+        results = await this.resolveSingleRef(
+          refs[0],
+          includeNameless,
+          useFirst,
+        );
       } else {
         // Multiple refs - resolve each and deduplicate
-        results = await this.resolveMultipleRefs(refs, includeNameless, useFirst);
+        results = await this.resolveMultipleRefs(
+          refs,
+          includeNameless,
+          useFirst,
+        );
       }
     }
 
@@ -269,8 +277,10 @@ export class DFSProjectResolver implements ProjectResolver {
     }
 
     // Check if ref is a directory path - look for deno.jsonc or deno.json
-    const jsoncPath = ref.endsWith('/') ? `${ref}deno.jsonc` : `${ref}/deno.jsonc`;
-    const jsonPath = ref.endsWith('/') ? `${ref}deno.json` : `${ref}/deno.json`;
+    const jsoncPath = ref.endsWith("/")
+      ? `${ref}deno.jsonc`
+      : `${ref}/deno.jsonc`;
+    const jsonPath = ref.endsWith("/") ? `${ref}deno.json` : `${ref}/deno.json`;
 
     // Try as directory with single config
     const jsoncProject = await this.loadProjectFromPath(jsoncPath);
@@ -367,7 +377,7 @@ export class DFSProjectResolver implements ProjectResolver {
   ): Promise<ProjectRef[]> {
     const projects: ProjectRef[] = [];
     // Normalize: remove leading ./ or ensure consistent format, add trailing /
-    const normalizedDir = this.normalizePath(dirPath) + '/';
+    const normalizedDir = this.normalizePath(dirPath) + "/";
 
     for await (
       const entry of this.DFS.Walk({
@@ -440,14 +450,14 @@ export class DFSProjectResolver implements ProjectResolver {
       // This ensures consistent path handling across platforms
       const normalizedConfigPath = this.normalizePath(configPath);
       const dir = dirname(normalizedConfigPath);
-      const name = typeof config.name === 'string' ? config.name : undefined;
+      const name = typeof config.name === "string" ? config.name : undefined;
       const rawTasks = config.tasks ?? {};
-      const hasDev = Boolean(rawTasks && Object.hasOwn(rawTasks, 'dev'));
+      const hasDev = Boolean(rawTasks && Object.hasOwn(rawTasks, "dev"));
 
       // Convert tasks to Record<string, string>, filtering non-string values
       const tasks: Record<string, string> = {};
       for (const [key, value] of Object.entries(rawTasks)) {
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           tasks[key] = value;
         }
       }
@@ -460,7 +470,7 @@ export class DFSProjectResolver implements ProjectResolver {
 
   private async isDirectory(path: string): Promise<boolean> {
     // In DFS, we check if any files exist under this path prefix
-    const normalizedDir = this.normalizePath(path) + '/';
+    const normalizedDir = this.normalizePath(path) + "/";
 
     for await (const entry of this.DFS.Walk()) {
       const entryPath = this.normalizePath(entry.path);
@@ -473,9 +483,9 @@ export class DFSProjectResolver implements ProjectResolver {
   }
 
   private isDenoConfig(path: string): boolean {
-    const normalized = path.replace(/\\/g, '/');
-    return normalized.endsWith('deno.json') ||
-      normalized.endsWith('deno.jsonc');
+    const normalized = path.replace(/\\/g, "/");
+    return normalized.endsWith("deno.json") ||
+      normalized.endsWith("deno.jsonc");
   }
 
   /**
@@ -483,13 +493,13 @@ export class DFSProjectResolver implements ProjectResolver {
    * Removes leading ./ and \, converts backslashes to forward slashes.
    */
   private normalizePath(path: string): string {
-    let normalized = path.replace(/\\/g, '/');
+    let normalized = path.replace(/\\/g, "/");
     // Remove leading ./
-    if (normalized.startsWith('./')) {
+    if (normalized.startsWith("./")) {
       normalized = normalized.slice(2);
     }
     // Remove leading /
-    if (normalized.startsWith('/')) {
+    if (normalized.startsWith("/")) {
       normalized = normalized.slice(1);
     }
     return normalized;

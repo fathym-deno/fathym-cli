@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Group } from '@fathym/cli';
+import { Group } from "@fathym/cli";
 
-export default Group('install')
-  .Description('Installation commands and utilities');
+export default Group("install")
+  .Description("Installation commands and utilities");

@@ -17,24 +17,27 @@ export class GitService {
   /**
    * Run a git command. Use `RunChecked` if you want failures to throw.
    */
-  public async Run(args: string[], options: GitRunOptions = {}): Promise<GitRunResult> {
-    const cmdText = `git ${args.join(' ')}`;
+  public async Run(
+    args: string[],
+    options: GitRunOptions = {},
+  ): Promise<GitRunResult> {
+    const cmdText = `git ${args.join(" ")}`;
     if (options.dryRun) {
       this.logger?.Info?.(`[dry-run] ${cmdText}`);
       return {
-        stdout: '',
-        stderr: '',
+        stdout: "",
+        stderr: "",
         success: true,
         code: 0,
       };
     }
 
-    const command = new Deno.Command('git', {
+    const command = new Deno.Command("git", {
       args,
       cwd: options.cwd,
-      stdin: options.stdin ?? 'null',
-      stdout: options.stdout ?? 'piped',
-      stderr: options.stderr ?? 'piped',
+      stdin: options.stdin ?? "null",
+      stdout: options.stdout ?? "piped",
+      stderr: options.stderr ?? "piped",
       env: options.env,
     });
 
@@ -42,8 +45,8 @@ export class GitService {
     const decoder = new TextDecoder();
 
     const formatted: GitRunResult = {
-      stdout: result.stdout ? decoder.decode(result.stdout).trim() : '',
-      stderr: result.stderr ? decoder.decode(result.stderr).trim() : '',
+      stdout: result.stdout ? decoder.decode(result.stdout).trim() : "",
+      stderr: result.stderr ? decoder.decode(result.stderr).trim() : "",
       success: result.success,
       code: result.code,
     };
@@ -68,7 +71,10 @@ export class GitService {
   /**
    * Execute a git command and return trimmed stdout.
    */
-  public async Output(args: string[], options: GitRunOptions = {}): Promise<string> {
+  public async Output(
+    args: string[],
+    options: GitRunOptions = {},
+  ): Promise<string> {
     const result = await this.RunChecked(args, options);
     return result.stdout;
   }
@@ -78,7 +84,7 @@ export class GitService {
    */
   public async IsRepository(options: GitRunOptions = {}): Promise<boolean> {
     try {
-      await this.RunChecked(['rev-parse', '--is-inside-work-tree'], options);
+      await this.RunChecked(["rev-parse", "--is-inside-work-tree"], options);
       return true;
     } catch {
       return false;
@@ -89,23 +95,31 @@ export class GitService {
    * Get the current branch name.
    */
   public async CurrentBranch(options: GitRunOptions = {}): Promise<string> {
-    const result = await this.Output(['rev-parse', '--abbrev-ref', 'HEAD'], options);
+    const result = await this.Output(
+      ["rev-parse", "--abbrev-ref", "HEAD"],
+      options,
+    );
     return result.trim();
   }
 
   /**
    * Check if there are staged or unstaged changes.
    */
-  public async HasUncommittedChanges(options: GitRunOptions = {}): Promise<boolean> {
-    const result = await this.Output(['status', '--porcelain'], options);
+  public async HasUncommittedChanges(
+    options: GitRunOptions = {},
+  ): Promise<boolean> {
+    const result = await this.Output(["status", "--porcelain"], options);
     return result.trim().length > 0;
   }
 
   /**
    * Determine whether the given branch exists on origin.
    */
-  public async RemoteBranchExists(branch: string, options: GitRunOptions = {}): Promise<boolean> {
-    const result = await this.Run(['ls-remote', '--heads', 'origin', branch], {
+  public async RemoteBranchExists(
+    branch: string,
+    options: GitRunOptions = {},
+  ): Promise<boolean> {
+    const result = await this.Run(["ls-remote", "--heads", "origin", branch], {
       ...options,
       allowFailure: true,
     });
@@ -115,14 +129,20 @@ export class GitService {
   /**
    * Convenience helper to push with upstream auto-creation.
    */
-  public async PushWithUpstream(branch: string, options: GitRunOptions = {}): Promise<void> {
+  public async PushWithUpstream(
+    branch: string,
+    options: GitRunOptions = {},
+  ): Promise<void> {
     const exists = await this.RemoteBranchExists(branch, options);
     if (!exists) {
-      await this.RunChecked(['push', '--set-upstream', 'origin', branch], options);
+      await this.RunChecked(
+        ["push", "--set-upstream", "origin", branch],
+        options,
+      );
       return;
     }
 
-    await this.RunChecked(['push', 'origin', branch], options);
+    await this.RunChecked(["push", "origin", branch], options);
   }
 
   /**
@@ -130,10 +150,16 @@ export class GitService {
    *
    * When the remote branch does not exist, this pushes using --set-upstream.
    */
-  public async EnsureUpstream(branch: string, options: GitRunOptions = {}): Promise<void> {
+  public async EnsureUpstream(
+    branch: string,
+    options: GitRunOptions = {},
+  ): Promise<void> {
     const exists = await this.RemoteBranchExists(branch, options);
     if (!exists) {
-      await this.RunChecked(['push', '--set-upstream', 'origin', branch], options);
+      await this.RunChecked(
+        ["push", "--set-upstream", "origin", branch],
+        options,
+      );
     }
   }
 }
@@ -148,9 +174,9 @@ export interface GitRunOptions {
   cwd?: string;
   dryRun?: boolean;
   env?: Record<string, string>;
-  stdin?: 'inherit' | 'null' | 'piped';
-  stdout?: 'inherit' | 'piped';
-  stderr?: 'inherit' | 'piped';
+  stdin?: "inherit" | "null" | "piped";
+  stdout?: "inherit" | "piped";
+  stderr?: "inherit" | "piped";
   allowFailure?: boolean;
 }
 
@@ -164,6 +190,6 @@ export interface GitRunResult {
 export class GitCommandError extends Error {
   public constructor(command: string, public result: GitRunResult) {
     super(`git command failed: ${command}\n${result.stderr || result.stdout}`);
-    this.name = 'GitCommandError';
+    this.name = "GitCommandError";
   }
 }

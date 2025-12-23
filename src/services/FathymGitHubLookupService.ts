@@ -1,4 +1,4 @@
-import { FathymApiClient } from './FathymApiClient.ts';
+import { FathymApiClient } from "./FathymApiClient.ts";
 
 export type FathymGitHubOrganization = {
   Lookup: string;
@@ -47,7 +47,7 @@ export class FathymGitHubLookupService {
 
   public async ListOrganizations(): Promise<FathymGitHubOrganization[]> {
     const response = await this.api.GetJson<OrganizationsResponse>(
-      '/github/organizations',
+      "/github/organizations",
     );
 
     return response.Model?.GithubOrganizations ?? [];

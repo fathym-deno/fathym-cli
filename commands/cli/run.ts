@@ -59,7 +59,7 @@
  * @module
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 import {
   CLIDFSContextManager,
   Command,
@@ -68,7 +68,7 @@ import {
   runCommandWithLogs,
   TemplateLocator,
   TemplateScaffolder,
-} from '@fathym/cli';
+} from "@fathym/cli";
 
 /**
  * Result data for the run command.
@@ -89,7 +89,7 @@ export interface RunResult {
  * arguments as variadic positional args for forwarding.
  */
 const RunArgsSchema = z
-  .tuple([z.string().meta({ argName: 'command' })])
+  .tuple([z.string().meta({ argName: "command" })])
   .rest(z.string());
 
 /**
@@ -121,7 +121,7 @@ class RunParams extends CommandParams<
    * This flag is consumed by run and not forwarded to target.
    */
   get ConfigPath(): string | undefined {
-    return this.Flag('config');
+    return this.Flag("config");
   }
 
   /**
@@ -143,7 +143,7 @@ class RunParams extends CommandParams<
    */
   get ForwardedFlags(): string[] {
     const mapFlag = (key: string, val: unknown): string | undefined => {
-      if (key === 'config') return undefined;
+      if (key === "config") return undefined;
       if (val === true) return `--${key}`;
       if (val === false) return undefined;
       return `--${key}=${val}`;
@@ -161,7 +161,7 @@ class RunParams extends CommandParams<
  * Scaffolds a temporary runner and executes the target command
  * in a new Deno process without requiring compilation.
  */
-export default Command('run', 'Run a specific command in a CLI project')
+export default Command("run", "Run a specific command in a CLI project")
   .Args(RunArgsSchema)
   .Flags(RunFlagsSchema)
   .Params(RunParams)
@@ -169,31 +169,33 @@ export default Command('run', 'Run a specific command in a CLI project')
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
     if (ctx.Params.ConfigPath) {
-      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
+      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, "CLI");
     }
 
-    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath
+      ? await dfsCtx.GetDFS("CLI")
+      : await dfsCtx.GetExecutionDFS();
 
     return {
       CLIDFS: dfs,
       Scaffolder: new TemplateScaffolder(
-        await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
+        await ioc.Resolve<TemplateLocator>(ioc.Symbol("TemplateLocator")),
         dfs,
       ),
     };
   })
   .Run(async ({ Params, Log, Services }): Promise<CommandStatus<RunResult>> => {
-    const outputFile = './.temp/dev.ts';
+    const outputFile = "./.temp/dev.ts";
 
     Log.Info(`📦 Scaffolding dev runner → ${outputFile}`);
 
     await Services.Scaffolder.Scaffold({
-      templateName: 'cli-run',
-      outputDir: './.temp',
+      templateName: "cli-run",
+      outputDir: "./.temp",
     });
 
     const cliArgs = [
-      await Services.CLIDFS.ResolvePath('./.cli.ts'),
+      await Services.CLIDFS.ResolvePath("./.cli.ts"),
       ...Params.ForwardedArgs,
       ...Params.ForwardedFlags,
     ];
@@ -201,19 +203,23 @@ export default Command('run', 'Run a specific command in a CLI project')
     const runner = await Services.CLIDFS.ResolvePath(outputFile);
 
     Log.Info(`🚀 Executing CLI in new process:`);
-    Log.Info(`→ deno run -A ${runner} ${cliArgs.join(' ')}`);
+    Log.Info(`→ deno run -A ${runner} ${cliArgs.join(" ")}`);
 
-    await runCommandWithLogs(['run', '-A', runner, ...cliArgs], Log, {
+    await runCommandWithLogs(["run", "-A", runner, ...cliArgs], Log, {
       exitOnFail: true,
       cwd: Services.CLIDFS.Root,
     });
 
-    Log.Success('🎉 CLI run completed');
+    Log.Success("🎉 CLI run completed");
 
-    const command = Params.ForwardedArgs[0] ?? '';
+    const command = Params.ForwardedArgs[0] ?? "";
     return {
       Code: 0,
       Message: `CLI run completed: ${command}`,
-      Data: { command, args: Params.ForwardedArgs.slice(1), flags: Params.ForwardedFlags },
+      Data: {
+        command,
+        args: Params.ForwardedArgs.slice(1),
+        flags: Params.ForwardedFlags,
+      },
     };
   });

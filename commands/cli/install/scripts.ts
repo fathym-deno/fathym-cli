@@ -53,12 +53,17 @@
  * @module
  */
 
-import { join } from '@std/path';
-import { parse as parseJsonc } from '@std/jsonc';
-import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { DEFAULT_INSTALL_DIR } from '../../../src/config/FathymCLIConfig.ts';
+import { join } from "@std/path";
+import { parse as parseJsonc } from "@std/jsonc";
+import { z } from "zod";
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { DEFAULT_INSTALL_DIR } from "../../../src/config/FathymCLIConfig.ts";
 
 /**
  * Result data for the scripts command.
@@ -88,21 +93,21 @@ export const ScriptsFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe('Path to .cli.ts (default: ./.cli.ts)'),
+      .describe("Path to .cli.ts (default: ./.cli.ts)"),
     repo: z
       .string()
       .optional()
       .describe(
-        'GitHub repository (owner/repo). Auto-detected from .git/config if not specified',
+        "GitHub repository (owner/repo). Auto-detected from .git/config if not specified",
       ),
     output: z
       .string()
       .optional()
-      .describe('Output directory for scripts (default: ./.dist)'),
+      .describe("Output directory for scripts (default: ./.dist)"),
     installDir: z
       .string()
       .optional()
-      .describe('Default install directory in scripts (default: ~/.bin)'),
+      .describe("Default install directory in scripts (default: ~/.bin)"),
   })
   .passthrough();
 
@@ -114,19 +119,19 @@ export class ScriptsParams extends CommandParams<
   z.infer<typeof ScriptsFlagsSchema>
 > {
   get ConfigPath(): string | undefined {
-    return this.Flag('config');
+    return this.Flag("config");
   }
 
   get Repo(): string | undefined {
-    return this.Flag('repo');
+    return this.Flag("repo");
   }
 
   get OutputDir(): string {
-    return this.Flag('output') ?? './.dist';
+    return this.Flag("output") ?? "./.dist";
   }
 
   get InstallDir(): string {
-    return this.Flag('installDir') ?? DEFAULT_INSTALL_DIR.unix;
+    return this.Flag("installDir") ?? DEFAULT_INSTALL_DIR.unix;
   }
 }
 
@@ -135,7 +140,7 @@ export class ScriptsParams extends CommandParams<
  */
 async function detectGitHubRepo(cwd: string): Promise<string | undefined> {
   try {
-    const gitConfigPath = join(cwd, '.git', 'config');
+    const gitConfigPath = join(cwd, ".git", "config");
     const content = await Deno.readTextFile(gitConfigPath);
 
     // Match GitHub remote URL patterns
@@ -147,7 +152,7 @@ async function detectGitHubRepo(cwd: string): Promise<string | undefined> {
     );
 
     const match = httpsMatch || sshMatch;
-    return match ? match[1].replace(/\.git$/, '') : undefined;
+    return match ? match[1].replace(/\.git$/, "") : undefined;
   } catch {
     return undefined;
   }
@@ -236,7 +241,7 @@ ${
 exec "$BINARY_NAME" "$@"' > "$INSTALL_DIR/${alias}"
   chmod +x "$INSTALL_DIR/${alias}"
   echo "🔗 Alias created: $INSTALL_DIR/${alias}"`
-    ).join('\n')
+    ).join("\n")
   }
 
   # Check if in PATH
@@ -306,7 +311,7 @@ ${
       `    $AliasPath = Join-Path $InstallDir "${alias}.cmd"
     "@echo off\`r\`n$BinaryName.exe %*" | Out-File -FilePath $AliasPath -Encoding ASCII
     Write-Host "🔗 Alias created: $AliasPath" -ForegroundColor Cyan`
-    ).join('\n')
+    ).join("\n")
   }
 
     # Check if in PATH
@@ -484,8 +489,8 @@ async function updateDenoJsoncExports(
   dfs: DFSFileHandler,
   outputDir: string,
 ): Promise<{ success: boolean; message: string; configPath?: string }> {
-  const denoJsoncPath = await dfs.ResolvePath('deno.jsonc');
-  const denoJsonPath = await dfs.ResolvePath('deno.json');
+  const denoJsoncPath = await dfs.ResolvePath("deno.jsonc");
+  const denoJsonPath = await dfs.ResolvePath("deno.json");
 
   // Check if deno.jsonc exists, fall back to deno.json
   let configPath: string | undefined;
@@ -499,7 +504,7 @@ async function updateDenoJsoncExports(
     } catch {
       return {
         success: false,
-        message: 'No deno.jsonc or deno.json found - skipping export update',
+        message: "No deno.jsonc or deno.json found - skipping export update",
       };
     }
   }
@@ -509,29 +514,29 @@ async function updateDenoJsoncExports(
   const config = parseJsonc(content) as Record<string, unknown>;
 
   // Ensure exports object exists
-  if (!config.exports || typeof config.exports !== 'object') {
+  if (!config.exports || typeof config.exports !== "object") {
     config.exports = {};
   }
 
   const exports = config.exports as Record<string, string>;
   // Normalize path: "./.dist" -> ".dist", then prepend "./"
-  const normalizedOutput = outputDir.replace(/^\.\//, '');
+  const normalizedOutput = outputDir.replace(/^\.\//, "");
   const installPath = `./${normalizedOutput}/install.ts`;
 
   // Check if already set correctly
-  if (exports['./install'] === installPath) {
+  if (exports["./install"] === installPath) {
     return {
       success: true,
-      message: 'Export ./install already configured',
+      message: "Export ./install already configured",
       configPath,
     };
   }
 
   // Update export
-  exports['./install'] = installPath;
+  exports["./install"] = installPath;
 
   // Write back (clean JSON, 2-space indent)
-  await Deno.writeTextFile(configPath, JSON.stringify(config, null, 2) + '\n');
+  await Deno.writeTextFile(configPath, JSON.stringify(config, null, 2) + "\n");
 
   return {
     success: true,
@@ -544,8 +549,8 @@ async function updateDenoJsoncExports(
  * Scripts command - generates platform-specific installation scripts.
  */
 export default Command(
-  'scripts',
-  'Generate install.sh, install.ps1, and install.ts scripts',
+  "scripts",
+  "Generate install.sh, install.ps1, and install.ts scripts",
 )
   .Args(ScriptsArgsSchema)
   .Flags(ScriptsFlagsSchema)
@@ -554,161 +559,169 @@ export default Command(
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
     if (ctx.Params.ConfigPath) {
-      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
+      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, "CLI");
     }
 
-    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath
+      ? await dfsCtx.GetDFS("CLI")
+      : await dfsCtx.GetExecutionDFS();
 
     return { DFS: dfs };
   })
-  .Run(async ({ Params, Log, Services, Config: Config }): Promise<CommandStatus<ScriptsResult>> => {
-    const { DFS } = Services;
+  .Run(
+    async (
+      { Params, Log, Services, Config: Config },
+    ): Promise<CommandStatus<ScriptsResult>> => {
+      const { DFS } = Services;
 
-    // Load config
-    const tokens = Config.Tokens ?? ['cli'];
-    const binaryName = tokens[0];
-    const aliases = tokens.slice(1);
+      // Load config
+      const tokens = Config.Tokens ?? ["cli"];
+      const binaryName = tokens[0];
+      const aliases = tokens.slice(1);
 
-    // Read package name from deno.jsonc for the install script
-    let packageName = `@scope/${binaryName}`; // fallback
-    try {
-      const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
-      const denoContent = await Deno.readTextFile(denoJsoncPath);
-      const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
-      if (typeof denoConfig.name === 'string') {
-        packageName = denoConfig.name;
-      }
-    } catch {
-      // Try deno.json as fallback
+      // Read package name from deno.jsonc for the install script
+      let packageName = `@scope/${binaryName}`; // fallback
       try {
-        const denoJsonPath = await DFS.ResolvePath('deno.json');
-        const denoContent = await Deno.readTextFile(denoJsonPath);
-        const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
-        if (typeof denoConfig.name === 'string') {
+        const denoJsoncPath = await DFS.ResolvePath("deno.jsonc");
+        const denoContent = await Deno.readTextFile(denoJsoncPath);
+        const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
+        if (typeof denoConfig.name === "string") {
           packageName = denoConfig.name;
         }
       } catch {
-        Log.Warn(
-          `⚠️  Could not read package name from deno.json(c), using fallback: ${packageName}`,
-        );
+        // Try deno.json as fallback
+        try {
+          const denoJsonPath = await DFS.ResolvePath("deno.json");
+          const denoContent = await Deno.readTextFile(denoJsonPath);
+          const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
+          if (typeof denoConfig.name === "string") {
+            packageName = denoConfig.name;
+          }
+        } catch {
+          Log.Warn(
+            `⚠️  Could not read package name from deno.json(c), using fallback: ${packageName}`,
+          );
+        }
       }
-    }
 
-    // Detect or use provided repo
-    let repo = Params.Repo;
-    if (!repo) {
-      repo = await detectGitHubRepo(DFS.Root);
+      // Detect or use provided repo
+      let repo = Params.Repo;
       if (!repo) {
-        Log.Error('❌ Could not detect GitHub repository from .git/config');
-        Log.Error('   Use --repo=owner/repo to specify manually');
-        return {
-          Code: 1,
-          Message: 'Could not detect GitHub repository from .git/config',
-          Data: { scripts: [], repo: '' },
-        };
+        repo = await detectGitHubRepo(DFS.Root);
+        if (!repo) {
+          Log.Error("❌ Could not detect GitHub repository from .git/config");
+          Log.Error("   Use --repo=owner/repo to specify manually");
+          return {
+            Code: 1,
+            Message: "Could not detect GitHub repository from .git/config",
+            Data: { scripts: [], repo: "" },
+          };
+        }
+        Log.Info(`📦 Detected GitHub repo: ${repo}`);
       }
-      Log.Info(`📦 Detected GitHub repo: ${repo}`);
-    }
 
-    const outputDir = await DFS.ResolvePath(Params.OutputDir);
-    await Deno.mkdir(outputDir, { recursive: true });
+      const outputDir = await DFS.ResolvePath(Params.OutputDir);
+      await Deno.mkdir(outputDir, { recursive: true });
 
-    const generatedScripts: string[] = [];
+      const generatedScripts: string[] = [];
 
-    // Generate bash script
-    const bashScript = generateBashScript(
-      binaryName,
-      repo,
-      Params.InstallDir,
-      aliases,
-    );
-    const bashPath = join(outputDir, 'install.sh');
-    await Deno.writeTextFile(bashPath, bashScript);
-    Log.Success(`✅ Generated: ${bashPath}`);
-    generatedScripts.push('install.sh');
+      // Generate bash script
+      const bashScript = generateBashScript(
+        binaryName,
+        repo,
+        Params.InstallDir,
+        aliases,
+      );
+      const bashPath = join(outputDir, "install.sh");
+      await Deno.writeTextFile(bashPath, bashScript);
+      Log.Success(`✅ Generated: ${bashPath}`);
+      generatedScripts.push("install.sh");
 
-    // Generate PowerShell script
-    const psScript = generatePowerShellScript(
-      binaryName,
-      repo,
-      Params.InstallDir,
-      aliases,
-    );
-    const psPath = join(outputDir, 'install.ps1');
-    await Deno.writeTextFile(psPath, psScript);
-    Log.Success(`✅ Generated: ${psPath}`);
-    generatedScripts.push('install.ps1');
+      // Generate PowerShell script
+      const psScript = generatePowerShellScript(
+        binaryName,
+        repo,
+        Params.InstallDir,
+        aliases,
+      );
+      const psPath = join(outputDir, "install.ps1");
+      await Deno.writeTextFile(psPath, psScript);
+      Log.Success(`✅ Generated: ${psPath}`);
+      generatedScripts.push("install.ps1");
 
-    // Read version from deno.jsonc for the GitHub release tag
-    let packageVersion = '0.0.0'; // fallback
-    try {
-      const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
-      const denoContent = await Deno.readTextFile(denoJsoncPath);
-      const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
-      if (typeof denoConfig.version === 'string') {
-        packageVersion = denoConfig.version;
-      }
-    } catch {
-      // Try deno.json as fallback
+      // Read version from deno.jsonc for the GitHub release tag
+      let packageVersion = "0.0.0"; // fallback
       try {
-        const denoJsonPath = await DFS.ResolvePath('deno.json');
-        const denoContent = await Deno.readTextFile(denoJsonPath);
-        const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
-        if (typeof denoConfig.version === 'string') {
+        const denoJsoncPath = await DFS.ResolvePath("deno.jsonc");
+        const denoContent = await Deno.readTextFile(denoJsoncPath);
+        const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
+        if (typeof denoConfig.version === "string") {
           packageVersion = denoConfig.version;
         }
       } catch {
-        Log.Warn(
-          `⚠️  Could not read version from deno.json(c), using fallback: ${packageVersion}`,
-        );
+        // Try deno.json as fallback
+        try {
+          const denoJsonPath = await DFS.ResolvePath("deno.json");
+          const denoContent = await Deno.readTextFile(denoJsonPath);
+          const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
+          if (typeof denoConfig.version === "string") {
+            packageVersion = denoConfig.version;
+          }
+        } catch {
+          Log.Warn(
+            `⚠️  Could not read version from deno.json(c), using fallback: ${packageVersion}`,
+          );
+        }
       }
-    }
 
-    // Generate Deno script (downloads from GitHub releases)
-    const denoScript = generateDenoScript(
-      binaryName,
-      Params.InstallDir,
-      aliases,
-      packageName,
-      repo,
-      packageVersion,
-    );
-    const denoPath = join(outputDir, 'install.ts');
-    await Deno.writeTextFile(denoPath, denoScript);
-    Log.Success(`✅ Generated: ${denoPath}`);
-    generatedScripts.push('install.ts');
+      // Generate Deno script (downloads from GitHub releases)
+      const denoScript = generateDenoScript(
+        binaryName,
+        Params.InstallDir,
+        aliases,
+        packageName,
+        repo,
+        packageVersion,
+      );
+      const denoPath = join(outputDir, "install.ts");
+      await Deno.writeTextFile(denoPath, denoScript);
+      Log.Success(`✅ Generated: ${denoPath}`);
+      generatedScripts.push("install.ts");
 
-    // Update deno.jsonc exports to include ./install
-    const exportResult = await updateDenoJsoncExports(DFS, Params.OutputDir);
-    if (exportResult.success) {
-      if (exportResult.message.includes('already configured')) {
-        Log.Info(`ℹ️  ${exportResult.message}`);
+      // Update deno.jsonc exports to include ./install
+      const exportResult = await updateDenoJsoncExports(DFS, Params.OutputDir);
+      if (exportResult.success) {
+        if (exportResult.message.includes("already configured")) {
+          Log.Info(`ℹ️  ${exportResult.message}`);
+        } else {
+          Log.Success(
+            `✅ ${exportResult.message} in ${exportResult.configPath}`,
+          );
+        }
       } else {
-        Log.Success(`✅ ${exportResult.message} in ${exportResult.configPath}`);
+        Log.Warn(`⚠️  ${exportResult.message}`);
       }
-    } else {
-      Log.Warn(`⚠️  ${exportResult.message}`);
-    }
 
-    Log.Info('');
-    Log.Info('📋 Users can install via:');
-    Log.Info('');
-    Log.Info('   # macOS/Linux');
-    Log.Info(
-      `   curl -fsSL https://github.com/${repo}/releases/latest/download/install.sh | bash`,
-    );
-    Log.Info('');
-    Log.Info('   # Windows PowerShell');
-    Log.Info(
-      `   iwr -useb https://github.com/${repo}/releases/latest/download/install.ps1 | iex`,
-    );
-    Log.Info('');
-    Log.Info('   # Deno (cross-platform)');
-    Log.Info(`   deno run -A jsr:${packageName}/install`);
+      Log.Info("");
+      Log.Info("📋 Users can install via:");
+      Log.Info("");
+      Log.Info("   # macOS/Linux");
+      Log.Info(
+        `   curl -fsSL https://github.com/${repo}/releases/latest/download/install.sh | bash`,
+      );
+      Log.Info("");
+      Log.Info("   # Windows PowerShell");
+      Log.Info(
+        `   iwr -useb https://github.com/${repo}/releases/latest/download/install.ps1 | iex`,
+      );
+      Log.Info("");
+      Log.Info("   # Deno (cross-platform)");
+      Log.Info(`   deno run -A jsr:${packageName}/install`);
 
-    return {
-      Code: 0,
-      Message: `Generated ${generatedScripts.length} install scripts`,
-      Data: { scripts: generatedScripts, repo },
-    };
-  });
+      return {
+        Code: 0,
+        Message: `Generated ${generatedScripts.length} install scripts`,
+        Data: { scripts: generatedScripts, repo },
+      };
+    },
+  );

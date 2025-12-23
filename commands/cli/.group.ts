@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Group } from '@fathym/cli';
+import { Group } from "@fathym/cli";
 
-export default Group('cli')
-  .Description('Commands for building, compiling, and managing CLI projects');
+export default Group("cli")
+  .Description("Commands for building, compiling, and managing CLI projects");

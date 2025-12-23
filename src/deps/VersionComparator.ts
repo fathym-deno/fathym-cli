@@ -23,7 +23,7 @@
  * @module
  */
 
-import { compare, parse, type SemVer } from '@std/semver';
+import { compare, parse, type SemVer } from "@std/semver";
 
 /**
  * Represents a parsed version with channel information.
@@ -92,7 +92,7 @@ export class VersionComparator {
 
       if (semver.prerelease && semver.prerelease.length > 0) {
         // Join all prerelease parts to form the channel
-        channel = semver.prerelease.map(String).join('.');
+        channel = semver.prerelease.map(String).join(".");
         base = `${semver.major}.${semver.minor}.${semver.patch}`;
       } else {
         base = `${semver.major}.${semver.minor}.${semver.patch}`;
@@ -116,7 +116,7 @@ export class VersionComparator {
    */
   private parseManually(version: string): ParsedVersion {
     // Split on first hyphen to separate base and channel
-    const hyphenIndex = version.indexOf('-');
+    const hyphenIndex = version.indexOf("-");
 
     let base: string;
     let channel: string | undefined;
@@ -129,7 +129,7 @@ export class VersionComparator {
     }
 
     // Parse base version
-    const parts = base.split('.').map(Number);
+    const parts = base.split(".").map(Number);
     const major = parts[0] || 0;
     const minor = parts[1] || 0;
     const patch = parts[2] || 0;

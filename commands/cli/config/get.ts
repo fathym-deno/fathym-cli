@@ -15,9 +15,14 @@
  * @module
  */
 
-import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
-import { z } from 'zod';
-import { ConfigFileService } from '../../../src/services/ConfigFileService.ts';
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from "@fathym/cli";
+import { z } from "zod";
+import { ConfigFileService } from "../../../src/services/ConfigFileService.ts";
 
 /**
  * Result data for the config get command.
@@ -34,7 +39,7 @@ export interface ConfigGetResult {
 }
 
 const ArgsSchema = z.tuple([
-  z.string().describe('Config file path (relative to ConfigDFS)'),
+  z.string().describe("Config file path (relative to ConfigDFS)"),
   z.string().describe('Key (dot-notation, e.g., "azure.apiKey")'),
 ]);
 
@@ -52,7 +57,7 @@ class ConfigGetParams extends CommandParams<
   }
 }
 
-export default Command('cli/config/get', 'Get a value from a JSON config file')
+export default Command("cli/config/get", "Get a value from a JSON config file")
   .Args(ArgsSchema)
   .Flags(FlagsSchema)
   .Params(ConfigGetParams)
@@ -71,19 +76,28 @@ export default Command('cli/config/get', 'Get a value from a JSON config file')
 
     return { configService: configService! };
   })
-  .Run(async ({ Params, Services, Log }): Promise<CommandStatus<ConfigGetResult>> => {
-    const value = await Services.configService.get(Params.FilePath, Params.Key);
-    const found = value !== undefined;
+  .Run(
+    async (
+      { Params, Services, Log },
+    ): Promise<CommandStatus<ConfigGetResult>> => {
+      const value = await Services.configService.get(
+        Params.FilePath,
+        Params.Key,
+      );
+      const found = value !== undefined;
 
-    if (!found) {
-      Log.Info(`Key "${Params.Key}" not found in ${Params.FilePath}`);
-    } else {
-      Log.Info(JSON.stringify(value, null, 2));
-    }
+      if (!found) {
+        Log.Info(`Key "${Params.Key}" not found in ${Params.FilePath}`);
+      } else {
+        Log.Info(JSON.stringify(value, null, 2));
+      }
 
-    return {
-      Code: 0,
-      Message: found ? `Found ${Params.Key}` : `Key "${Params.Key}" not found`,
-      Data: { file: Params.FilePath, key: Params.Key, value, found },
-    };
-  });
+      return {
+        Code: 0,
+        Message: found
+          ? `Found ${Params.Key}`
+          : `Key "${Params.Key}" not found`,
+        Data: { file: Params.FilePath, key: Params.Key, value, found },
+      };
+    },
+  );

@@ -8,7 +8,7 @@
  * @module
  */
 
-import type { ProjectRef } from '../projects/ProjectRef.ts';
+import type { ProjectRef } from "../projects/ProjectRef.ts";
 
 /**
  * Definition of a step in a pipeline.
@@ -41,7 +41,7 @@ export interface ResolvedStep extends CascadeStepDef {
   hasOverride: boolean;
 
   /** Source of the step's implementation */
-  source: 'override' | 'default';
+  source: "override" | "default";
 }
 
 /**

@@ -5,10 +5,10 @@ export interface SpinnerLogger {
 }
 
 const SYMBOLS = {
-  start: '⏳',
-  success: '✅',
-  fail: '❌',
-  skip: '⚪',
+  start: "⏳",
+  success: "✅",
+  fail: "❌",
+  skip: "⚪",
 } as const;
 
 /**

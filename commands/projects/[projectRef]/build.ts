@@ -65,17 +65,25 @@
  * @module
  */
 
-import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
-import { CascadeRunner } from '../../../src/pipelines/CascadeRunner.ts';
-import type { CascadeStepDef, CommandInvoker } from '../../../src/pipelines/CascadeTypes.ts';
-import TaskCommand from '../../task.ts';
-import FmtCommand from './fmt.ts';
-import LintCommand from './lint.ts';
-import CheckCommand from './check.ts';
-import TestCommand from './test.ts';
+import { z } from "zod";
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { DFSProjectResolver } from "../../../src/projects/ProjectResolver.ts";
+import { CascadeRunner } from "../../../src/pipelines/CascadeRunner.ts";
+import type {
+  CascadeStepDef,
+  CommandInvoker,
+} from "../../../src/pipelines/CascadeTypes.ts";
+import TaskCommand from "../../task.ts";
+import FmtCommand from "./fmt.ts";
+import LintCommand from "./lint.ts";
+import CheckCommand from "./check.ts";
+import TestCommand from "./test.ts";
 
 /**
  * Result data for the build command.
@@ -100,28 +108,28 @@ export interface ProjectBuildResult {
  */
 const BUILD_STEPS: CascadeStepDef[] = [
   {
-    name: 'fmt',
-    overrideTask: 'build:fmt',
-    description: 'Formatting code',
-    commandKey: 'Fmt',
+    name: "fmt",
+    overrideTask: "build:fmt",
+    description: "Formatting code",
+    commandKey: "Fmt",
   },
   {
-    name: 'lint',
-    overrideTask: 'build:lint',
-    description: 'Linting code',
-    commandKey: 'Lint',
+    name: "lint",
+    overrideTask: "build:lint",
+    description: "Linting code",
+    commandKey: "Lint",
   },
   {
-    name: 'check',
-    overrideTask: 'build:check',
-    description: 'Type checking',
-    commandKey: 'Check',
+    name: "check",
+    overrideTask: "build:check",
+    description: "Type checking",
+    commandKey: "Check",
   },
   {
-    name: 'test',
-    overrideTask: 'test',
-    description: 'Running tests',
-    commandKey: 'Test',
+    name: "test",
+    overrideTask: "test",
+    description: "Running tests",
+    commandKey: "Test",
   },
 ];
 
@@ -129,7 +137,9 @@ const BUILD_STEPS: CascadeStepDef[] = [
  * Segments schema for the build command.
  */
 const BuildSegmentsSchema = z.object({
-  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+  projectRef: z.string().describe(
+    "Project name, path to deno.json(c), or directory",
+  ),
 });
 
 type BuildSegments = z.infer<typeof BuildSegmentsSchema>;
@@ -138,17 +148,17 @@ type BuildSegments = z.infer<typeof BuildSegmentsSchema>;
  * Zod schema for build command flags.
  */
 const BuildFlagsSchema = z.object({
-  'dry-run': z.boolean().optional().describe(
-    'Show what would run without executing',
+  "dry-run": z.boolean().optional().describe(
+    "Show what would run without executing",
   ),
-  'verbose': z.boolean().optional().describe(
-    'Show detailed cascade resolution and execution',
+  "verbose": z.boolean().optional().describe(
+    "Show detailed cascade resolution and execution",
   ),
-  'ignore-faults': z.boolean().optional().describe(
-    'Continue on step failure, attempting fallback to defaults',
+  "ignore-faults": z.boolean().optional().describe(
+    "Continue on step failure, attempting fallback to defaults",
   ),
-  'explain': z.boolean().optional().describe(
-    'Show pipeline structure and override status without executing',
+  "explain": z.boolean().optional().describe(
+    "Show pipeline structure and override status without executing",
   ),
 });
 
@@ -166,29 +176,29 @@ class BuildCommandParams extends CommandParams<
   BuildSegments
 > {
   get ProjectRef(): string {
-    return this.Segment('projectRef') ?? '';
+    return this.Segment("projectRef") ?? "";
   }
 
   get Verbose(): boolean {
-    return this.Flag('verbose') ?? false;
+    return this.Flag("verbose") ?? false;
   }
 
   get IgnoreFaults(): boolean {
-    return this.Flag('ignore-faults') ?? false;
+    return this.Flag("ignore-faults") ?? false;
   }
 
   get Explain(): boolean {
-    return this.Flag('explain') ?? false;
+    return this.Flag("explain") ?? false;
   }
 
   override get DryRun(): boolean {
-    return this.Flag('dry-run') ?? false;
+    return this.Flag("dry-run") ?? false;
   }
 }
 
 export default Command(
-  'projects:[projectRef]:build',
-  'Build a project with cascading task overrides.',
+  "projects:[projectRef]:build",
+  "Build a project with cascading task overrides.",
 )
   .Args(BuildArgsSchema)
   .Flags(BuildFlagsSchema)
@@ -216,7 +226,7 @@ export default Command(
     if (projects.length > 1) {
       throw new Error(
         `Found ${projects.length} projects. Please specify a single project:\n` +
-          projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
+          projects.map((p) => `  - ${p.name ?? p.dir}`).join("\n"),
       );
     }
 
@@ -224,55 +234,65 @@ export default Command(
       Project: projects[0],
     };
   })
-  .Run(async ({ Params, Commands, Services, Log }): Promise<CommandStatus<ProjectBuildResult>> => {
-    const { Project } = Services;
-    const { Task, Fmt, Lint, Check, Test } = Commands!;
+  .Run(
+    async (
+      { Params, Commands, Services, Log },
+    ): Promise<CommandStatus<ProjectBuildResult>> => {
+      const { Project } = Services;
+      const { Task, Fmt, Lint, Check, Test } = Commands!;
 
-    // Build step commands map (excluding Task which is used for overrides)
-    const stepCommands: Record<string, CommandInvoker> = {
-      Fmt: Fmt as CommandInvoker,
-      Lint: Lint as CommandInvoker,
-      Check: Check as CommandInvoker,
-      Test: Test as CommandInvoker,
-    };
-
-    // Create cascade runner with options
-    const runner = new CascadeRunner(Project, Log, Task as CommandInvoker, {
-      verbose: Params.Verbose,
-      ignoreFaults: Params.IgnoreFaults,
-      dryRun: Params.DryRun,
-      explain: Params.Explain,
-    });
-
-    // Resolve cascade (check for overrides)
-    const resolution = runner.resolve('build', 'build', BUILD_STEPS);
-
-    // Execute (handles --explain, --dry-run, full override, and step execution)
-    try {
-      const exitCode = await runner.run(resolution, stepCommands, Params.ProjectRef);
-      const success = exitCode === 0;
-
-      return {
-        Code: exitCode,
-        Message: success
-          ? `Build succeeded for ${Params.ProjectRef}`
-          : `Build failed for ${Params.ProjectRef}`,
-        Data: {
-          project: Params.ProjectRef,
-          success,
-          exitCode,
-        },
+      // Build step commands map (excluding Task which is used for overrides)
+      const stepCommands: Record<string, CommandInvoker> = {
+        Fmt: Fmt as CommandInvoker,
+        Lint: Lint as CommandInvoker,
+        Check: Check as CommandInvoker,
+        Test: Test as CommandInvoker,
       };
-    } catch (error) {
-      Log.Error(error instanceof Error ? error.message : String(error));
-      return {
-        Code: 1,
-        Message: `Build failed: ${error instanceof Error ? error.message : String(error)}`,
-        Data: {
-          project: Params.ProjectRef,
-          success: false,
-          exitCode: 1,
-        },
-      };
-    }
-  });
+
+      // Create cascade runner with options
+      const runner = new CascadeRunner(Project, Log, Task as CommandInvoker, {
+        verbose: Params.Verbose,
+        ignoreFaults: Params.IgnoreFaults,
+        dryRun: Params.DryRun,
+        explain: Params.Explain,
+      });
+
+      // Resolve cascade (check for overrides)
+      const resolution = runner.resolve("build", "build", BUILD_STEPS);
+
+      // Execute (handles --explain, --dry-run, full override, and step execution)
+      try {
+        const exitCode = await runner.run(
+          resolution,
+          stepCommands,
+          Params.ProjectRef,
+        );
+        const success = exitCode === 0;
+
+        return {
+          Code: exitCode,
+          Message: success
+            ? `Build succeeded for ${Params.ProjectRef}`
+            : `Build failed for ${Params.ProjectRef}`,
+          Data: {
+            project: Params.ProjectRef,
+            success,
+            exitCode,
+          },
+        };
+      } catch (error) {
+        Log.Error(error instanceof Error ? error.message : String(error));
+        return {
+          Code: 1,
+          Message: `Build failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          Data: {
+            project: Params.ProjectRef,
+            success: false,
+            exitCode: 1,
+          },
+        };
+      }
+    },
+  );

@@ -8,8 +8,8 @@
  * @module
  */
 
-import { compile as compileGitignore } from '@cfa/gitignore-parser';
-import type { DFSProjectResolver } from './ProjectResolver.ts';
+import { compile as compileGitignore } from "@cfa/gitignore-parser";
+import type { DFSProjectResolver } from "./ProjectResolver.ts";
 
 /**
  * A reference to a package found in the workspace.
@@ -24,7 +24,7 @@ export interface PackageReference {
   file: string;
   line: number;
   currentVersion: string;
-  source: 'config' | 'deps' | 'template' | 'docs' | 'other';
+  source: "config" | "deps" | "template" | "docs" | "other";
   /** The name of the project containing this reference (from deno.json(c)) */
   projectName: string;
 }
@@ -44,22 +44,22 @@ export const REFERENCE_FILE_PATTERNS = [
  * Directories to always skip, regardless of .gitignore.
  */
 export const ALWAYS_SKIP_DIRS = [
-  '.git',
-  'node_modules',
-  '.deno',
-  'cov',
-  '.coverage',
+  ".git",
+  "node_modules",
+  ".deno",
+  "cov",
+  ".coverage",
 ];
 
 /**
  * Determine the source type based on file path.
  */
-export function getSourceType(filePath: string): PackageReference['source'] {
-  if (/deno\.jsonc?$/.test(filePath)) return 'config';
-  if (/\.deps\.ts$/.test(filePath)) return 'deps';
-  if (/\.hbs$/.test(filePath)) return 'template';
-  if (/\.mdx?$/.test(filePath)) return 'docs';
-  return 'other';
+export function getSourceType(filePath: string): PackageReference["source"] {
+  if (/deno\.jsonc?$/.test(filePath)) return "config";
+  if (/\.deps\.ts$/.test(filePath)) return "deps";
+  if (/\.hbs$/.test(filePath)) return "template";
+  if (/\.mdx?$/.test(filePath)) return "docs";
+  return "other";
 }
 
 /**
@@ -85,7 +85,10 @@ export async function loadGitignore(
  */
 export interface FindReferencesOptions {
   /** Filter by source type(s) - single type, array of types, or 'all' (default) */
-  sourceFilter?: PackageReference['source'] | PackageReference['source'][] | 'all';
+  sourceFilter?:
+    | PackageReference["source"]
+    | PackageReference["source"][]
+    | "all";
   /** Filter by project refs - only include references from projects matching these refs */
   projectFilter?: string[];
   /** Exclude references from projects matching these refs (applied after projectFilter) */
@@ -111,22 +114,23 @@ export async function findPackageReferences(
   const seenFiles = new Set<string>(); // Avoid duplicate entries
 
   // Parse filter options
-  const sourceFilter = options?.sourceFilter ?? 'all';
+  const sourceFilter = options?.sourceFilter ?? "all";
   const projectFilter = options?.projectFilter ?? [];
   const excludeProjectFilter = options?.excludeProjectFilter ?? [];
 
   // Normalize source filter to array for easier checking
-  const sourceTypes: PackageReference['source'][] | 'all' = sourceFilter === 'all'
-    ? 'all'
-    : Array.isArray(sourceFilter)
-    ? sourceFilter
-    : [sourceFilter];
+  const sourceTypes: PackageReference["source"][] | "all" =
+    sourceFilter === "all"
+      ? "all"
+      : Array.isArray(sourceFilter)
+      ? sourceFilter
+      : [sourceFilter];
 
   /**
    * Check if a source type passes the filter.
    */
-  function matchesSourceFilter(source: PackageReference['source']): boolean {
-    if (sourceTypes === 'all') return true;
+  function matchesSourceFilter(source: PackageReference["source"]): boolean {
+    if (sourceTypes === "all") return true;
     return sourceTypes.includes(source);
   }
 
@@ -134,7 +138,7 @@ export async function findPackageReferences(
   // Group 1 = version (stops at / or quote/whitespace/comma)
   // The subpath after version is NOT captured - we only need the version for reporting
   const packagePattern = new RegExp(
-    `jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@([^/"'\\s,]+)`,
+    `jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}@([^/"'\\s,]+)`,
   );
 
   const dfs = resolver.DFS;
@@ -150,7 +154,7 @@ export async function findPackageReferences(
   for (const project of allProjects) {
     if (project.name) {
       // Normalize the directory path for consistent matching
-      const normalizedDir = project.dir.replace(/\\/g, '/').replace(/^\//, '');
+      const normalizedDir = project.dir.replace(/\\/g, "/").replace(/^\//, "");
       projectMap.set(normalizedDir, { name: project.name, dir: normalizedDir });
     }
   }
@@ -196,11 +200,11 @@ export async function findPackageReferences(
    * Normalize a path to use forward slashes and remove leading ./ or /
    */
   function normalizePath(path: string): string {
-    let normalized = path.replace(/\\/g, '/');
-    if (normalized.startsWith('./')) {
+    let normalized = path.replace(/\\/g, "/");
+    if (normalized.startsWith("./")) {
       normalized = normalized.slice(2);
     }
-    if (normalized.startsWith('/')) {
+    if (normalized.startsWith("/")) {
       normalized = normalized.slice(1);
     }
     return normalized;
@@ -219,7 +223,9 @@ export async function findPackageReferences(
       .sort((a, b) => b[1].dir.length - a[1].dir.length);
 
     for (const [, project] of sortedProjects) {
-      if (normalized.startsWith(project.dir + '/') || normalized === project.dir) {
+      if (
+        normalized.startsWith(project.dir + "/") || normalized === project.dir
+      ) {
         return project.name;
       }
     }
@@ -236,7 +242,10 @@ export async function findPackageReferences(
 
     // Always skip certain directories
     for (const skipDir of ALWAYS_SKIP_DIRS) {
-      if (normalized.includes(`/${skipDir}/`) || normalized.startsWith(`${skipDir}/`)) {
+      if (
+        normalized.includes(`/${skipDir}/`) ||
+        normalized.startsWith(`${skipDir}/`)
+      ) {
         return true;
       }
       if (normalized.endsWith(`/${skipDir}`) || normalized === skipDir) {
@@ -268,7 +277,10 @@ export async function findPackageReferences(
    * Only adds references if the file belongs to a project (has projectName)
    * and passes both source and project filters.
    */
-  async function searchFile(filePath: string, projectName: string): Promise<void> {
+  async function searchFile(
+    filePath: string,
+    projectName: string,
+  ): Promise<void> {
     if (seenFiles.has(filePath)) return;
     seenFiles.add(filePath);
 
@@ -285,7 +297,7 @@ export async function findPackageReferences(
       const content = await readFileContent(filePath);
       if (!content) return;
 
-      const lines = content.split('\n');
+      const lines = content.split("\n");
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -320,7 +332,7 @@ export async function findPackageReferences(
     // E.g., /(^|\/)\.git(\/|$)/ matches ".git" as a directory but not "deno.git.ts"
     const skipPatterns = ALWAYS_SKIP_DIRS.map((dir) => {
       // Escape special regex characters in the directory name
-      const escaped = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escaped = dir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       return new RegExp(`(^|[/\\\\])${escaped}([/\\\\]|$)`);
     });
 
@@ -355,7 +367,7 @@ export interface UpgradeResult {
   line: number;
   oldVersion: string;
   newVersion: string;
-  source: PackageReference['source'];
+  source: PackageReference["source"];
   /** The name of the project containing this reference (from deno.json(c)) */
   projectName: string;
   success: boolean;
@@ -371,7 +383,10 @@ export interface UpgradeOptions {
   /** If true, don't write changes */
   dryRun?: boolean;
   /** Filter by source type(s) - single type, array of types, or 'all' (default) */
-  sourceFilter?: PackageReference['source'] | PackageReference['source'][] | 'all';
+  sourceFilter?:
+    | PackageReference["source"]
+    | PackageReference["source"][]
+    | "all";
   /** Filter by project refs - only upgrade references in projects matching these refs */
   projectFilter?: string[];
   /** Exclude references from projects matching these refs (applied after projectFilter) */
@@ -390,7 +405,7 @@ export async function upgradePackageReferences(
   const {
     version,
     dryRun = false,
-    sourceFilter = 'all',
+    sourceFilter = "all",
     projectFilter = [],
     excludeProjectFilter = [],
   } = options;
@@ -418,7 +433,10 @@ export async function upgradePackageReferences(
    * Write file content to DFS using the relative file path.
    * Since PackageReference.file contains relative paths, we use them directly.
    */
-  async function writeFileContent(filePath: string, content: string): Promise<void> {
+  async function writeFileContent(
+    filePath: string,
+    content: string,
+  ): Promise<void> {
     await dfs.WriteFile(filePath, content);
   }
 
@@ -442,8 +460,10 @@ export async function upgradePackageReferences(
   // Group 2 = version (stops at / or quote/whitespace/comma)
   // Group 3 = optional subpath (e.g., /build, /handlers/memory)
   const packagePattern = new RegExp(
-    `(jsr:${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}@)([^/"'\\s,]+)(/[^"'\\s,]*)?`,
-    'g',
+    `(jsr:${
+      packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    }@)([^/"'\\s,]+)(/[^"'\\s,]*)?`,
+    "g",
   );
 
   // Process each file
@@ -459,7 +479,7 @@ export async function upgradePackageReferences(
         packagePattern,
         (_match, prefix, _oldVersion, subpath) => {
           // Preserve the subpath if it exists, otherwise use empty string
-          return `${prefix}${version}${subpath || ''}`;
+          return `${prefix}${version}${subpath || ""}`;
         },
       );
 

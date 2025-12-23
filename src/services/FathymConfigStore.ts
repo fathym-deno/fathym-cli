@@ -1,4 +1,4 @@
-import type { DFSFileHandler } from '@fathym/dfs';
+import type { DFSFileHandler } from "@fathym/dfs";
 
 export interface AccessTokenData {
   access_token: string;
@@ -20,7 +20,7 @@ export interface SystemConfig {
 }
 
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
-  apiRoot: 'https://fcp-cli-stateflow.azurewebsites.net/api',
+  apiRoot: "https://fcp-cli-stateflow.azurewebsites.net/api",
 };
 
 const DEFAULT_USER_CONFIG: UserAuthConfig = {};
@@ -41,8 +41,8 @@ export class FathymConfigStore {
   public constructor(
     protected readonly dfs: DFSFileHandler,
     protected readonly paths: ConfigPaths = {
-      system: 'lcu.system.json',
-      user: 'user-auth.config.json',
+      system: "lcu.system.json",
+      user: "user-auth.config.json",
     },
   ) {}
 

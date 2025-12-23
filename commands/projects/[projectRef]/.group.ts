@@ -23,7 +23,9 @@
  * @module
  */
 
-import { Group } from '@fathym/cli';
+import { Group } from "@fathym/cli";
 
-export default Group('Project Commands')
-  .Description('Commands that operate on a specific project or set of projects.');
+export default Group("Project Commands")
+  .Description(
+    "Commands that operate on a specific project or set of projects.",
+  );

@@ -1,4 +1,4 @@
-import { DFSFileHandler } from '@fathym/dfs';
+import { DFSFileHandler } from "@fathym/dfs";
 
 /**
  * Service for reading and writing JSON config files with dot-notation key support.
@@ -48,7 +48,7 @@ export class ConfigFileService {
   }
 
   protected getNestedValue(obj: Record<string, unknown>, key: string): unknown {
-    return key.split('.').reduce<unknown>(
+    return key.split(".").reduce<unknown>(
       (o, k) => (o as Record<string, unknown>)?.[k],
       obj,
     );
@@ -59,11 +59,11 @@ export class ConfigFileService {
     key: string,
     value: unknown,
   ): void {
-    const keys = key.split('.');
+    const keys = key.split(".");
     const last = keys.pop()!;
     let current = obj;
     for (const k of keys) {
-      if (!(k in current) || typeof current[k] !== 'object') {
+      if (!(k in current) || typeof current[k] !== "object") {
         current[k] = {};
       }
       current = current[k] as Record<string, unknown>;

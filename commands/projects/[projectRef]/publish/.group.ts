@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Group } from '@fathym/cli';
+import { Group } from "@fathym/cli";
 
-export default Group('publish')
-  .Description('Commands for publishing project packages');
+export default Group("publish")
+  .Description("Commands for publishing project packages");

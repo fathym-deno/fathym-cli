@@ -32,10 +32,13 @@ Guardrails for humans and AI collaborating on the Fathym CLI project.
 
 1. **Stay scoped.** Keep CLI work inside `projects/open-source/fathym-cli/`.
 2. **Public-friendly.** No secrets, tokens, or internal-only links in sources.
-3. **Frontmatter required.** Every Markdown/MDX doc uses workspace frontmatter standard.
-4. **Document source first.** Add JSDoc to commands before writing external docs.
+3. **Frontmatter required.** Every Markdown/MDX doc uses workspace frontmatter
+   standard.
+4. **Document source first.** Add JSDoc to commands before writing external
+   docs.
 5. **Preserve compatibility.** Note breaking changes explicitly in UPSTREAM.md.
-6. **Pin dependencies.** Align with `@fathym/cli` version; update import map when changing.
+6. **Pin dependencies.** Align with `@fathym/cli` version; update import map
+   when changing.
 
 ## Documentation Standards
 

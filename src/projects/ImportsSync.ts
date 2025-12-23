@@ -49,10 +49,10 @@
  * @module
  */
 
-import type { DFSFileHandler } from '@fathym/dfs';
-import { dirname, isAbsolute, join, relative } from '@std/path';
-import { parse as parseJsonc } from '@std/jsonc';
-import type { ProjectResolver } from './ProjectResolver.ts';
+import type { DFSFileHandler } from "@fathym/dfs";
+import { dirname, isAbsolute, join, relative } from "@std/path";
+import { parse as parseJsonc } from "@std/jsonc";
+import type { ProjectResolver } from "./ProjectResolver.ts";
 
 /**
  * Sync mode for import operations.
@@ -60,7 +60,7 @@ import type { ProjectResolver } from './ProjectResolver.ts';
  * - `'local'`: Rewrite imports to use local workspace paths
  * - `'remote'`: Restore original JSR registry imports
  */
-export type ImportsSyncMode = 'local' | 'remote';
+export type ImportsSyncMode = "local" | "remote";
 
 /**
  * Options for the syncImports function.
@@ -107,7 +107,7 @@ export interface LocalPackageConfig {
   exports: Record<string, string>;
 
   /** Package classification: 'runtime' has subpath exports, 'library' does not */
-  kind: 'runtime' | 'library';
+  kind: "runtime" | "library";
 }
 
 interface ImportsBlockRange {
@@ -132,10 +132,10 @@ type Logger = {
 };
 
 /** Comment marker indicating the start of preserved original imports */
-const ORIGINAL_BEGIN = '// @sync-imports BEGIN ORIGINAL IMPORTS';
+const ORIGINAL_BEGIN = "// @sync-imports BEGIN ORIGINAL IMPORTS";
 
 /** Comment marker indicating the end of preserved original imports */
-const ORIGINAL_END = '// @sync-imports END ORIGINAL IMPORTS';
+const ORIGINAL_END = "// @sync-imports END ORIGINAL IMPORTS";
 
 /**
  * Synchronize import mappings for target project(s).
@@ -175,18 +175,18 @@ export async function syncImports(
 
   const localPackages = await discoverLocalPackages(dfs, logger);
 
-  const runtimes = localPackages.filter((p) => p.kind === 'runtime');
-  const libraries = localPackages.filter((p) => p.kind === 'library');
+  const runtimes = localPackages.filter((p) => p.kind === "runtime");
+  const libraries = localPackages.filter((p) => p.kind === "library");
 
   logger.info(
     `[sync-imports] discovered ${localPackages.length} local package(s) ` +
       `(runtimes: ${runtimes.length}, libraries: ${libraries.length})`,
   );
   if (runtimes.length) {
-    logger.info(`  runtimes: ${runtimes.map((pkg) => pkg.name).join(', ')}`);
+    logger.info(`  runtimes: ${runtimes.map((pkg) => pkg.name).join(", ")}`);
   }
   if (libraries.length) {
-    logger.info(`  libraries: ${libraries.map((pkg) => pkg.name).join(', ')}`);
+    logger.info(`  libraries: ${libraries.map((pkg) => pkg.name).join(", ")}`);
   }
 
   const targetConfigs = await resolveTargetConfigs(
@@ -209,19 +209,19 @@ export async function syncImports(
     logger.info(`  - ${cfg}`);
   }
 
-  if (options.mode === 'local') {
+  if (options.mode === "local") {
     for (const cfg of targetConfigs) {
       await applyLocalModeToConfig(cfg, localPackages, dfs, logger);
     }
     logger.info(
-      '[sync-imports] Local mode completed for all resolved targets.',
+      "[sync-imports] Local mode completed for all resolved targets.",
     );
   } else {
     for (const cfg of targetConfigs) {
       await applyRemoteModeToConfig(cfg, dfs, logger);
     }
     logger.info(
-      '[sync-imports] Remote mode completed for all resolved targets.',
+      "[sync-imports] Remote mode completed for all resolved targets.",
     );
   }
 
@@ -241,7 +241,7 @@ function commentLine(line: string): string {
 }
 
 function uncommentLine(line: string): string {
-  return line.replace(/^\/\/\s?/, '');
+  return line.replace(/^\/\/\s?/, "");
 }
 
 async function discoverLocalPackages(
@@ -278,9 +278,9 @@ async function discoverLocalPackages(
 
     if (
       !config ||
-      typeof config !== 'object' ||
-      !('name' in config) ||
-      !('exports' in config)
+      typeof config !== "object" ||
+      !("name" in config) ||
+      !("exports" in config)
     ) {
       continue;
     }
@@ -289,7 +289,7 @@ async function discoverLocalPackages(
     const exports = (config as { exports: unknown }).exports;
 
     if (
-      typeof name !== 'string' || typeof exports !== 'object' ||
+      typeof name !== "string" || typeof exports !== "object" ||
       exports === null
     ) {
       continue;
@@ -303,7 +303,7 @@ async function discoverLocalPackages(
       configPath,
       packageDir,
       exports: exports as Record<string, string>,
-      kind: isRuntime ? 'runtime' : 'library',
+      kind: isRuntime ? "runtime" : "library",
     });
   }
 
@@ -315,8 +315,8 @@ async function isRuntimePackage(
   dfs: DFSFileHandler,
 ): Promise<boolean> {
   const requirementSets = [
-    ['main.ts', 'dev.ts', 'DOCKERFILE'],
-    ['.cli.json'],
+    ["main.ts", "dev.ts", "DOCKERFILE"],
+    [".cli.json"],
   ];
 
   for (const requirement of requirementSets) {
@@ -364,13 +364,15 @@ function resolveLocalPathForSpec(
   const targetPkg = localByName.get(parsed.pkgName);
   if (!targetPkg) return null;
 
-  const targetImportKey = parsed.bucket ? `${parsed.pkgName}/${parsed.bucket}` : parsed.pkgName;
+  const targetImportKey = parsed.bucket
+    ? `${parsed.pkgName}/${parsed.bucket}`
+    : parsed.pkgName;
 
   let exportPath: string | null = null;
 
   for (const [exportKey, exportValue] of Object.entries(targetPkg.exports)) {
     const importKey = exportKeyToImportKey(targetPkg.name, exportKey);
-    if (importKey === targetImportKey && typeof exportValue === 'string') {
+    if (importKey === targetImportKey && typeof exportValue === "string") {
       exportPath = exportValue;
       break;
     }
@@ -378,7 +380,9 @@ function resolveLocalPathForSpec(
 
   if (!exportPath) return null;
 
-  const absExport = isAbsolute(exportPath) ? exportPath : join(targetPkg.packageDir, exportPath);
+  const absExport = isAbsolute(exportPath)
+    ? exportPath
+    : join(targetPkg.packageDir, exportPath);
 
   return toRelativeImportPath(fromDir, absExport);
 }
@@ -396,9 +400,9 @@ async function collectLibraryOverrides(
 
   // Normalize paths for comparison: forward slashes, lowercase for Windows, strip leading ./
   const normalizeForComparison = (p: string): string => {
-    let normalized = p.replace(/\\/g, '/').toLowerCase();
+    let normalized = p.replace(/\\/g, "/").toLowerCase();
     // Strip leading ./ if present for consistent comparison
-    if (normalized.startsWith('./')) {
+    if (normalized.startsWith("./")) {
       normalized = normalized.substring(2);
     }
     return normalized;
@@ -419,8 +423,10 @@ async function collectLibraryOverrides(
 
     // Check if this .deps.ts file is within the library's directory
     // Handle empty libPath (library at DFS root) by matching all files
-    const isInLib = normalizedLibPath === '' ? true : normalizedEntryPath === normalizedLibPath ||
-      normalizedEntryPath.startsWith(normalizedLibPath + '/');
+    const isInLib = normalizedLibPath === ""
+      ? true
+      : normalizedEntryPath === normalizedLibPath ||
+        normalizedEntryPath.startsWith(normalizedLibPath + "/");
 
     if (!isInLib) {
       continue;
@@ -480,7 +486,7 @@ async function collectRuntimeOverridesFromLibraries(
   const overrides = new Map<string, string>();
 
   for (const lib of localPackages) {
-    if (lib.kind !== 'library') continue;
+    if (lib.kind !== "library") continue;
 
     let text: string;
     try {
@@ -499,18 +505,18 @@ async function collectRuntimeOverridesFromLibraries(
       continue;
     }
 
-    if (!config || typeof config !== 'object' || !('imports' in config)) {
+    if (!config || typeof config !== "object" || !("imports" in config)) {
       continue;
     }
 
     const imports = (config as { imports: unknown }).imports;
-    if (!imports || typeof imports !== 'object') continue;
+    if (!imports || typeof imports !== "object") continue;
 
     for (
       const [key, value] of Object.entries(imports as Record<string, unknown>)
     ) {
-      if (typeof key !== 'string' || !key.startsWith('jsr:')) continue;
-      if (typeof value !== 'string') continue;
+      if (typeof key !== "string" || !key.startsWith("jsr:")) continue;
+      if (typeof value !== "string") continue;
 
       const absPath = isAbsolute(value) ? value : join(lib.packageDir, value);
 
@@ -540,7 +546,7 @@ function findImportsBlockRange(lines: string[]): ImportsBlockRange | null {
 
   let braceStart = -1;
   for (let i = importsLine; i < lines.length; i++) {
-    if (lines[i].includes('{')) {
+    if (lines[i].includes("{")) {
       braceStart = i;
       break;
     }
@@ -554,8 +560,8 @@ function findImportsBlockRange(lines: string[]): ImportsBlockRange | null {
   for (let i = braceStart; i < lines.length; i++) {
     const line = lines[i];
     for (const ch of line) {
-      if (ch === '{') depth++;
-      if (ch === '}') depth--;
+      if (ch === "{") depth++;
+      if (ch === "}") depth--;
     }
     if (depth === 0 && (i > braceStart || i === braceStart)) {
       braceEnd = i;
@@ -569,16 +575,16 @@ function findImportsBlockRange(lines: string[]): ImportsBlockRange | null {
 }
 
 function exportKeyToImportKey(pkgName: string, exportKey: string): string {
-  if (exportKey === '.') return pkgName;
-  if (exportKey.startsWith('./')) {
+  if (exportKey === ".") return pkgName;
+  if (exportKey.startsWith("./")) {
     return `${pkgName}/${exportKey.substring(2)}`;
   }
   return `${pkgName}/${exportKey}`;
 }
 
 function toRelativeImportPath(fromDir: string, toFile: string): string {
-  const rel = relative(fromDir, toFile).replace(/\\/g, '/');
-  if (rel.startsWith('.')) return rel;
+  const rel = relative(fromDir, toFile).replace(/\\/g, "/");
+  if (rel.startsWith(".")) return rel;
   return `./${rel}`;
 }
 
@@ -609,7 +615,7 @@ function insertOriginalBlockCommented(
   insertIndex: number,
 ): void {
   const commented = originalBlock.map(commentLine);
-  const block = ['/**', ORIGINAL_BEGIN, ...commented, ORIGINAL_END, '*/'];
+  const block = ["/**", ORIGINAL_BEGIN, ...commented, ORIGINAL_END, "*/"];
   lines.splice(insertIndex, 0, ...block);
 }
 
@@ -618,13 +624,13 @@ function generateImportsBlock(
   importMap: Record<string, string>,
   trailingComma: boolean,
 ): string[] {
-  const jsonLines = JSON.stringify(importMap, null, 2).split('\n');
+  const jsonLines = JSON.stringify(importMap, null, 2).split("\n");
   const rendered: string[] = [];
   rendered.push(`${indent}"imports": {`);
   for (let i = 1; i < jsonLines.length - 1; i++) {
     rendered.push(`${indent}${jsonLines[i]}`);
   }
-  rendered.push(`${indent}}${trailingComma ? ',' : ''}`);
+  rendered.push(`${indent}}${trailingComma ? "," : ""}`);
   return rendered;
 }
 
@@ -663,7 +669,7 @@ async function applyRemoteModeToConfig(
     return;
   }
 
-  if (!config || typeof config !== 'object' || !('imports' in config)) {
+  if (!config || typeof config !== "object" || !("imports" in config)) {
     logger.warn(
       `[sync-imports] No imports block found in ${configPath}; skipping.`,
     );
@@ -671,7 +677,7 @@ async function applyRemoteModeToConfig(
   }
 
   const imports = (config as { imports: unknown }).imports;
-  if (!imports || typeof imports !== 'object') {
+  if (!imports || typeof imports !== "object") {
     logger.warn(
       `[sync-imports] Imports block in ${configPath} is not an object; skipping.`,
     );
@@ -700,11 +706,11 @@ async function applyRemoteModeToConfig(
 
   let markerStart = markerRange[0];
   let markerEnd = markerRange[1];
-  if (markerStart > 0 && lines[markerStart - 1].trim() === '/**') {
+  if (markerStart > 0 && lines[markerStart - 1].trim() === "/**") {
     markerStart -= 1;
   }
   if (
-    markerEnd + 1 < lines.length && lines[markerEnd + 1].trim().startsWith('*/')
+    markerEnd + 1 < lines.length && lines[markerEnd + 1].trim().startsWith("*/")
   ) {
     markerEnd += 1;
   }
@@ -721,7 +727,7 @@ async function applyRemoteModeToConfig(
   try {
     const relativePath = relative(dfs.Root, configPath);
     const encoder = new TextEncoder();
-    const content = lines.join('\n');
+    const content = lines.join("\n");
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(encoder.encode(content));
@@ -774,7 +780,7 @@ async function applyLocalModeToConfig(
     return;
   }
 
-  if (!config || typeof config !== 'object' || !('imports' in config)) {
+  if (!config || typeof config !== "object" || !("imports" in config)) {
     logger.warn(
       `[sync-imports] No imports block found in ${configPath}; skipping.`,
     );
@@ -782,7 +788,7 @@ async function applyLocalModeToConfig(
   }
 
   const imports = (config as { imports: unknown }).imports;
-  if (!imports || typeof imports !== 'object') {
+  if (!imports || typeof imports !== "object") {
     logger.warn(
       `[sync-imports] Imports block in ${configPath} is not an object; skipping.`,
     );
@@ -799,17 +805,17 @@ async function applyLocalModeToConfig(
     return;
   }
 
-  const indent = lines[range.braceStart].match(/^(\s*)/)?.[1] ?? '';
-  const trailingComma = lines[range.braceEnd].trim().endsWith(',');
+  const indent = lines[range.braceStart].match(/^(\s*)/)?.[1] ?? "";
+  const trailingComma = lines[range.braceEnd].trim().endsWith(",");
 
   const markerRange = findMarkerRange(lines);
   if (markerRange) {
     let mStart = markerRange[0];
     let mEnd = markerRange[1];
-    if (mStart > 0 && lines[mStart - 1].trim() === '/**') {
+    if (mStart > 0 && lines[mStart - 1].trim() === "/**") {
       mStart -= 1;
     }
-    if (mEnd + 1 < lines.length && lines[mEnd + 1].trim().startsWith('*/')) {
+    if (mEnd + 1 < lines.length && lines[mEnd + 1].trim().startsWith("*/")) {
       mEnd += 1;
     }
     lines.splice(mStart, mEnd - mStart + 1);
@@ -825,13 +831,13 @@ async function applyLocalModeToConfig(
 
   const configDir = dirname(configPath);
 
-  const runtimeOverrides = currentPkg && currentPkg.kind === 'runtime'
+  const runtimeOverrides = currentPkg && currentPkg.kind === "runtime"
     ? await collectRuntimeOverridesFromLibraries(localPackages, dfs)
     : [];
 
   const originalEntries: Record<string, string> = {};
   for (const [k, v] of Object.entries(imports as Record<string, unknown>)) {
-    if (typeof v === 'string') {
+    if (typeof v === "string") {
       originalEntries[k] = v;
     }
   }
@@ -844,11 +850,11 @@ async function applyLocalModeToConfig(
     }
     const pkg = localByName.get(key);
     if (
-      pkg && value.startsWith('jsr:') && typeof pkg.exports['.'] === 'string'
+      pkg && value.startsWith("jsr:") && typeof pkg.exports["."] === "string"
     ) {
       const relPath = toRelativeImportPath(
         configDir,
-        join(pkg.packageDir, pkg.exports['.']),
+        join(pkg.packageDir, pkg.exports["."]),
       );
       newImports[key] = relPath;
     } else {
@@ -858,10 +864,10 @@ async function applyLocalModeToConfig(
 
   for (const pkg of localPackages) {
     const originalVal = originalEntries[pkg.name];
-    if (!originalVal || !originalVal.startsWith('jsr:')) continue;
+    if (!originalVal || !originalVal.startsWith("jsr:")) continue;
 
     for (const [exportKey, exportPath] of Object.entries(pkg.exports)) {
-      if (typeof exportPath !== 'string') continue;
+      if (typeof exportPath !== "string") continue;
       const bucketKey = exportKeyToImportKey(pkg.name, exportKey);
       const rel = toRelativeImportPath(
         configDir,
@@ -871,7 +877,7 @@ async function applyLocalModeToConfig(
     }
   }
 
-  if (currentPkg && currentPkg.kind === 'library') {
+  if (currentPkg && currentPkg.kind === "library") {
     try {
       const overrides = await collectLibraryOverrides(
         currentPkg,
@@ -891,7 +897,7 @@ async function applyLocalModeToConfig(
     }
   }
 
-  if (currentPkg && currentPkg.kind === 'runtime' && runtimeOverrides.length) {
+  if (currentPkg && currentPkg.kind === "runtime" && runtimeOverrides.length) {
     for (const override of runtimeOverrides) {
       const relImportPath = toRelativeImportPath(
         configDir,
@@ -919,7 +925,7 @@ async function applyLocalModeToConfig(
   try {
     const relativePath = relative(dfs.Root, configPath);
     const encoder = new TextEncoder();
-    const content = lines.join('\n');
+    const content = lines.join("\n");
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(encoder.encode(content));
@@ -949,7 +955,7 @@ async function resolveTargetConfigs(
 
   if (projects.length > 0) {
     for (const project of projects) {
-      if (project.configPath.endsWith('.jsonc')) {
+      if (project.configPath.endsWith(".jsonc")) {
         targets.push(project.configPath);
       }
     }

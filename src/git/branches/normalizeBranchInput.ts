@@ -3,16 +3,16 @@
  */
 export function NormalizeBranchInput(value?: string): string {
   if (!value) {
-    return '';
+    return "";
   }
 
   return value
     .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^A-Za-z0-9/_\-.]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/\/+/g, '/')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '')
+    .replace(/\s+/g, "-")
+    .replace(/[^A-Za-z0-9/_\-.]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/\/+/g, "/")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "")
     .toLowerCase();
 }

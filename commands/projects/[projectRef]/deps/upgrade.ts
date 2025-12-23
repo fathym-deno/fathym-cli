@@ -36,18 +36,26 @@
  * @module
  */
 
-import { z } from 'zod';
-import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { dirname, relative } from '@std/path';
-import { parse as parseJsonc } from '@std/jsonc';
-import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
-import { DepsFileParser, type DepsReference } from '../../../../src/deps/DepsFileParser.ts';
-import { VersionComparator } from '../../../../src/deps/VersionComparator.ts';
-import { VersionResolver } from '../../../../src/deps/VersionResolver.ts';
+import { z } from "zod";
+import {
+  CLIDFSContextManager,
+  Command,
+  CommandParams,
+  type CommandStatus,
+} from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { dirname, relative } from "@std/path";
+import { parse as parseJsonc } from "@std/jsonc";
+import { DFSProjectResolver } from "../../../../src/projects/ProjectResolver.ts";
+import {
+  DepsFileParser,
+  type DepsReference,
+} from "../../../../src/deps/DepsFileParser.ts";
+import { VersionComparator } from "../../../../src/deps/VersionComparator.ts";
+import { VersionResolver } from "../../../../src/deps/VersionResolver.ts";
 
 /** Upgrade mode options */
-type UpgradeMode = 'all' | 'jsr' | 'npm' | 'local-only';
+type UpgradeMode = "all" | "jsr" | "npm" | "local-only";
 
 /**
  * Result data for the deps:upgrade command.
@@ -67,7 +75,9 @@ export interface DepsUpgradeResult {
  * Segments schema for the deps:upgrade command.
  */
 const UpgradeSegmentsSchema = z.object({
-  projectRef: z.string().describe('Project name, path to deno.json(c), or directory'),
+  projectRef: z.string().describe(
+    "Project name, path to deno.json(c), or directory",
+  ),
 });
 
 type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
@@ -76,24 +86,24 @@ type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
  * Zod schema for deps:upgrade command flags.
  */
 const UpgradeFlagsSchema = z.object({
-  'dry-run': z.boolean().optional().describe(
-    'Show what would be upgraded without making changes',
+  "dry-run": z.boolean().optional().describe(
+    "Show what would be upgraded without making changes",
   ),
-  'verbose': z.boolean().optional().describe(
-    'Show detailed upgrade information',
+  "verbose": z.boolean().optional().describe(
+    "Show detailed upgrade information",
   ),
-  'mode': z
-    .enum(['all', 'jsr', 'npm', 'local-only'])
+  "mode": z
+    .enum(["all", "jsr", "npm", "local-only"])
     .optional()
-    .describe('Upgrade mode: all, jsr, npm, or local-only'),
-  'channel': z.string().optional().describe(
-    'Target feature channel (e.g., integration, hmis)',
+    .describe("Upgrade mode: all, jsr, npm, or local-only"),
+  "channel": z.string().optional().describe(
+    "Target feature channel (e.g., integration, hmis)",
   ),
-  'package': z.string().optional().describe(
-    'Filter to specific package(s), supports wildcards (e.g., @fathym/eac*)',
+  "package": z.string().optional().describe(
+    "Filter to specific package(s), supports wildcards (e.g., @fathym/eac*)",
   ),
-  'interactive': z.boolean().optional().describe(
-    'Prompt before each upgrade',
+  "interactive": z.boolean().optional().describe(
+    "Prompt before each upgrade",
   ),
 });
 
@@ -111,31 +121,31 @@ class UpgradeParams extends CommandParams<
   UpgradeSegments
 > {
   get ProjectRef(): string {
-    return this.Segment('projectRef') ?? '';
+    return this.Segment("projectRef") ?? "";
   }
 
   get Verbose(): boolean {
-    return this.Flag('verbose') ?? false;
+    return this.Flag("verbose") ?? false;
   }
 
   get Mode(): UpgradeMode {
-    return this.Flag('mode') ?? 'all';
+    return this.Flag("mode") ?? "all";
   }
 
   get Channel(): string | undefined {
-    return this.Flag('channel');
+    return this.Flag("channel");
   }
 
   get PackageFilter(): string | undefined {
-    return this.Flag('package');
+    return this.Flag("package");
   }
 
   get Interactive(): boolean {
-    return this.Flag('interactive') ?? false;
+    return this.Flag("interactive") ?? false;
   }
 
   override get DryRun(): boolean {
-    return this.Flag('dry-run') ?? false;
+    return this.Flag("dry-run") ?? false;
   }
 }
 
@@ -144,16 +154,16 @@ class UpgradeParams extends CommandParams<
  */
 interface PendingUpgrade {
   packageName: string;
-  registry: 'jsr' | 'npm';
+  registry: "jsr" | "npm";
   currentVersion: string;
   newVersion: string;
-  source: 'import-map' | 'deps-file';
+  source: "import-map" | "deps-file";
   filePath: string;
 }
 
 export default Command(
-  'projects:[projectRef]:deps:upgrade',
-  'Upgrade dependencies in deno.jsonc and .deps.ts files.',
+  "projects:[projectRef]:deps:upgrade",
+  "Upgrade dependencies in deno.jsonc and .deps.ts files.",
 )
   .Args(UpgradeArgsSchema)
   .Flags(UpgradeFlagsSchema)
@@ -171,168 +181,216 @@ export default Command(
       VersionResolver: new VersionResolver(),
     };
   })
-  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<DepsUpgradeResult>> => {
-    const { ProjectResolver, DFS, DepsParser, VersionComparator, VersionResolver } = Services;
+  .Run(
+    async (
+      { Params, Log, Services },
+    ): Promise<CommandStatus<DepsUpgradeResult>> => {
+      const {
+        ProjectResolver,
+        DFS,
+        DepsParser,
+        VersionComparator,
+        VersionResolver,
+      } = Services;
 
-    if (!Params.ProjectRef) {
-      Log.Error('No project reference provided.');
-      return {
-        Code: 1,
-        Message: 'No project reference provided',
-        Data: { totalUpgrades: 0, totalSkipped: 0, success: false, dryRun: Params.DryRun },
-      };
-    }
-
-    try {
-      // Resolve target projects
-      const projects = await ProjectResolver.Resolve(Params.ProjectRef);
-
-      if (projects.length === 0) {
-        Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
+      if (!Params.ProjectRef) {
+        Log.Error("No project reference provided.");
         return {
           Code: 1,
-          Message: `No projects found matching '${Params.ProjectRef}'`,
-          Data: { totalUpgrades: 0, totalSkipped: 0, success: false, dryRun: Params.DryRun },
+          Message: "No project reference provided",
+          Data: {
+            totalUpgrades: 0,
+            totalSkipped: 0,
+            success: false,
+            dryRun: Params.DryRun,
+          },
         };
       }
 
-      if (Params.Verbose) {
-        Log.Info(`Found ${projects.length} project(s) to upgrade.`);
-      }
+      try {
+        // Resolve target projects
+        const projects = await ProjectResolver.Resolve(Params.ProjectRef);
 
-      // For local-only mode, get all local package names
-      let localPackageNames: Set<string> | undefined;
-      if (Params.Mode === 'local-only') {
-        const allProjects = await ProjectResolver.Resolve('**');
-        localPackageNames = new Set(
-          allProjects.filter((p) => p.name).map((p) => p.name!),
-        );
-        if (Params.Verbose) {
-          Log.Info(`Local-only mode: targeting ${localPackageNames.size} local packages`);
+        if (projects.length === 0) {
+          Log.Error(`No projects found matching '${Params.ProjectRef}'.`);
+          return {
+            Code: 1,
+            Message: `No projects found matching '${Params.ProjectRef}'`,
+            Data: {
+              totalUpgrades: 0,
+              totalSkipped: 0,
+              success: false,
+              dryRun: Params.DryRun,
+            },
+          };
         }
-      }
-
-      let totalUpgrades = 0;
-      let totalSkipped = 0;
-
-      for (const project of projects) {
-        const projectName = project.name ?? project.dir;
 
         if (Params.Verbose) {
-          Log.Info(`\nProcessing ${projectName}...`);
+          Log.Info(`Found ${projects.length} project(s) to upgrade.`);
         }
 
-        const pendingUpgrades: PendingUpgrade[] = [];
-
-        // 1. Process deno.jsonc imports
-        const importMapUpgrades = await collectImportMapUpgrades(
-          project.configPath,
-          DFS,
-          DepsParser,
-          VersionComparator,
-          VersionResolver,
-          Params.Mode,
-          Params.Channel,
-          Params.PackageFilter,
-          localPackageNames,
-          Log,
-          Params.Verbose,
-        );
-        pendingUpgrades.push(...importMapUpgrades);
-
-        // 2. Find and process .deps.ts files
-        const projectDir = dirname(project.configPath);
-        const depsFileUpgrades = await collectDepsFileUpgrades(
-          projectDir,
-          DFS,
-          DepsParser,
-          VersionComparator,
-          VersionResolver,
-          Params.Mode,
-          Params.Channel,
-          Params.PackageFilter,
-          localPackageNames,
-          Log,
-          Params.Verbose,
-        );
-        pendingUpgrades.push(...depsFileUpgrades);
-
-        if (pendingUpgrades.length === 0) {
-          Log.Info(`${projectName}: No upgrades available.`);
-          continue;
-        }
-
-        // Display upgrades
-        Log.Info(`\n${projectName}: ${pendingUpgrades.length} upgrade(s) available`);
-
-        for (const upgrade of pendingUpgrades) {
-          const sourceLabel = upgrade.source === 'import-map' ? 'import' : '.deps.ts';
-          Log.Info(
-            `  ${upgrade.packageName}: ${upgrade.currentVersion} → ${upgrade.newVersion} (${sourceLabel})`,
+        // For local-only mode, get all local package names
+        let localPackageNames: Set<string> | undefined;
+        if (Params.Mode === "local-only") {
+          const allProjects = await ProjectResolver.Resolve("**");
+          localPackageNames = new Set(
+            allProjects.filter((p) => p.name).map((p) => p.name!),
           );
+          if (Params.Verbose) {
+            Log.Info(
+              `Local-only mode: targeting ${localPackageNames.size} local packages`,
+            );
+          }
         }
 
-        if (Params.DryRun) {
-          Log.Info(`[DRY RUN] Would apply ${pendingUpgrades.length} upgrade(s)`);
-          totalUpgrades += pendingUpgrades.length;
-          continue;
-        }
+        let totalUpgrades = 0;
+        let totalSkipped = 0;
 
-        // Apply upgrades (group by file for efficiency)
-        const upgradesByFile = groupByFile(pendingUpgrades);
+        for (const project of projects) {
+          const projectName = project.name ?? project.dir;
 
-        for (const [filePath, fileUpgrades] of upgradesByFile) {
-          // Handle interactive mode
-          if (Params.Interactive) {
-            for (const upgrade of fileUpgrades) {
-              const answer = prompt(
-                `Upgrade ${upgrade.packageName} to ${upgrade.newVersion}? [y/N]`,
-              );
-              if (answer?.toLowerCase() !== 'y') {
-                totalSkipped++;
-                continue;
+          if (Params.Verbose) {
+            Log.Info(`\nProcessing ${projectName}...`);
+          }
+
+          const pendingUpgrades: PendingUpgrade[] = [];
+
+          // 1. Process deno.jsonc imports
+          const importMapUpgrades = await collectImportMapUpgrades(
+            project.configPath,
+            DFS,
+            DepsParser,
+            VersionComparator,
+            VersionResolver,
+            Params.Mode,
+            Params.Channel,
+            Params.PackageFilter,
+            localPackageNames,
+            Log,
+            Params.Verbose,
+          );
+          pendingUpgrades.push(...importMapUpgrades);
+
+          // 2. Find and process .deps.ts files
+          const projectDir = dirname(project.configPath);
+          const depsFileUpgrades = await collectDepsFileUpgrades(
+            projectDir,
+            DFS,
+            DepsParser,
+            VersionComparator,
+            VersionResolver,
+            Params.Mode,
+            Params.Channel,
+            Params.PackageFilter,
+            localPackageNames,
+            Log,
+            Params.Verbose,
+          );
+          pendingUpgrades.push(...depsFileUpgrades);
+
+          if (pendingUpgrades.length === 0) {
+            Log.Info(`${projectName}: No upgrades available.`);
+            continue;
+          }
+
+          // Display upgrades
+          Log.Info(
+            `\n${projectName}: ${pendingUpgrades.length} upgrade(s) available`,
+          );
+
+          for (const upgrade of pendingUpgrades) {
+            const sourceLabel = upgrade.source === "import-map"
+              ? "import"
+              : ".deps.ts";
+            Log.Info(
+              `  ${upgrade.packageName}: ${upgrade.currentVersion} → ${upgrade.newVersion} (${sourceLabel})`,
+            );
+          }
+
+          if (Params.DryRun) {
+            Log.Info(
+              `[DRY RUN] Would apply ${pendingUpgrades.length} upgrade(s)`,
+            );
+            totalUpgrades += pendingUpgrades.length;
+            continue;
+          }
+
+          // Apply upgrades (group by file for efficiency)
+          const upgradesByFile = groupByFile(pendingUpgrades);
+
+          for (const [filePath, fileUpgrades] of upgradesByFile) {
+            // Handle interactive mode
+            if (Params.Interactive) {
+              for (const upgrade of fileUpgrades) {
+                const answer = prompt(
+                  `Upgrade ${upgrade.packageName} to ${upgrade.newVersion}? [y/N]`,
+                );
+                if (answer?.toLowerCase() !== "y") {
+                  totalSkipped++;
+                  continue;
+                }
               }
             }
+
+            const isImportMap = filePath.endsWith(".jsonc") ||
+              filePath.endsWith(".json");
+
+            if (isImportMap) {
+              await applyImportMapUpgrades(filePath, fileUpgrades, DFS);
+            } else {
+              await applyDepsFileUpgrades(
+                filePath,
+                fileUpgrades,
+                DFS,
+                DepsParser,
+              );
+            }
+
+            totalUpgrades += fileUpgrades.length;
           }
+        }
 
-          const isImportMap = filePath.endsWith('.jsonc') || filePath.endsWith('.json');
-
-          if (isImportMap) {
-            await applyImportMapUpgrades(filePath, fileUpgrades, DFS);
-          } else {
-            await applyDepsFileUpgrades(filePath, fileUpgrades, DFS, DepsParser);
+        // Summary
+        if (Params.DryRun) {
+          Log.Info(
+            `\n[DRY RUN] Total: ${totalUpgrades} upgrade(s) would be applied`,
+          );
+        } else {
+          Log.Info(`\nTotal: ${totalUpgrades} upgrade(s) applied`);
+          if (totalSkipped > 0) {
+            Log.Info(`Skipped: ${totalSkipped} upgrade(s)`);
           }
-
-          totalUpgrades += fileUpgrades.length;
         }
-      }
 
-      // Summary
-      if (Params.DryRun) {
-        Log.Info(`\n[DRY RUN] Total: ${totalUpgrades} upgrade(s) would be applied`);
-      } else {
-        Log.Info(`\nTotal: ${totalUpgrades} upgrade(s) applied`);
-        if (totalSkipped > 0) {
-          Log.Info(`Skipped: ${totalSkipped} upgrade(s)`);
-        }
+        return {
+          Code: 0,
+          Message: Params.DryRun
+            ? `[DRY RUN] ${totalUpgrades} upgrade(s) would be applied`
+            : `${totalUpgrades} upgrade(s) applied`,
+          Data: {
+            totalUpgrades,
+            totalSkipped,
+            success: true,
+            dryRun: Params.DryRun,
+          },
+        };
+      } catch (error) {
+        Log.Error(error instanceof Error ? error.message : String(error));
+        return {
+          Code: 1,
+          Message: `Deps upgrade failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          Data: {
+            totalUpgrades: 0,
+            totalSkipped: 0,
+            success: false,
+            dryRun: Params.DryRun,
+          },
+        };
       }
-
-      return {
-        Code: 0,
-        Message: Params.DryRun
-          ? `[DRY RUN] ${totalUpgrades} upgrade(s) would be applied`
-          : `${totalUpgrades} upgrade(s) applied`,
-        Data: { totalUpgrades, totalSkipped, success: true, dryRun: Params.DryRun },
-      };
-    } catch (error) {
-      Log.Error(error instanceof Error ? error.message : String(error));
-      return {
-        Code: 1,
-        Message: `Deps upgrade failed: ${error instanceof Error ? error.message : String(error)}`,
-        Data: { totalUpgrades: 0, totalSkipped: 0, success: false, dryRun: Params.DryRun },
-      };
-    }
-  });
+    },
+  );
 
 /**
  * Collect upgrades from import map (deno.jsonc).
@@ -370,26 +428,31 @@ async function collectImportMapUpgrades(
     return upgrades;
   }
 
-  if (!config || typeof config !== 'object' || !('imports' in config)) {
+  if (!config || typeof config !== "object" || !("imports" in config)) {
     return upgrades;
   }
 
   const imports = (config as { imports: unknown }).imports;
-  if (!imports || typeof imports !== 'object') {
+  if (!imports || typeof imports !== "object") {
     return upgrades;
   }
 
   // Process each import
-  for (const [_key, value] of Object.entries(imports as Record<string, unknown>)) {
-    if (typeof value !== 'string') continue;
+  for (
+    const [_key, value] of Object.entries(imports as Record<string, unknown>)
+  ) {
+    if (typeof value !== "string") continue;
 
     const parsed = depsParser.parseSpecifier(value);
     if (!parsed) continue;
 
     // Apply mode filter
-    if (mode === 'jsr' && parsed.registry !== 'jsr') continue;
-    if (mode === 'npm' && parsed.registry !== 'npm') continue;
-    if (mode === 'local-only' && localPackageNames && !localPackageNames.has(parsed.fullName)) {
+    if (mode === "jsr" && parsed.registry !== "jsr") continue;
+    if (mode === "npm" && parsed.registry !== "npm") continue;
+    if (
+      mode === "local-only" && localPackageNames &&
+      !localPackageNames.has(parsed.fullName)
+    ) {
       continue;
     }
 
@@ -410,7 +473,7 @@ async function collectImportMapUpgrades(
 
       if (!latestVersion) {
         if (verbose) {
-          const channelLabel = channel ? ` (${channel})` : '';
+          const channelLabel = channel ? ` (${channel})` : "";
           log.Info(`  ${parsed.fullName}: No version found${channelLabel}`);
         }
         continue;
@@ -419,7 +482,9 @@ async function collectImportMapUpgrades(
       // Check if upgrade is beneficial
       if (!versionComparator.isNewer(parsed.version, latestVersion)) {
         if (verbose) {
-          log.Info(`  ${parsed.fullName}: Already at latest (${parsed.version})`);
+          log.Info(
+            `  ${parsed.fullName}: Already at latest (${parsed.version})`,
+          );
         }
         continue;
       }
@@ -429,7 +494,7 @@ async function collectImportMapUpgrades(
         registry: parsed.registry,
         currentVersion: parsed.version,
         newVersion: latestVersion,
-        source: 'import-map',
+        source: "import-map",
         filePath: configPath,
       });
     } catch (error) {
@@ -477,9 +542,11 @@ async function collectDepsFileUpgrades(
     if (!entry.isFile) continue;
 
     // Check if this file is within the project directory
-    const entryPath = entry.path.replace(/\\/g, '/');
-    const projPath = relProjectDir.replace(/\\/g, '/');
-    if (!entryPath.startsWith(projPath) && !entryPath.startsWith(projPath + '/')) {
+    const entryPath = entry.path.replace(/\\/g, "/");
+    const projPath = relProjectDir.replace(/\\/g, "/");
+    if (
+      !entryPath.startsWith(projPath) && !entryPath.startsWith(projPath + "/")
+    ) {
       continue;
     }
 
@@ -511,7 +578,7 @@ async function collectDepsFileUpgrades(
               registry: ref.registry,
               currentVersion: ref.version,
               newVersion: cachedVersion,
-              source: 'deps-file',
+              source: "deps-file",
               filePath: fullPath,
             });
           }
@@ -520,9 +587,12 @@ async function collectDepsFileUpgrades(
       }
 
       // Apply mode filter
-      if (mode === 'jsr' && ref.registry !== 'jsr') continue;
-      if (mode === 'npm' && ref.registry !== 'npm') continue;
-      if (mode === 'local-only' && localPackageNames && !localPackageNames.has(packageName)) {
+      if (mode === "jsr" && ref.registry !== "jsr") continue;
+      if (mode === "npm" && ref.registry !== "npm") continue;
+      if (
+        mode === "local-only" && localPackageNames &&
+        !localPackageNames.has(packageName)
+      ) {
         continue;
       }
 
@@ -543,7 +613,7 @@ async function collectDepsFileUpgrades(
         if (!latestVersion) {
           processedPackages.set(packageName, ref.version);
           if (verbose) {
-            const channelLabel = channel ? ` (${channel})` : '';
+            const channelLabel = channel ? ` (${channel})` : "";
             log.Info(`  ${packageName}: No version found${channelLabel}`);
           }
           continue;
@@ -564,7 +634,7 @@ async function collectDepsFileUpgrades(
           registry: ref.registry,
           currentVersion: ref.version,
           newVersion: latestVersion,
-          source: 'deps-file',
+          source: "deps-file",
           filePath: fullPath,
         });
       } catch (error) {
@@ -586,7 +656,9 @@ async function collectDepsFileUpgrades(
 /**
  * Group upgrades by file path.
  */
-function groupByFile(upgrades: PendingUpgrade[]): Map<string, PendingUpgrade[]> {
+function groupByFile(
+  upgrades: PendingUpgrade[],
+): Map<string, PendingUpgrade[]> {
   const grouped = new Map<string, PendingUpgrade[]>();
 
   for (const upgrade of upgrades) {
@@ -617,14 +689,19 @@ async function applyImportMapUpgrades(
   // Apply each upgrade
   for (const upgrade of upgrades) {
     // Replace version in the import value
-    const escapedName = upgrade.packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedName = upgrade.packageName.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
+    );
     const regex = new RegExp(
-      `(["'])(jsr|npm):${escapedName}@${escapeRegex(upgrade.currentVersion)}(/[^"']*)?\\1`,
-      'g',
+      `(["'])(jsr|npm):${escapedName}@${
+        escapeRegex(upgrade.currentVersion)
+      }(/[^"']*)?\\1`,
+      "g",
     );
 
     text = text.replace(regex, (_match, quote, registry, subpath) => {
-      const newSubpath = subpath || '';
+      const newSubpath = subpath || "";
       return `${quote}${registry}:${upgrade.packageName}@${upgrade.newVersion}${newSubpath}${quote}`;
     });
   }
@@ -680,5 +757,5 @@ async function applyDepsFileUpgrades(
  * Escape special regex characters.
  */
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

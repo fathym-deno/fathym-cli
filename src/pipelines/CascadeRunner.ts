@@ -22,14 +22,14 @@
  * @module
  */
 
-import type { ProjectRef } from '../projects/ProjectRef.ts';
+import type { ProjectRef } from "../projects/ProjectRef.ts";
 import type {
   CascadeOptions,
   CascadeResolution,
   CascadeStepDef,
   CommandInvoker,
   ResolvedStep,
-} from './CascadeTypes.ts';
+} from "./CascadeTypes.ts";
 
 /**
  * Logger interface matching the CommandLog from @fathym/cli.
@@ -97,7 +97,9 @@ export class CascadeRunner {
     const resolvedSteps: ResolvedStep[] = steps.map((step) => ({
       ...step,
       hasOverride: step.overrideTask in tasks,
-      source: (step.overrideTask in tasks ? 'override' : 'default') as 'override' | 'default',
+      source: (step.overrideTask in tasks ? "override" : "default") as
+        | "override"
+        | "default",
     }));
 
     return {
@@ -139,17 +141,26 @@ export class CascadeRunner {
     // Handle full override
     if (resolution.hasFullOverride) {
       if (this.options.verbose) {
-        this.log.Info(`\n=== ${resolution.pipelineName} for ${projectName} ===`);
-        this.log.Info(`Full override: delegating to '${resolution.fullOverrideTask}' task\n`);
+        this.log.Info(
+          `\n=== ${resolution.pipelineName} for ${projectName} ===`,
+        );
+        this.log.Info(
+          `Full override: delegating to '${resolution.fullOverrideTask}' task\n`,
+        );
       }
 
       if (this.options.dryRun) {
-        this.log.Info(`[DRY RUN] Would run: deno task ${resolution.fullOverrideTask}`);
+        this.log.Info(
+          `[DRY RUN] Would run: deno task ${resolution.fullOverrideTask}`,
+        );
         return 0;
       }
 
-      const code = await this.taskInvoker([projectRef, resolution.fullOverrideTask], {});
-      return typeof code === 'number' ? code : 0;
+      const code = await this.taskInvoker([
+        projectRef,
+        resolution.fullOverrideTask,
+      ], {});
+      return typeof code === "number" ? code : 0;
     }
 
     // Run step pipeline
@@ -158,11 +169,11 @@ export class CascadeRunner {
       this.log.Info(`Running ${resolution.steps.length}-step pipeline:\n`);
 
       for (const step of resolution.steps) {
-        const indicator = step.hasOverride ? '(override)' : '(default)';
+        const indicator = step.hasOverride ? "(override)" : "(default)";
         this.log.Info(`  ${step.name}: ${step.overrideTask} ${indicator}`);
       }
 
-      this.log.Info('');
+      this.log.Info("");
     }
 
     for (let i = 0; i < resolution.steps.length; i++) {
@@ -198,7 +209,7 @@ export class CascadeRunner {
     total: number,
   ): Promise<number> {
     if (this.options.verbose) {
-      const source = step.hasOverride ? 'override' : 'default';
+      const source = step.hasOverride ? "override" : "default";
       this.log.Info(`[${index}/${total}] ${step.description} (${source})`);
     }
 
@@ -213,19 +224,26 @@ export class CascadeRunner {
     try {
       if (step.hasOverride) {
         // Delegate to project task via TaskCommand
-        const code = await this.taskInvoker([projectRef, step.overrideTask], {});
-        return typeof code === 'number' ? code : 0;
+        const code = await this.taskInvoker(
+          [projectRef, step.overrideTask],
+          {},
+        );
+        return typeof code === "number" ? code : 0;
       } else {
         // Use the step's default command
         const stepCommand = stepCommands[step.commandKey];
 
         if (!stepCommand) {
-          this.log.Warn(`  [${step.name}] No default command found for '${step.commandKey}'`);
+          this.log.Warn(
+            `  [${step.name}] No default command found for '${step.commandKey}'`,
+          );
           return this.options.ignoreFaults ? 0 : 1;
         }
 
-        const code = await stepCommand([projectRef], { verbose: this.options.verbose });
-        return typeof code === 'number' ? code : 0;
+        const code = await stepCommand([projectRef], {
+          verbose: this.options.verbose,
+        });
+        return typeof code === "number" ? code : 0;
       }
     } catch (error) {
       if (this.options.ignoreFaults) {
@@ -250,26 +268,42 @@ export class CascadeRunner {
 
     if (resolution.hasFullOverride) {
       this.log.Info(`Status: FULL OVERRIDE`);
-      this.log.Info(`The project defines a '${resolution.fullOverrideTask}' task.`);
-      this.log.Info(`This task will run exclusively, bypassing the step pipeline.\n`);
+      this.log.Info(
+        `The project defines a '${resolution.fullOverrideTask}' task.`,
+      );
+      this.log.Info(
+        `This task will run exclusively, bypassing the step pipeline.\n`,
+      );
       return;
     }
 
-    this.log.Info(`Full override task '${resolution.fullOverrideTask}': not defined\n`);
+    this.log.Info(
+      `Full override task '${resolution.fullOverrideTask}': not defined\n`,
+    );
     this.log.Info(`Steps:`);
-    this.log.Info(`  ${'Step'.padEnd(12)} ${'Override Task'.padEnd(20)} ${'Status'.padEnd(10)}`);
-    this.log.Info(`  ${'─'.repeat(12)} ${'─'.repeat(20)} ${'─'.repeat(10)}`);
+    this.log.Info(
+      `  ${"Step".padEnd(12)} ${"Override Task".padEnd(20)} ${
+        "Status".padEnd(10)
+      }`,
+    );
+    this.log.Info(`  ${"─".repeat(12)} ${"─".repeat(20)} ${"─".repeat(10)}`);
 
     for (const step of resolution.steps) {
-      const status = step.hasOverride ? 'OVERRIDE' : 'default';
+      const status = step.hasOverride ? "OVERRIDE" : "default";
       this.log.Info(
-        `  ${step.name.padEnd(12)} ${step.overrideTask.padEnd(20)} ${status.padEnd(10)}`,
+        `  ${step.name.padEnd(12)} ${step.overrideTask.padEnd(20)} ${
+          status.padEnd(10)
+        }`,
       );
     }
 
     this.log.Info(`\nOverride priority:`);
-    this.log.Info(`  1. Full override: '${resolution.fullOverrideTask}' task runs exclusively`);
-    this.log.Info(`  2. Step overrides: Each step task replaces that step's default`);
+    this.log.Info(
+      `  1. Full override: '${resolution.fullOverrideTask}' task runs exclusively`,
+    );
+    this.log.Info(
+      `  2. Step overrides: Each step task replaces that step's default`,
+    );
     this.log.Info(`  3. CLI defaults: Used when no override is defined\n`);
   }
 }
