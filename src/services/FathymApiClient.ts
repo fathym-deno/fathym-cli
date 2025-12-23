@@ -1,4 +1,4 @@
-import { FathymConfigStore } from "./FathymConfigStore.ts";
+import { FathymConfigStore } from './FathymConfigStore.ts';
 
 export class MissingAccessTokenError extends Error {
   public constructor() {
@@ -27,7 +27,7 @@ export class FathymApiClient {
   public async GetJson<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await this.Request(path, {
       ...init,
-      method: init?.method ?? "GET",
+      method: init?.method ?? 'GET',
     });
 
     if (!response.ok) {
@@ -47,7 +47,7 @@ export class FathymApiClient {
   ): Promise<TResponse> {
     const response = await this.Request(path, {
       ...init,
-      method: init?.method ?? "POST",
+      method: init?.method ?? 'POST',
       body: JSON.stringify(body),
     });
 
@@ -63,8 +63,8 @@ export class FathymApiClient {
 
   protected async buildUrl(path: string): Promise<string> {
     const base = await this.configStore.GetApiRoot();
-    const normalizedBase = base.endsWith("/") ? base : `${base}/`;
-    const trimmedPath = path.startsWith("/") ? path.slice(1) : path;
+    const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+    const trimmedPath = path.startsWith('/') ? path.slice(1) : path;
 
     return new URL(trimmedPath, normalizedBase).toString();
   }
@@ -79,12 +79,12 @@ export class FathymApiClient {
       throw new MissingAccessTokenError();
     }
 
-    if (!headers.has("Authorization")) {
-      headers.set("Authorization", `Bearer ${token.access_token}`);
+    if (!headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token.access_token}`);
     }
 
-    if (!headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
 
     return headers;

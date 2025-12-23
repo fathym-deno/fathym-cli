@@ -16,7 +16,7 @@
  * @module
  */
 
-import type { CLIConfig } from "@fathym/cli";
+import type { CLIConfig } from '@fathym/cli';
 
 /**
  * Release configuration for cross-platform binary distribution.
@@ -88,11 +88,11 @@ export interface FathymCLIConfig extends CLIConfig {
  * - Linux ARM64
  */
 export const DEFAULT_TARGETS = [
-  "x86_64-pc-windows-msvc",
-  "x86_64-apple-darwin",
-  "aarch64-apple-darwin",
-  "x86_64-unknown-linux-gnu",
-  "aarch64-unknown-linux-gnu",
+  'x86_64-pc-windows-msvc',
+  'x86_64-apple-darwin',
+  'aarch64-apple-darwin',
+  'x86_64-unknown-linux-gnu',
+  'aarch64-unknown-linux-gnu',
 ] as const;
 
 /**
@@ -106,8 +106,8 @@ export type DefaultTarget = (typeof DEFAULT_TARGETS)[number];
  * Both platforms default to `~/.bin` for consistency.
  */
 export const DEFAULT_INSTALL_DIR = {
-  unix: "~/.bin",
-  windows: "~/.bin",
+  unix: '~/.bin',
+  windows: '~/.bin',
 } as const;
 
 /**
@@ -131,18 +131,16 @@ export function detectTarget(): DefaultTarget {
   const os = Deno.build.os;
   const arch = Deno.build.arch;
 
-  if (os === "windows") {
-    return "x86_64-pc-windows-msvc";
+  if (os === 'windows') {
+    return 'x86_64-pc-windows-msvc';
   }
 
-  if (os === "darwin") {
-    return arch === "aarch64" ? "aarch64-apple-darwin" : "x86_64-apple-darwin";
+  if (os === 'darwin') {
+    return arch === 'aarch64' ? 'aarch64-apple-darwin' : 'x86_64-apple-darwin';
   }
 
-  if (os === "linux") {
-    return arch === "aarch64"
-      ? "aarch64-unknown-linux-gnu"
-      : "x86_64-unknown-linux-gnu";
+  if (os === 'linux') {
+    return arch === 'aarch64' ? 'aarch64-unknown-linux-gnu' : 'x86_64-unknown-linux-gnu';
   }
 
   throw new Error(`Unsupported platform: ${os}/${arch}`);
@@ -161,5 +159,5 @@ export function detectTarget(): DefaultTarget {
  * ```
  */
 export function getBinaryExtension(target: string): string {
-  return target.includes("windows") ? ".exe" : "";
+  return target.includes('windows') ? '.exe' : '';
 }

@@ -102,10 +102,10 @@
  * @module
  */
 
-import { dirname } from "@std/path/dirname";
-import { join } from "@std/path/join";
-import { toFileUrl } from "@std/path/to-file-url";
-import { z } from "zod";
+import { dirname } from '@std/path/dirname';
+import { join } from '@std/path/join';
+import { toFileUrl } from '@std/path/to-file-url';
+import { z } from 'zod';
 import {
   CLIDFSContextManager,
   CLIModuleBuilder,
@@ -113,9 +113,9 @@ import {
   CommandParams,
   type CommandStatus,
   runCommandWithLogs,
-} from "@fathym/cli";
-import BuildCommand from "./build.ts";
-import { getBinaryExtension } from "../../src/config/FathymCLIConfig.ts";
+} from '@fathym/cli';
+import BuildCommand from './build.ts';
+import { getBinaryExtension } from '../../src/config/FathymCLIConfig.ts';
 
 /**
  * Result data for the compile command.
@@ -137,11 +137,11 @@ export const CompileArgsSchema = z.tuple([]);
  * All supported cross-compilation targets.
  */
 export const COMPILE_TARGETS = [
-  "x86_64-unknown-linux-gnu",
-  "aarch64-unknown-linux-gnu",
-  "x86_64-apple-darwin",
-  "aarch64-apple-darwin",
-  "x86_64-pc-windows-msvc",
+  'x86_64-unknown-linux-gnu',
+  'aarch64-unknown-linux-gnu',
+  'x86_64-apple-darwin',
+  'aarch64-apple-darwin',
+  'x86_64-pc-windows-msvc',
 ] as const;
 
 /**
@@ -159,30 +159,30 @@ export const CompileFlagsSchema = z
     entry: z
       .string()
       .optional()
-      .describe("Entry point file (default: ./.build/main.ts)"),
+      .describe('Entry point file (default: ./.build/main.ts)'),
     config: z
       .string()
       .optional()
-      .describe("Path to .cli.ts (default: alongside entry)"),
+      .describe('Path to .cli.ts (default: alongside entry)'),
     output: z.string().optional().describe(
-      "Output folder (default: ./.dist/exe)",
+      'Output folder (default: ./.dist/exe)',
     ),
     permissions: z
       .string()
       .optional()
-      .describe("Deno permissions (default: full access)"),
+      .describe('Deno permissions (default: full access)'),
     target: z
       .string()
       .optional()
-      .describe("Cross-compilation target (e.g., x86_64-pc-windows-msvc)"),
+      .describe('Cross-compilation target (e.g., x86_64-pc-windows-msvc)'),
     all: z
       .boolean()
       .optional()
-      .describe("Compile for all supported targets"),
+      .describe('Compile for all supported targets'),
     version: z
       .string()
       .optional()
-      .describe("Version to embed in the compiled binary (default: 0.0.0)"),
+      .describe('Version to embed in the compiled binary (default: 0.0.0)'),
   })
   .passthrough();
 
@@ -209,7 +209,7 @@ export class CompileParams extends CommandParams<
    * Defaults to './.build/main.ts' (output of build command).
    */
   get Entry(): string {
-    return this.Flag("entry") ?? "./.build/main.ts";
+    return this.Flag('entry') ?? './.build/main.ts';
   }
 
   /**
@@ -217,7 +217,7 @@ export class CompileParams extends CommandParams<
    * When undefined, looks for .cli.ts alongside the entry point.
    */
   get ConfigPath(): string | undefined {
-    return this.Flag("config");
+    return this.Flag('config');
   }
 
   /**
@@ -225,7 +225,7 @@ export class CompileParams extends CommandParams<
    * Defaults to './.dist/exe'.
    */
   get OutputDir(): string {
-    return this.Flag("output") ?? "./.dist/exe";
+    return this.Flag('output') ?? './.dist/exe';
   }
 
   /**
@@ -236,12 +236,12 @@ export class CompileParams extends CommandParams<
    */
   get Permissions(): string[] {
     return (
-      this.Flag("permissions")?.split(" ") ?? [
-        "--allow-read",
-        "--allow-env",
-        "--allow-net",
-        "--allow-write",
-        "--allow-run",
+      this.Flag('permissions')?.split(' ') ?? [
+        '--allow-read',
+        '--allow-env',
+        '--allow-net',
+        '--allow-write',
+        '--allow-run',
       ]
     );
   }
@@ -260,7 +260,7 @@ export class CompileParams extends CommandParams<
    * - `aarch64-unknown-linux-gnu` - Linux ARM64
    */
   get Target(): string | undefined {
-    return this.Flag("target");
+    return this.Flag('target');
   }
 
   /**
@@ -270,7 +270,7 @@ export class CompileParams extends CommandParams<
    * Output structure: `.dist/exe/<target>/<binary>`
    */
   get All(): boolean {
-    return this.Flag("all") ?? false;
+    return this.Flag('all') ?? false;
   }
 
   /**
@@ -278,7 +278,7 @@ export class CompileParams extends CommandParams<
    * Defaults to '0.0.0' if --version flag not provided.
    */
   get Version(): string {
-    return this.Flag("version") ?? "0.0.0";
+    return this.Flag('version') ?? '0.0.0';
   }
 }
 
@@ -289,7 +289,7 @@ export class CompileParams extends CommandParams<
  * a standalone executable. Binary name is derived from .cli.ts Tokens[0].
  * Supports cross-compilation via the `--target` flag.
  */
-export default Command("compile", "Compile the CLI into a native binary")
+export default Command('compile', 'Compile the CLI into a native binary')
   .Args(CompileArgsSchema)
   .Flags(CompileFlagsSchema)
   .Params(CompileParams)
@@ -298,10 +298,10 @@ export default Command("compile", "Compile the CLI into a native binary")
   })
   .Services(async (ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
-    const cliRoot = await dfsCtx.RegisterProjectDFS(ctx.Params.Entry, "CLI");
+    const cliRoot = await dfsCtx.RegisterProjectDFS(ctx.Params.Entry, 'CLI');
 
     return {
-      CLIDFS: await dfsCtx.GetDFS("CLI"),
+      CLIDFS: await dfsCtx.GetDFS('CLI'),
       CLIRoot: cliRoot,
     };
   })
@@ -312,21 +312,21 @@ export default Command("compile", "Compile the CLI into a native binary")
       const { CLIDFS } = Services;
 
       const relativeEntry = Params.Entry.replace(
-        CLIDFS.Root.replace(/^\.\/?/, ""),
-        "",
-      ).replace(/^\.\/?/, "");
+        CLIDFS.Root.replace(/^\.\/?/, ''),
+        '',
+      ).replace(/^\.\/?/, '');
       const entryPath = await CLIDFS.ResolvePath(`./${relativeEntry}`);
       const baseOutputDir = await CLIDFS.ResolvePath(Params.OutputDir);
       const permissions = Params.Permissions;
 
       // Import CLI module to get config
-      const cliModulePath = await CLIDFS.ResolvePath(".cli.ts");
-      const cliModuleInfo = await CLIDFS.GetFileInfo("./.cli.ts");
+      const cliModulePath = await CLIDFS.ResolvePath('.cli.ts');
+      const cliModuleInfo = await CLIDFS.GetFileInfo('./.cli.ts');
       if (!cliModuleInfo) {
         Log.Error(`❌ Could not find CLI config at: ./.cli.ts`);
         return {
           Code: 1,
-          Message: "Could not find CLI config at: ./.cli.ts",
+          Message: 'Could not find CLI config at: ./.cli.ts',
           Data: { binaries: [], version: Params.Version },
         };
       }
@@ -338,13 +338,13 @@ export default Command("compile", "Compile the CLI into a native binary")
         cliModule = cliModule.Build();
       }
       const config = cliModule.Config ?? {};
-      const tokens: string[] = config.Tokens ?? ["cli"];
+      const tokens: string[] = config.Tokens ?? ['cli'];
 
       if (!tokens.length) {
-        Log.Error("❌ No tokens specified in CLI config.");
+        Log.Error('❌ No tokens specified in CLI config.');
         return {
           Code: 1,
-          Message: "No tokens specified in CLI config",
+          Message: 'No tokens specified in CLI config',
           Data: { binaries: [], version: Params.Version },
         };
       }
@@ -359,9 +359,7 @@ export default Command("compile", "Compile the CLI into a native binary")
       });
 
       // Determine which targets to compile
-      const targets: (string | undefined)[] = Params.All
-        ? [...COMPILE_TARGETS]
-        : [Params.Target];
+      const targets: (string | undefined)[] = Params.All ? [...COMPILE_TARGETS] : [Params.Target];
       const compiledBinaries: { target: string; path: string }[] = [];
 
       if (Params.All) {
@@ -374,7 +372,7 @@ export default Command("compile", "Compile the CLI into a native binary")
         // Determine binary extension based on target or current OS
         const binaryExt = target
           ? getBinaryExtension(target)
-          : (Deno.build.os === "windows" ? ".exe" : "");
+          : (Deno.build.os === 'windows' ? '.exe' : '');
 
         // Always use subdirectory structure: .dist/exe/<target>/<binary>
         let outputBinaryPath: string;
@@ -394,7 +392,7 @@ export default Command("compile", "Compile the CLI into a native binary")
         if (target) {
           Log.Info(`- Target: ${target}`);
         }
-        Log.Info(`- Permissions: ${permissions.join(" ")}`);
+        Log.Info(`- Permissions: ${permissions.join(' ')}`);
 
         // Ensure output directory exists before compilation (required for cross-compilation targets)
         const outputDir = dirname(outputBinaryWithExt);
@@ -408,16 +406,16 @@ export default Command("compile", "Compile the CLI into a native binary")
 
         // Build compile command with optional target
         const compileArgs = [
-          "compile",
+          'compile',
           ...permissions,
-          "--output",
+          '--output',
           outputBinaryWithExt,
-          ...(target ? ["--target", target] : []),
+          ...(target ? ['--target', target] : []),
           entryPath,
         ];
 
         await runCommandWithLogs(compileArgs, Log, {
-          stdin: "null",
+          stdin: 'null',
           exitOnFail: true,
           cwd: Services.CLIDFS.Root,
         });
@@ -428,7 +426,7 @@ export default Command("compile", "Compile the CLI into a native binary")
         }
 
         compiledBinaries.push({
-          target: target ?? "local",
+          target: target ?? 'local',
           path: outputBinaryWithExt,
         });
       }
@@ -441,7 +439,7 @@ export default Command("compile", "Compile the CLI into a native binary")
       } else {
         Log.Info(
           `👉 To install, run: \`ftm cli install${
-            Params.Target ? ` --target=${Params.Target}` : ""
+            Params.Target ? ` --target=${Params.Target}` : ''
           }\``,
         );
       }

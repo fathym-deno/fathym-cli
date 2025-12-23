@@ -1,4 +1,4 @@
-import type { DFSFileHandler } from "@fathym/dfs";
+import type { DFSFileHandler } from '@fathym/dfs';
 
 export interface GitDefaults {
   organization?: string;
@@ -38,7 +38,7 @@ const DEFAULT_CONFIG: GitConfigData = {
 export class GitConfigStore {
   public constructor(
     protected readonly dfs: DFSFileHandler,
-    protected readonly filePath = "git/config.json",
+    protected readonly filePath = 'git/config.json',
   ) {}
 
   /**

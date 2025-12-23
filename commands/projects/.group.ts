@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Group } from "@fathym/cli";
+import { Group } from '@fathym/cli';
 
-export default Group("projects")
-  .Description("Commands for managing workspace projects");
+export default Group('projects')
+  .Description('Commands for managing workspace projects');

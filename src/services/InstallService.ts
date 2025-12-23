@@ -11,9 +11,9 @@
  * @module
  */
 
-import { join, normalize } from "@std/path";
-import { exists } from "@fathym/common/path";
-import { detectTarget, getBinaryExtension } from "../config/FathymCLIConfig.ts";
+import { join, normalize } from '@std/path';
+import { exists } from '@fathym/common/path';
+import { detectTarget, getBinaryExtension } from '../config/FathymCLIConfig.ts';
 
 /**
  * Logger interface for installation output.
@@ -66,9 +66,9 @@ export async function findBinary(
 
   const locations = [
     // New location: .dist/exe/x86_64-apple-darwin/ftm
-    join(distDir, "exe", target, binaryName),
+    join(distDir, 'exe', target, binaryName),
     // Local compile: .dist/exe/ftm
-    join(distDir, "exe", binaryName),
+    join(distDir, 'exe', binaryName),
     // Backwards compat: .dist/x86_64-apple-darwin/ftm
     join(distDir, target, binaryName),
     // Backwards compat: .dist/ftm
@@ -115,9 +115,8 @@ export interface InstallBinaryOptions {
 export async function installBinary(
   options: InstallBinaryOptions,
 ): Promise<void> {
-  const { sourcePath, installDir, binaryName, aliases, log = consoleLogger } =
-    options;
-  const isWindows = Deno.build.os === "windows";
+  const { sourcePath, installDir, binaryName, aliases, log = consoleLogger } = options;
+  const isWindows = Deno.build.os === 'windows';
 
   // Create install directory
   await Deno.mkdir(installDir, { recursive: true });
@@ -133,7 +132,7 @@ export async function installBinary(
   try {
     for await (const entry of Deno.readDir(installDir)) {
       if (
-        entry.name.startsWith(`${binaryName}.`) && entry.name.endsWith(".old")
+        entry.name.startsWith(`${binaryName}.`) && entry.name.endsWith('.old')
       ) {
         try {
           await Deno.remove(join(installDir, entry.name));
@@ -153,11 +152,11 @@ export async function installBinary(
     // Check for EBUSY/EACCES error (file in use or access denied)
     const isBusy = err instanceof Deno.errors.Busy ||
       err instanceof Deno.errors.PermissionDenied ||
-      (err && typeof err === "object" && "code" in err &&
-        (err.code === "EBUSY" || err.code === "EACCES"));
+      (err && typeof err === 'object' && 'code' in err &&
+        (err.code === 'EBUSY' || err.code === 'EACCES'));
 
     if (isWindows && isBusy) {
-      log.info("🔄 Binary in use, using rename workaround...");
+      log.info('🔄 Binary in use, using rename workaround...');
       try {
         log.info(`   Renaming ${destBinaryPath} → ${oldBinaryPath}`);
         await Deno.rename(destBinaryPath, oldBinaryPath);
@@ -175,11 +174,9 @@ export async function installBinary(
         let errMsg: string;
         if (renameErr instanceof Error) {
           errMsg = renameErr.message;
-        } else if (renameErr && typeof renameErr === "object") {
-          const code = "code" in renameErr ? renameErr.code : undefined;
-          const message = "message" in renameErr
-            ? renameErr.message
-            : undefined;
+        } else if (renameErr && typeof renameErr === 'object') {
+          const code = 'code' in renameErr ? renameErr.code : undefined;
+          const message = 'message' in renameErr ? renameErr.message : undefined;
           errMsg = message
             ? String(message)
             : code
@@ -190,16 +187,16 @@ export async function installBinary(
         }
 
         log.error(`❌ Rename workaround failed: ${errMsg}`);
-        log.error("");
-        log.error("The binary is locked and cannot be replaced.");
-        log.error("This usually happens when the CLI is still running.");
-        log.error("");
-        log.error("Try one of these solutions:");
-        log.error("  1. Close all terminal windows running the CLI");
-        log.error("  2. Run the install command in a new terminal");
-        log.error("  3. Manually copy the binary:");
+        log.error('');
+        log.error('The binary is locked and cannot be replaced.');
+        log.error('This usually happens when the CLI is still running.');
+        log.error('');
+        log.error('Try one of these solutions:');
+        log.error('  1. Close all terminal windows running the CLI');
+        log.error('  2. Run the install command in a new terminal');
+        log.error('  3. Manually copy the binary:');
         log.error(`     copy "${sourcePath}" "${destBinaryPath}"`);
-        throw new Error("Binary locked and cannot be replaced");
+        throw new Error('Binary locked and cannot be replaced');
       }
     } else {
       throw err;
@@ -215,7 +212,7 @@ export async function installBinary(
 
   // Create alias scripts
   for (const alias of aliases) {
-    const aliasName = `${alias}${isWindows ? ".cmd" : ""}`;
+    const aliasName = `${alias}${isWindows ? '.cmd' : ''}`;
     const aliasPath = join(installDir, aliasName);
 
     const aliasContent = isWindows
@@ -231,8 +228,8 @@ export async function installBinary(
   }
 
   // Check if install directory is in PATH
-  const envPath = Deno.env.get("PATH") ?? "";
-  const pathSep = isWindows ? ";" : ":";
+  const envPath = Deno.env.get('PATH') ?? '';
+  const pathSep = isWindows ? ';' : ':';
   // Normalize paths for comparison - Windows paths may have inconsistent separators/casing
   // Use case-insensitive comparison on Windows only (Unix filesystems are case-sensitive)
   const normalizePath = (p: string) => {
@@ -240,9 +237,7 @@ export async function installBinary(
     return isWindows ? normalized.toLowerCase() : normalized;
   };
   const normalizedInstallDir = normalizePath(installDir);
-  const inPath = envPath.split(pathSep).some((p) =>
-    normalizePath(p) === normalizedInstallDir
-  );
+  const inPath = envPath.split(pathSep).some((p) => normalizePath(p) === normalizedInstallDir);
 
   if (!inPath) {
     log.warn(`⚠️  Install path (${installDir}) is not in your PATH`);
@@ -255,7 +250,7 @@ export async function installBinary(
     }
   }
 
-  log.success("🎉 CLI installed successfully");
+  log.success('🎉 CLI installed successfully');
 }
 
 /**
@@ -266,14 +261,14 @@ export async function installBinary(
  * @throws Error if home directory cannot be determined
  */
 export function expandHome(path: string): string {
-  if (path.startsWith("~")) {
+  if (path.startsWith('~')) {
     const home = Deno.env.get(
-      Deno.build.os === "windows" ? "USERPROFILE" : "HOME",
+      Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME',
     );
-    if (!home) throw new Error("Could not determine home directory");
+    if (!home) throw new Error('Could not determine home directory');
     // Use normalize to ensure consistent path separators on Windows
     // Without this, "~/.bin" becomes "C:\Users\Name/.bin" (mixed slashes)
-    return normalize(path.replace("~", home));
+    return normalize(path.replace('~', home));
   }
   return path;
 }

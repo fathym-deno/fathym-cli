@@ -8,11 +8,11 @@
  * @module
  */
 
-export { DepsFileParser, type DepsReference } from "./DepsFileParser.ts";
-export { type ParsedVersion, VersionComparator } from "./VersionComparator.ts";
+export { DepsFileParser, type DepsReference } from './DepsFileParser.ts';
+export { type ParsedVersion, VersionComparator } from './VersionComparator.ts';
 export {
   type AvailableVersion,
   type JsrMetaResponse,
   type NpmRegistryResponse,
   VersionResolver,
-} from "./VersionResolver.ts";
+} from './VersionResolver.ts';

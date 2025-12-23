@@ -55,19 +55,11 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { DFSProjectResolver } from "../../../../src/projects/ProjectResolver.ts";
-import {
-  type ImportsSyncMode,
-  syncImports,
-} from "../../../../src/projects/ImportsSync.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
+import { type ImportsSyncMode, syncImports } from '../../../../src/projects/ImportsSync.ts';
 
 /**
  * Result data for the imports:sync command.
@@ -88,7 +80,7 @@ export interface ImportsSyncResult {
  */
 const SyncSegmentsSchema = z.object({
   projectRef: z.string().describe(
-    "Project name, path to deno.json(c), or directory",
+    'Project name, path to deno.json(c), or directory',
   ),
 });
 
@@ -108,7 +100,7 @@ const SyncArgsSchema = z.tuple([]);
  */
 const SyncFlagsSchema = z.object({
   mode: z
-    .enum(["local", "remote"])
+    .enum(['local', 'remote'])
     .describe(
       "Either 'local' (enable local overrides) or 'remote' (restore jsr imports).",
     ),
@@ -126,18 +118,18 @@ class SyncParams extends CommandParams<
 > {
   /** Sync mode: 'local' or 'remote' */
   get Mode(): ImportsSyncMode {
-    return this.Flag("mode") as ImportsSyncMode;
+    return this.Flag('mode') as ImportsSyncMode;
   }
 
   /** Target from dynamic segment */
   get Target(): string {
-    return this.Segment("projectRef") ?? "";
+    return this.Segment('projectRef') ?? '';
   }
 }
 
 export default Command(
-  "projects:[projectRef]:imports:sync",
-  "Sync deno.jsonc imports between jsr and local workspace overrides.",
+  'projects:[projectRef]:imports:sync',
+  'Sync deno.jsonc imports between jsr and local workspace overrides.',
 )
   .Args(SyncArgsSchema)
   .Flags(SyncFlagsSchema)
@@ -158,12 +150,12 @@ export default Command(
       { Params, Log, Services },
     ): Promise<CommandStatus<ImportsSyncResult>> => {
       if (!Params.Target) {
-        Log.Error("No project reference provided.");
+        Log.Error('No project reference provided.');
         return {
           Code: 1,
-          Message: "No project reference provided",
+          Message: 'No project reference provided',
           Data: {
-            target: "",
+            target: '',
             mode: Params.Mode,
             configsSynced: 0,
             success: false,
@@ -180,10 +172,10 @@ export default Command(
         });
 
         if (result.targetConfigs.length === 0) {
-          Log.Error("No deno.jsonc targets were resolved.");
+          Log.Error('No deno.jsonc targets were resolved.');
           return {
             Code: 1,
-            Message: "No deno.jsonc targets were resolved",
+            Message: 'No deno.jsonc targets were resolved',
             Data: {
               target: Params.Target,
               mode: Params.Mode,
@@ -195,8 +187,7 @@ export default Command(
 
         return {
           Code: 0,
-          Message:
-            `Synced ${result.targetConfigs.length} config(s) to ${Params.Mode} mode`,
+          Message: `Synced ${result.targetConfigs.length} config(s) to ${Params.Mode} mode`,
           Data: {
             target: Params.Target,
             mode: Params.Mode,
@@ -208,9 +199,7 @@ export default Command(
         Log.Error(error instanceof Error ? error.message : String(error));
         return {
           Code: 1,
-          Message: `Sync failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          Message: `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
           Data: {
             target: Params.Target,
             mode: Params.Mode,

@@ -5,20 +5,20 @@ import {
   type InputOptions,
   Select,
   type SelectOptions,
-} from "@cliffy/prompt";
+} from '@cliffy/prompt';
 
 export interface PromptService {
   Input(
     message: string,
-    options?: Omit<InputOptions, "message">,
+    options?: Omit<InputOptions, 'message'>,
   ): Promise<string>;
   Confirm(
     message: string,
-    options?: Omit<ConfirmOptions, "message">,
+    options?: Omit<ConfirmOptions, 'message'>,
   ): Promise<boolean>;
   Select<T extends string>(
     message: string,
-    options: Omit<SelectOptions<T>, "message">,
+    options: Omit<SelectOptions<T>, 'message'>,
   ): Promise<T>;
 }
 
@@ -28,7 +28,7 @@ export interface PromptService {
 export class CliffyPromptService implements PromptService {
   public async Input(
     message: string,
-    options?: Omit<InputOptions, "message">,
+    options?: Omit<InputOptions, 'message'>,
   ): Promise<string> {
     const opts: InputOptions = { ...(options ?? {}), message };
     return await Input.prompt(opts);
@@ -36,7 +36,7 @@ export class CliffyPromptService implements PromptService {
 
   public async Confirm(
     message: string,
-    options?: Omit<ConfirmOptions, "message">,
+    options?: Omit<ConfirmOptions, 'message'>,
   ): Promise<boolean> {
     const opts: ConfirmOptions = { ...(options ?? {}), message };
     return await Confirm.prompt(opts);
@@ -44,7 +44,7 @@ export class CliffyPromptService implements PromptService {
 
   public async Select<T extends string>(
     message: string,
-    options: Omit<SelectOptions<T>, "message">,
+    options: Omit<SelectOptions<T>, 'message'>,
   ): Promise<T> {
     const opts: SelectOptions<T> = { ...(options ?? {}), message };
     return await Select.prompt(opts) as T;

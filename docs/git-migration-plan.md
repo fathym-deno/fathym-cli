@@ -128,20 +128,15 @@ Deliverable: commands that only touch local git state.
 **Implementation pattern (example for `git` command):**
 
 ```typescript
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import { GitService, TaskPipeline } from "../../src/services/.exports.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import { GitService, TaskPipeline } from '../../src/services/.exports.ts';
 
 const Args = z.tuple([]);
 const Flags = z.object({
   message: z.string().optional(),
   rebase: z.boolean().optional(),
-  "dry-run": z.boolean().optional(),
+  'dry-run': z.boolean().optional(),
 });
 
 /** Result data for the git sync command */
@@ -151,20 +146,19 @@ export interface GitSyncResult {
   pushed: boolean;
 }
 
-class GitParams
-  extends CommandParams<z.infer<typeof Args>, z.infer<typeof Flags>> {
+class GitParams extends CommandParams<z.infer<typeof Args>, z.infer<typeof Flags>> {
   get Message() {
-    return this.Flag("message");
+    return this.Flag('message');
   }
   get Rebase() {
-    return this.Flag("rebase") ?? false;
+    return this.Flag('rebase') ?? false;
   }
   override get DryRun() {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 }
 
-export default Command("git", "Commit and sync with integration")
+export default Command('git', 'Commit and sync with integration')
   .Args(Args)
   .Flags(Flags)
   .Params(GitParams)
@@ -184,7 +178,7 @@ export default Command("git", "Commit and sync with integration")
       const ctx = {
         dfs: Services.DFS,
         params: Params,
-        branch: "",
+        branch: '',
         committed: false,
       };
 
@@ -192,17 +186,17 @@ export default Command("git", "Commit and sync with integration")
         ctx,
         [
           {
-            title: "Verify git repository",
+            title: 'Verify git repository',
             run: async (_, task) => {/* ... */},
           },
-          { title: "Stage & commit changes", run: async () => {/* ... */} },
+          { title: 'Stage & commit changes', run: async () => {/* ... */} },
           {
-            title: Params.Rebase ? "Rebase integration" : "Merge integration",
+            title: Params.Rebase ? 'Rebase integration' : 'Merge integration',
             run: async () => {/* ... */},
           },
-          { title: "Pull latest changes", run: async () => {/* ... */} },
-          { title: "Push to origin", run: async () => {/* ... */} },
-          { title: "Fetch prune", run: async () => {/* ... */} },
+          { title: 'Pull latest changes', run: async () => {/* ... */} },
+          { title: 'Push to origin', run: async () => {/* ... */} },
+          { title: 'Fetch prune', run: async () => {/* ... */} },
         ],
         Log,
       );

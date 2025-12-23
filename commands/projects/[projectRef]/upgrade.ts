@@ -68,31 +68,26 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { DFSProjectResolver } from "../../../src/projects/ProjectResolver.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 import {
   type PackageReference,
   upgradePackageReferences,
   type UpgradeResult,
-} from "../../../src/projects/PackageReferences.ts";
+} from '../../../src/projects/PackageReferences.ts';
 
 /**
  * Valid source types for filtering.
  */
 const SOURCE_TYPES = [
-  "config",
-  "deps",
-  "template",
-  "docs",
-  "other",
-  "all",
+  'config',
+  'deps',
+  'template',
+  'docs',
+  'other',
+  'all',
 ] as const;
 type SourceFilter = (typeof SOURCE_TYPES)[number];
 
@@ -125,12 +120,10 @@ interface ParsedFilters {
  */
 function parseFilters(filter?: string): ParsedFilters {
   if (!filter) {
-    return { sourceTypes: ["all"], projectRefs: [] };
+    return { sourceTypes: ['all'], projectRefs: [] };
   }
 
-  const parts = filter.split(",").map((p) => p.trim()).filter((p) =>
-    p.length > 0
-  );
+  const parts = filter.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
   const sourceTypes: SourceFilter[] = [];
   const projectRefs: string[] = [];
 
@@ -144,7 +137,7 @@ function parseFilters(filter?: string): ParsedFilters {
 
   // Default to 'all' source types if none specified
   if (sourceTypes.length === 0) {
-    sourceTypes.push("all");
+    sourceTypes.push('all');
   }
 
   return { sourceTypes, projectRefs };
@@ -154,7 +147,7 @@ function parseFilters(filter?: string): ParsedFilters {
  * Segments schema for the upgrade command.
  */
 const UpgradeSegmentsSchema = z.object({
-  projectRef: z.string().describe("Package name to upgrade references for"),
+  projectRef: z.string().describe('Package name to upgrade references for'),
 });
 
 type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
@@ -163,15 +156,15 @@ type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
  * Zod schema for upgrade command flags.
  */
 const UpgradeFlagsSchema = z.object({
-  "dry-run": z.boolean().optional().describe("Preview changes without writing"),
+  'dry-run': z.boolean().optional().describe('Preview changes without writing'),
   filter: z
     .string()
     .optional()
     .describe(
-      "Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)",
+      'Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)',
     ),
   json: z.boolean().optional().describe(
-    "Output as JSON for programmatic consumption",
+    'Output as JSON for programmatic consumption',
   ),
 });
 
@@ -179,8 +172,8 @@ const UpgradeFlagsSchema = z.object({
  * Zod schema for upgrade command positional arguments.
  */
 const UpgradeArgsSchema = z.tuple([
-  z.string().describe("Target version to upgrade to").meta({
-    argName: "version",
+  z.string().describe('Target version to upgrade to').meta({
+    argName: 'version',
   }),
 ]);
 
@@ -194,7 +187,7 @@ class UpgradeCommandParams extends CommandParams<
 > {
   /** Project reference from dynamic segment */
   get ProjectRef(): string {
-    return this.Segment("projectRef") ?? "";
+    return this.Segment('projectRef') ?? '';
   }
 
   /** Target version from positional argument */
@@ -204,12 +197,12 @@ class UpgradeCommandParams extends CommandParams<
 
   /** Raw filter string (comma-separated source types and/or project refs) */
   get Filter(): string | undefined {
-    return this.Flag("filter");
+    return this.Flag('filter');
   }
 
   /** Whether to output as JSON */
   get Json(): boolean {
-    return this.Flag("json") ?? false;
+    return this.Flag('json') ?? false;
   }
 }
 
@@ -233,8 +226,8 @@ interface UpgradeOutput {
 }
 
 export default Command(
-  "projects:[projectRef]:upgrade",
-  "Upgrade all references to a package across the workspace.",
+  'projects:[projectRef]:upgrade',
+  'Upgrade all references to a package across the workspace.',
 )
   .Args(UpgradeArgsSchema)
   .Flags(UpgradeFlagsSchema)
@@ -255,7 +248,7 @@ export default Command(
       const { ProjectResolver } = Services;
 
       const emptyOutput: UpgradeOutput = {
-        packageName: "",
+        packageName: '',
         targetVersion: Params.Version,
         dryRun: Params.DryRun,
         filter: { sourceTypes: [], projectRefs: [] },
@@ -264,10 +257,10 @@ export default Command(
       };
 
       if (!Params.ProjectRef) {
-        Log.Error("No project reference provided.");
+        Log.Error('No project reference provided.');
         return {
           Code: 1,
-          Message: "No project reference provided",
+          Message: 'No project reference provided',
           Data: emptyOutput,
         };
       }
@@ -288,12 +281,11 @@ export default Command(
         if (projects.length > 1) {
           Log.Error(
             `Found ${projects.length} projects. Please specify a single project:\n` +
-              projects.map((p) => `  - ${p.name ?? p.dir}`).join("\n"),
+              projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
           );
           return {
             Code: 1,
-            Message:
-              `Found ${projects.length} projects, please specify a single project`,
+            Message: `Found ${projects.length} projects, please specify a single project`,
             Data: emptyOutput,
           };
         }
@@ -303,11 +295,11 @@ export default Command(
 
         if (!packageName) {
           Log.Error(
-            "Project does not have a package name defined in deno.json(c).",
+            'Project does not have a package name defined in deno.json(c).',
           );
           return {
             Code: 1,
-            Message: "Project does not have a package name defined",
+            Message: 'Project does not have a package name defined',
             Data: emptyOutput,
           };
         }
@@ -317,11 +309,11 @@ export default Command(
 
         // Convert source types for the API
         // 'all' is special - it means no source filter
-        const sourceFilterForApi = parsedFilters.sourceTypes.includes("all")
-          ? "all" as const
+        const sourceFilterForApi = parsedFilters.sourceTypes.includes('all')
+          ? 'all' as const
           : parsedFilters.sourceTypes.filter((
             t,
-          ): t is PackageReference["source"] => t !== "all");
+          ): t is PackageReference['source'] => t !== 'all');
 
         // Perform the upgrade
         const results = await upgradePackageReferences(
@@ -359,23 +351,23 @@ export default Command(
           console.log(JSON.stringify(output, null, 2));
         } else {
           // Human-readable output
-          const modeLabel = Params.DryRun ? " (dry-run)" : "";
+          const modeLabel = Params.DryRun ? ' (dry-run)' : '';
           Log.Info(
             `📦 Upgrading ${packageName} to ${Params.Version}${modeLabel}`,
           );
-          Log.Info("");
+          Log.Info('');
 
           if (results.length === 0) {
-            Log.Info("No references found in workspace.");
+            Log.Info('No references found in workspace.');
             return {
               Code: 0,
-              Message: "No references found in workspace",
+              Message: 'No references found in workspace',
               Data: output,
             };
           }
 
           Log.Info(`Found ${results.length} reference(s) in workspace:`);
-          Log.Info("");
+          Log.Info('');
 
           // Group results by file for cleaner output
           const resultsByFile = new Map<string, UpgradeResult[]>();
@@ -387,7 +379,7 @@ export default Command(
 
           for (const [file, fileResults] of resultsByFile) {
             const firstResult = fileResults[0];
-            const status = firstResult.success ? "✓" : "✗";
+            const status = firstResult.success ? '✓' : '✗';
             const sourceLabel = getSourceLabel(firstResult.source);
 
             Log.Info(`${status} ${file}:${firstResult.line}${sourceLabel}`);
@@ -400,7 +392,7 @@ export default Command(
             }
           }
 
-          Log.Info("");
+          Log.Info('');
 
           if (Params.DryRun) {
             Log.Info(
@@ -427,9 +419,7 @@ export default Command(
         Log.Error(error instanceof Error ? error.message : String(error));
         return {
           Code: 1,
-          Message: `Upgrade failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          Message: `Upgrade failed: ${error instanceof Error ? error.message : String(error)}`,
           Data: emptyOutput,
         };
       }
@@ -439,13 +429,13 @@ export default Command(
 /**
  * Get a label for the source type.
  */
-function getSourceLabel(source: PackageReference["source"]): string {
-  const labels: Record<PackageReference["source"], string> = {
-    config: "",
-    deps: " [.deps.ts]",
-    template: " [template]",
-    docs: " [docs]",
-    other: " [other]",
+function getSourceLabel(source: PackageReference['source']): string {
+  const labels: Record<PackageReference['source'], string> = {
+    config: '',
+    deps: ' [.deps.ts]',
+    template: ' [template]',
+    docs: ' [docs]',
+    other: ' [other]',
   };
   return labels[source];
 }

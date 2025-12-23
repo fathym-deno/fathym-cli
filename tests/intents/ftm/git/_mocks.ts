@@ -1,12 +1,12 @@
-import type { CLIDFSContextManager } from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import type { SelectOptions } from "@cliffy/prompt";
+import type { CLIDFSContextManager } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import type { SelectOptions } from '@cliffy/prompt';
 import {
   type GitRunOptions,
   type GitRunResult,
   GitService,
-} from "../../../../src/services/GitService.ts";
-import type { PromptService } from "../../../../src/services/PromptService.ts";
+} from '../../../../src/services/GitService.ts';
+import type { PromptService } from '../../../../src/services/PromptService.ts';
 import {
   type AccessTokenData,
   FathymConfigStore,
@@ -18,21 +18,21 @@ import {
   GitConfigStore,
   type GitConfiguredRepo,
   type GitDefaults,
-} from "../../../../src/services/.exports.ts";
-import { FathymApiClient } from "../../../../src/services/FathymApiClient.ts";
-import { UrlOpener } from "../../../../src/services/UrlOpener.ts";
-import { RegisterGitOpsTargetDFS } from "../../../../src/git/.exports.ts";
+} from '../../../../src/services/.exports.ts';
+import { FathymApiClient } from '../../../../src/services/FathymApiClient.ts';
+import { UrlOpener } from '../../../../src/services/UrlOpener.ts';
+import { RegisterGitOpsTargetDFS } from '../../../../src/git/.exports.ts';
 
-export function createMockDFS(root: string = "/mock/repo"): DFSFileHandler {
+export function createMockDFS(root: string = '/mock/repo'): DFSFileHandler {
   return {
     Root: root,
-    ResolvePath: (...parts: string[]) => [root, ...parts].join("/"),
+    ResolvePath: (...parts: string[]) => [root, ...parts].join('/'),
   } as DFSFileHandler;
 }
 
 export async function registerMockGitTargetDFS(
   dfsCtx: CLIDFSContextManager,
-  root: string = "/mock/git-target",
+  root: string = '/mock/git-target',
 ): Promise<void> {
   await RegisterGitOpsTargetDFS(dfsCtx, root);
 }
@@ -51,7 +51,7 @@ export class MockPromptService implements PromptService {
       return Promise.resolve(this.responses.inputs.shift()!);
     }
 
-    return Promise.resolve("Mock input");
+    return Promise.resolve('Mock input');
   }
 
   public Confirm(): Promise<boolean> {
@@ -64,7 +64,7 @@ export class MockPromptService implements PromptService {
 
   public Select<T extends string>(
     _message: string,
-    options: Omit<SelectOptions<T>, "message">,
+    options: Omit<SelectOptions<T>, 'message'>,
   ): Promise<T> {
     if (this.responses.selects?.length) {
       return Promise.resolve(this.responses.selects.shift() as T);
@@ -74,38 +74,38 @@ export class MockPromptService implements PromptService {
   }
 
   private static firstOption<T extends string>(
-    options: Omit<SelectOptions<T>, "message">,
+    options: Omit<SelectOptions<T>, 'message'>,
   ): T {
     const opts = (options as SelectOptions<T>).options ?? [];
 
     for (const option of opts) {
-      if (typeof option === "string") {
+      if (typeof option === 'string') {
         return option as T;
       }
 
-      if (typeof option === "number") {
+      if (typeof option === 'number') {
         return String(option) as T;
       }
 
-      if (typeof option === "object" && option) {
-        if ("type" in option && option.type === "separator") {
+      if (typeof option === 'object' && option) {
+        if ('type' in option && option.type === 'separator') {
           continue;
         }
 
-        if ("options" in option && Array.isArray(option.options)) {
+        if ('options' in option && Array.isArray(option.options)) {
           return MockPromptService.firstOption({
             ...options,
             options: option.options,
-          } as Omit<SelectOptions<T>, "message">);
+          } as Omit<SelectOptions<T>, 'message'>);
         }
 
-        if ("value" in option) {
+        if ('value' in option) {
           return option.value as T;
         }
       }
     }
 
-    throw new Error("No select options provided for mock prompt.");
+    throw new Error('No select options provided for mock prompt.');
   }
 }
 
@@ -124,7 +124,7 @@ export class MockGitService extends GitService {
   public constructor(private readonly opts: GitMockOptions = {}) {
     super();
 
-    const branch = this.opts.branch ?? "feature/mock";
+    const branch = this.opts.branch ?? 'feature/mock';
     if (this.opts.remoteExists !== false) {
       this.remoteBranches.add(branch);
     }
@@ -135,7 +135,7 @@ export class MockGitService extends GitService {
   }
 
   public override CurrentBranch(): Promise<string> {
-    return Promise.resolve(this.opts.branch ?? "feature/mock");
+    return Promise.resolve(this.opts.branch ?? 'feature/mock');
   }
 
   public override HasUncommittedChanges(): Promise<boolean> {
@@ -148,35 +148,35 @@ export class MockGitService extends GitService {
   ): Promise<GitRunResult> {
     this.Commands.push({ args: [...args], options: { ...options } });
 
-    if (args[0] === "remote" && args[1] === "get-url") {
+    if (args[0] === 'remote' && args[1] === 'get-url') {
       const stdout = this.opts.remoteUrl ??
-        "https://github.com/fathym/mock.git";
+        'https://github.com/fathym/mock.git';
 
       return Promise.resolve({
         stdout,
-        stderr: "",
+        stderr: '',
         success: true,
         code: 0,
       });
     }
 
     if (options.dryRun) {
-      this.logger?.Info?.(`[dry-run] git ${args.join(" ")}`);
+      this.logger?.Info?.(`[dry-run] git ${args.join(' ')}`);
     }
 
-    if (args[0] === "push" && args.includes("--set-upstream")) {
+    if (args[0] === 'push' && args.includes('--set-upstream')) {
       const branch = args.at(-1);
       if (branch) {
         this.remoteBranches.add(branch);
       }
-    } else if (args[0] === "push" && args[1] === "origin") {
+    } else if (args[0] === 'push' && args[1] === 'origin') {
       const branch = args.at(-1);
       if (branch) {
         this.remoteBranches.add(branch);
       }
     }
 
-    return Promise.resolve({ stdout: "", stderr: "", success: true, code: 0 });
+    return Promise.resolve({ stdout: '', stderr: '', success: true, code: 0 });
   }
 
   public override RunChecked(
@@ -199,13 +199,13 @@ export class MockGitService extends GitService {
   ): Promise<void> {
     if (!this.remoteBranches.has(branch)) {
       this.remoteBranches.add(branch);
-      return this.Run(["push", "--set-upstream", "origin", branch], options)
+      return this.Run(['push', '--set-upstream', 'origin', branch], options)
         .then(
           () => undefined,
         );
     }
 
-    return this.Run(["push", "origin", branch], options).then(() => undefined);
+    return this.Run(['push', 'origin', branch], options).then(() => undefined);
   }
 
   public override EnsureUpstream(
@@ -216,7 +216,7 @@ export class MockGitService extends GitService {
       return Promise.resolve();
     }
 
-    return this.Run(["push", "--set-upstream", "origin", branch], options).then(
+    return this.Run(['push', '--set-upstream', 'origin', branch], options).then(
       () => undefined,
     );
   }
@@ -247,7 +247,7 @@ export class MockGitConfigStore extends GitConfigStore {
         const record: GitConfiguredRepo = {
           organization: repo.organization,
           repository: repo.repository,
-          configuredAt: repo.configuredAt ?? "mock-date",
+          configuredAt: repo.configuredAt ?? 'mock-date',
           metadata: repo.metadata,
         };
 
@@ -294,7 +294,7 @@ export class MockGitConfigStore extends GitConfigStore {
     const record: GitConfiguredRepo = {
       organization,
       repository,
-      configuredAt: "mock-date",
+      configuredAt: 'mock-date',
       metadata,
     };
 
@@ -349,7 +349,7 @@ export class MockFathymConfigStore extends FathymConfigStore {
   }
 
   public override GetApiRoot(): Promise<string> {
-    return Promise.resolve(this.options.apiRoot ?? "https://api.fathym.com/");
+    return Promise.resolve(this.options.apiRoot ?? 'https://api.fathym.com/');
   }
 
   public override GetAccessToken(): Promise<AccessTokenData | undefined> {
@@ -373,7 +373,7 @@ export class MockFathymApiClient extends FathymApiClient {
 
   public override GetJson<T>(path: string): Promise<T> {
     this.requests.push(`GET ${path}`);
-    const key = this.findResponseKey("GET", path);
+    const key = this.findResponseKey('GET', path);
     if (!key) {
       throw new Error(`No mock response for GET ${path}`);
     }
@@ -386,13 +386,13 @@ export class MockFathymApiClient extends FathymApiClient {
     body: TBody,
   ): Promise<TResponse> {
     this.requests.push(`POST ${path}`);
-    const key = this.findResponseKey("POST", path);
+    const key = this.findResponseKey('POST', path);
     if (!key) {
       throw new Error(`No mock response for POST ${path}`);
     }
 
     const value = this.responses.get(key);
-    if (typeof value === "function") {
+    if (typeof value === 'function') {
       return Promise.resolve((value as (payload: TBody) => TResponse)(body));
     }
 

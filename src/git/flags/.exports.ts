@@ -1,1 +1,1 @@
-export * from "./gitTargetFlag.ts";
+export * from './gitTargetFlag.ts';

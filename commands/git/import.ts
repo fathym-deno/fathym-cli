@@ -11,14 +11,9 @@
  * @module
  */
 
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { z } from "zod";
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { z } from 'zod';
 import {
   CliffyPromptService,
   GitConfigStore,
@@ -28,58 +23,55 @@ import {
   type PromptService,
   type TaskDefinition,
   TaskPipeline,
-} from "../../src/services/.exports.ts";
-import {
-  GitTargetFlagSchema,
-  ResolveGitOpsWorkingDFS,
-} from "../../src/git/.exports.ts";
+} from '../../src/services/.exports.ts';
+import { GitTargetFlagSchema, ResolveGitOpsWorkingDFS } from '../../src/git/.exports.ts';
 
 const GitImportArgsSchema = z.tuple([
   z
     .string()
-    .describe("GitHub organization (e.g., fathym)")
+    .describe('GitHub organization (e.g., fathym)')
     .optional()
-    .meta({ argName: "organization" }),
+    .meta({ argName: 'organization' }),
   z
     .string()
-    .describe("Repository name (e.g., cli)")
+    .describe('Repository name (e.g., cli)')
     .optional()
-    .meta({ argName: "repository" }),
+    .meta({ argName: 'repository' }),
   z
     .string()
-    .describe("Remote URL (e.g., https://github.com/.../.git)")
+    .describe('Remote URL (e.g., https://github.com/.../.git)')
     .optional()
-    .meta({ argName: "remote" }),
+    .meta({ argName: 'remote' }),
 ]);
 
 const GitImportFlagsSchema = z.object({
   branch: z
     .string()
     .optional()
-    .describe("Optional branch/tag to mirror (defaults to all refs)"),
+    .describe('Optional branch/tag to mirror (defaults to all refs)'),
   depth: z
     .coerce
     .number()
     .int()
     .positive()
     .optional()
-    .describe("Perform a shallow clone with the provided depth"),
+    .describe('Perform a shallow clone with the provided depth'),
   dir: z
     .string()
     .optional()
     .describe(
-      "Directory name for the bare clone (defaults to repository name)",
+      'Directory name for the bare clone (defaults to repository name)',
     ),
   force: z
     .boolean()
     .optional()
     .describe(
-      "Bypass the configured-repo gate (unsafe unless you know the repo is provisioned)",
+      'Bypass the configured-repo gate (unsafe unless you know the repo is provisioned)',
     ),
-  "dry-run": z
+  'dry-run': z
     .boolean()
     .optional()
-    .describe("Preview git commands without running them"),
+    .describe('Preview git commands without running them'),
 }).merge(GitTargetFlagSchema);
 
 class GitImportParams extends CommandParams<
@@ -99,23 +91,23 @@ class GitImportParams extends CommandParams<
   }
 
   public get Branch(): string | undefined {
-    return this.Flag("branch");
+    return this.Flag('branch');
   }
 
   public get Depth(): number | undefined {
-    return this.Flag("depth");
+    return this.Flag('depth');
   }
 
   public get Directory(): string | undefined {
-    return this.Flag("dir");
+    return this.Flag('dir');
   }
 
   public get Force(): boolean {
-    return this.Flag("force") ?? false;
+    return this.Flag('force') ?? false;
   }
 
   public override get DryRun(): boolean {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 }
 
@@ -158,8 +150,8 @@ type GitImportResult = {
 };
 
 export default Command(
-  "Import Repository",
-  "Mirror an external git remote into the configured GitHub repo",
+  'Import Repository',
+  'Mirror an external git remote into the configured GitHub repo',
 )
   .Args(GitImportArgsSchema)
   .Flags(GitImportFlagsSchema)
@@ -192,20 +184,19 @@ export default Command(
 
       await TaskPipeline.Run(ctx, buildTasks(), Log);
 
-      Log.Info("");
+      Log.Info('');
       Log.Info(
         `Imported ${ctx.remote} → ${ctx.organization}/${ctx.repository}`,
       );
-      Log.Info("Next steps:");
-      Log.Info("  - Verify the mirrored repository on GitHub");
+      Log.Info('Next steps:');
+      Log.Info('  - Verify the mirrored repository on GitHub');
       Log.Info(
-        "  - Run `ftm git configure -s` again if you need to adjust defaults.",
+        '  - Run `ftm git configure -s` again if you need to adjust defaults.',
       );
 
       return {
         Code: 0,
-        Message:
-          `Imported ${ctx.remote} into ${ctx.organization}/${ctx.repository}`,
+        Message: `Imported ${ctx.remote} into ${ctx.organization}/${ctx.repository}`,
         Data: {
           organization: ctx.organization!,
           repository: ctx.repository!,
@@ -225,23 +216,22 @@ export default Command(
 function buildTasks(): TaskDefinition<GitImportPipelineContext>[] {
   return [
     {
-      title: "Resolve organization",
+      title: 'Resolve organization',
       run: async (ctx, runtime) => {
         ctx.organization = await resolveOrganization(ctx);
         runtime.UpdateTitle(`Organization: ${ctx.organization}`);
       },
     },
     {
-      title: "Resolve repository",
+      title: 'Resolve repository',
       run: async (ctx, runtime) => {
         ctx.repository = await resolveRepository(ctx);
-        ctx.targetUrl =
-          `https://github.com/${ctx.organization}/${ctx.repository}.git`;
+        ctx.targetUrl = `https://github.com/${ctx.organization}/${ctx.repository}.git`;
         runtime.UpdateTitle(`Repository: ${ctx.repository}`);
       },
     },
     {
-      title: "Ensure repository configured",
+      title: 'Ensure repository configured',
       run: async (ctx, runtime) => {
         const configured = await ctx.config.IsConfigured(
           ctx.organization!,
@@ -252,30 +242,30 @@ function buildTasks(): TaskDefinition<GitImportPipelineContext>[] {
         if (!configured && !ctx.params.Force) {
           throw new Error(
             `Repository ${ctx.organization}/${ctx.repository} has not been configured. Run ` +
-              "`ftm git configure -s` first or pass --force to bypass.",
+              '`ftm git configure -s` first or pass --force to bypass.',
           );
         }
 
         runtime.UpdateTitle(
           configured
             ? `Repository ${ctx.organization}/${ctx.repository} is configured`
-            : "Proceeding without configure (--force)",
+            : 'Proceeding without configure (--force)',
         );
       },
     },
     {
-      title: "Resolve remote to import",
+      title: 'Resolve remote to import',
       run: async (ctx, runtime) => {
         ctx.remote = await resolveRemote(ctx);
         runtime.UpdateTitle(`Remote: ${ctx.remote}`);
       },
     },
     {
-      title: "Determine working directory",
+      title: 'Determine working directory',
       run: async (ctx, runtime) => {
         const folder = ctx.params.Directory?.trim() || ctx.repository;
         if (!folder) {
-          throw new Error("Destination directory could not be determined.");
+          throw new Error('Destination directory could not be determined.');
         }
 
         ctx.destinationRelative = folder;
@@ -284,20 +274,20 @@ function buildTasks(): TaskDefinition<GitImportPipelineContext>[] {
       },
     },
     {
-      title: "Clone remote as bare repository",
+      title: 'Clone remote as bare repository',
       run: async (ctx, runtime) => {
         runtime.UpdateTitle(`Clone ${ctx.remote} as bare repository`);
         await ctx.git.RunChecked(buildCloneArgs(ctx), gitOptions(ctx));
       },
     },
     {
-      title: "Push mirror to GitHub",
+      title: 'Push mirror to GitHub',
       run: async (ctx, runtime) => {
         runtime.UpdateTitle(
           `Push mirror to ${ctx.organization}/${ctx.repository}`,
         );
         await ctx.git.RunChecked(
-          ["push", "--mirror", ctx.targetUrl!],
+          ['push', '--mirror', ctx.targetUrl!],
           gitOptions({ ...ctx, cwd: ctx.destinationPath! }),
         );
       },
@@ -317,14 +307,14 @@ async function resolveOrganization(
   }
 
   const answer = (await ctx.prompt.Input(
-    "Which GitHub organization should receive the mirror?",
+    'Which GitHub organization should receive the mirror?',
   ))
     .trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error("GitHub organization is required.");
+  throw new Error('GitHub organization is required.');
 }
 
 async function resolveRepository(
@@ -339,14 +329,14 @@ async function resolveRepository(
   }
 
   const answer = (await ctx.prompt.Input(
-    "Which GitHub repository should receive the mirror?",
+    'Which GitHub repository should receive the mirror?',
   ))
     .trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error("GitHub repository is required.");
+  throw new Error('GitHub repository is required.');
 }
 
 async function resolveRemote(ctx: GitImportPipelineContext): Promise<string> {
@@ -355,24 +345,23 @@ async function resolveRemote(ctx: GitImportPipelineContext): Promise<string> {
     return candidate;
   }
 
-  const answer =
-    (await ctx.prompt.Input("Remote URL to import (HTTPS or SSH):")).trim();
+  const answer = (await ctx.prompt.Input('Remote URL to import (HTTPS or SSH):')).trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error("Remote URL is required for git import.");
+  throw new Error('Remote URL is required for git import.');
 }
 
 function buildCloneArgs(ctx: GitImportPipelineContext): string[] {
-  const args = ["clone", "--bare"];
+  const args = ['clone', '--bare'];
 
   if (ctx.params.Depth) {
-    args.push("--depth", ctx.params.Depth.toString());
+    args.push('--depth', ctx.params.Depth.toString());
   }
 
   if (ctx.branch) {
-    args.push("--branch", ctx.branch);
+    args.push('--branch', ctx.branch);
   }
 
   args.push(ctx.remote!, ctx.destinationPath!);
@@ -382,7 +371,7 @@ function buildCloneArgs(ctx: GitImportPipelineContext): string[] {
 
 function gitOptions(
   ctx:
-    & Pick<GitImportPipelineContext, "cwd" | "params">
+    & Pick<GitImportPipelineContext, 'cwd' | 'params'>
     & Partial<GitImportPipelineContext>,
 ): GitRunOptions {
   return {

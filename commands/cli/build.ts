@@ -57,11 +57,11 @@
  * @module
  */
 
-import { join } from "@std/path/join";
-import { toFileUrl } from "@std/path/to-file-url";
-import { pascalCase } from "@luca/cases";
-import { z } from "zod";
-import { DFSFileHandler } from "@fathym/dfs";
+import { join } from '@std/path/join';
+import { toFileUrl } from '@std/path/to-file-url';
+import { pascalCase } from '@luca/cases';
+import { z } from 'zod';
+import { DFSFileHandler } from '@fathym/dfs';
 import {
   CLICommandEntry,
   CLIDFSContextManager,
@@ -72,7 +72,7 @@ import {
   type CommandStatus,
   TemplateLocator,
   TemplateScaffolder,
-} from "@fathym/cli";
+} from '@fathym/cli';
 
 /**
  * Result data for the build command.
@@ -105,15 +105,15 @@ export const BuildFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe("Path to .cli.ts (default: ./.cli.ts)"),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     templates: z
       .string()
       .optional()
-      .describe("Path to templates/ folder (default: ./templates)"),
+      .describe('Path to templates/ folder (default: ./templates)'),
     version: z
       .string()
       .optional()
-      .describe("Version to embed in the build (default: 0.0.0)"),
+      .describe('Version to embed in the build (default: 0.0.0)'),
   })
   .passthrough();
 
@@ -139,7 +139,7 @@ export class BuildParams extends CommandParams<
    * Defaults to './templates' if --templates flag not provided.
    */
   get TemplatesDir(): string {
-    return this.Flag("templates") ?? "./templates";
+    return this.Flag('templates') ?? './templates';
   }
 
   /**
@@ -147,7 +147,7 @@ export class BuildParams extends CommandParams<
    * When undefined, uses './.cli.ts' in current directory.
    */
   get ConfigOverride(): string | undefined {
-    return this.Flag("config");
+    return this.Flag('config');
   }
 
   /**
@@ -155,7 +155,7 @@ export class BuildParams extends CommandParams<
    * Defaults to '0.0.0' if --version flag not provided.
    */
   get Version(): string {
-    return this.Flag("version") ?? "0.0.0";
+    return this.Flag('version') ?? '0.0.0';
   }
 }
 
@@ -165,7 +165,7 @@ export class BuildParams extends CommandParams<
  * Collects templates, command metadata, and scaffolds the embedded
  * CLI runtime. Output is written to `.build/` directory.
  */
-export default Command("build", "Prepare static CLI build folder")
+export default Command('build', 'Prepare static CLI build folder')
   .Args(BuildArgsSchema)
   .Flags(BuildFlagsSchema)
   .Params(BuildParams)
@@ -173,24 +173,23 @@ export default Command("build", "Prepare static CLI build folder")
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
     if (ctx.Params.ConfigOverride) {
-      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigOverride, "CLI");
+      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigOverride, 'CLI');
     }
 
     const buildDFS: DFSFileHandler = ctx.Params.ConfigOverride
-      ? await dfsCtx.GetDFS("CLI")
+      ? await dfsCtx.GetDFS('CLI')
       : await dfsCtx.GetExecutionDFS();
 
-    const { configPath, outDir, configDir, templatesDir } =
-      await resolveConfigAndOutDir(
-        ctx.Params,
-        buildDFS,
-      );
+    const { configPath, outDir, configDir, templatesDir } = await resolveConfigAndOutDir(
+      ctx.Params,
+      buildDFS,
+    );
 
     return {
       BuildDFS: buildDFS,
       Details: { configPath, outDir, configDir, templatesDir },
       Scaffolder: new TemplateScaffolder(
-        await ioc.Resolve<TemplateLocator>(ioc.Symbol("TemplateLocator")),
+        await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
         buildDFS,
         { cliOutDir: outDir },
       ),
@@ -210,7 +209,7 @@ export default Command("build", "Prepare static CLI build folder")
       );
 
       // Import CLI module to get config
-      const cliModulePath = await BuildDFS.ResolvePath(".cli.ts");
+      const cliModulePath = await BuildDFS.ResolvePath('.cli.ts');
       const cliModuleUrl = toFileUrl(cliModulePath).href;
       let cliModule = (await import(cliModuleUrl)).default;
       // Build the module if it's a builder
@@ -219,7 +218,7 @@ export default Command("build", "Prepare static CLI build folder")
       }
       const config = cliModule.Config ?? {};
 
-      const commandsDir = config.Commands ?? "./commands";
+      const commandsDir = config.Commands ?? './commands';
 
       const { imports, modules, commandEntries } = await collectCommandMetadata(
         commandsDir,
@@ -234,7 +233,7 @@ export default Command("build", "Prepare static CLI build folder")
       );
 
       await Scaffolder.Scaffold({
-        templateName: "cli-build-static",
+        templateName: 'cli-build-static',
         outputDir: outDir,
         context: {
           embeddedTemplatesPath,
@@ -252,7 +251,7 @@ export default Command("build", "Prepare static CLI build folder")
 
       return {
         Code: 0,
-        Message: "Build complete",
+        Message: 'Build complete',
         Data: {
           outDir,
           version: Params.Version,
@@ -283,17 +282,17 @@ async function resolveConfigAndOutDir(
   configDir: string;
   templatesDir: string;
 }> {
-  const configPath = params.ConfigOverride ?? "./.cli.ts";
-  const exists = await dfs.GetFileInfo("./.cli.ts");
+  const configPath = params.ConfigOverride ?? './.cli.ts';
+  const exists = await dfs.GetFileInfo('./.cli.ts');
   if (!exists) {
     throw new Error(`❌ Cannot find .cli.ts at: ${configPath}`);
   }
 
   const configDir = dfs.Root;
 
-  const outDir = "./.build";
+  const outDir = './.build';
 
-  const templatesDir = params.TemplatesDir ?? "./templates";
+  const templatesDir = params.TemplatesDir ?? './templates';
 
   return { configPath, outDir, configDir, templatesDir };
 }
@@ -321,18 +320,18 @@ async function collectTemplates(
 ): Promise<{ embeddedTemplatesPath: string; templateCount: number }> {
   const paths = await fromDFS.LoadAllPaths();
   const templateFiles = paths.filter(
-    (p) => p.startsWith(templatesDir) && !p.endsWith("/"),
+    (p) => p.startsWith(templatesDir) && !p.endsWith('/'),
   );
 
   const templates: Record<string, string> = {};
   for (const fullPath of templateFiles) {
     const info = await fromDFS.GetFileInfo(fullPath);
     if (!info) continue;
-    const rel = fullPath.replace(`${templatesDir}/`, "");
+    const rel = fullPath.replace(`${templatesDir}/`, '');
     templates[rel] = await new Response(info.Contents).text();
   }
 
-  const outputPath = join(outDir, "embedded-templates.json");
+  const outputPath = join(outDir, 'embedded-templates.json');
   const stream = new Response(JSON.stringify(templates, null, 2)).body!;
   await toDFS.WriteFile(outputPath, stream);
   log.Info(`📦 Embedded templates → ${outputPath}`);
@@ -371,7 +370,7 @@ async function collectCommandMetadata(
 }> {
   const paths = await dfs.LoadAllPaths();
   const entries = paths.filter(
-    (p) => p.startsWith(commandsDir) && p.endsWith(".ts"),
+    (p) => p.startsWith(commandsDir) && p.endsWith('.ts'),
   );
 
   const imports = [];
@@ -382,12 +381,10 @@ async function collectCommandMetadata(
   const seenKeys = new Set<string>();
 
   for (const path of entries) {
-    const rel = path.replace(`${commandsDir}/`, "").replace(/\\/g, "/");
-    const isMeta = rel.endsWith(".group.ts");
-    const key = isMeta
-      ? rel.replace(/\/\.group\.ts$/, "")
-      : rel.replace(/\.ts$/, "");
-    const group = key.split("/")[0];
+    const rel = path.replace(`${commandsDir}/`, '').replace(/\\/g, '/');
+    const isMeta = rel.endsWith('.group.ts');
+    const key = isMeta ? rel.replace(/\/\.group\.ts$/, '') : rel.replace(/\.ts$/, '');
+    const group = key.split('/')[0];
 
     // Use full path to generate unique alias - avoids collisions when
     // commands have the same filename in different directories
@@ -395,9 +392,9 @@ async function collectCommandMetadata(
     // Also sanitize brackets from dynamic segments like [projectRef] → ProjectRef
     // e.g., "projects/[projectRef]/build" → "projects-projectRef-build" → "ProjectsProjectRefBuild"
     const sanitized = key
-      .replace(/\//g, "-")
-      .replace(/\[/g, "")
-      .replace(/\]/g, "");
+      .replace(/\//g, '-')
+      .replace(/\[/g, '')
+      .replace(/\]/g, '');
     const baseName = pascalCase(sanitized);
     const alias = isMeta ? `${baseName}Group` : `${baseName}Command`;
 
@@ -445,7 +442,7 @@ async function writeCommandEntries(
   dfs: DFSFileHandler,
   log: CommandLog,
 ): Promise<string> {
-  const outputPath = join(outDir, "embedded-command-entries.json");
+  const outputPath = join(outDir, 'embedded-command-entries.json');
   const stream = new Response(JSON.stringify(entries, null, 2)).body!;
   await dfs.WriteFile(outputPath, stream);
   log.Info(`📘 Embedded command entries → ${outputPath}`);

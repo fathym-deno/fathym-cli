@@ -21,23 +21,23 @@ export class GitService {
     args: string[],
     options: GitRunOptions = {},
   ): Promise<GitRunResult> {
-    const cmdText = `git ${args.join(" ")}`;
+    const cmdText = `git ${args.join(' ')}`;
     if (options.dryRun) {
       this.logger?.Info?.(`[dry-run] ${cmdText}`);
       return {
-        stdout: "",
-        stderr: "",
+        stdout: '',
+        stderr: '',
         success: true,
         code: 0,
       };
     }
 
-    const command = new Deno.Command("git", {
+    const command = new Deno.Command('git', {
       args,
       cwd: options.cwd,
-      stdin: options.stdin ?? "null",
-      stdout: options.stdout ?? "piped",
-      stderr: options.stderr ?? "piped",
+      stdin: options.stdin ?? 'null',
+      stdout: options.stdout ?? 'piped',
+      stderr: options.stderr ?? 'piped',
       env: options.env,
     });
 
@@ -45,8 +45,8 @@ export class GitService {
     const decoder = new TextDecoder();
 
     const formatted: GitRunResult = {
-      stdout: result.stdout ? decoder.decode(result.stdout).trim() : "",
-      stderr: result.stderr ? decoder.decode(result.stderr).trim() : "",
+      stdout: result.stdout ? decoder.decode(result.stdout).trim() : '',
+      stderr: result.stderr ? decoder.decode(result.stderr).trim() : '',
       success: result.success,
       code: result.code,
     };
@@ -84,7 +84,7 @@ export class GitService {
    */
   public async IsRepository(options: GitRunOptions = {}): Promise<boolean> {
     try {
-      await this.RunChecked(["rev-parse", "--is-inside-work-tree"], options);
+      await this.RunChecked(['rev-parse', '--is-inside-work-tree'], options);
       return true;
     } catch {
       return false;
@@ -96,7 +96,7 @@ export class GitService {
    */
   public async CurrentBranch(options: GitRunOptions = {}): Promise<string> {
     const result = await this.Output(
-      ["rev-parse", "--abbrev-ref", "HEAD"],
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
       options,
     );
     return result.trim();
@@ -108,7 +108,7 @@ export class GitService {
   public async HasUncommittedChanges(
     options: GitRunOptions = {},
   ): Promise<boolean> {
-    const result = await this.Output(["status", "--porcelain"], options);
+    const result = await this.Output(['status', '--porcelain'], options);
     return result.trim().length > 0;
   }
 
@@ -119,7 +119,7 @@ export class GitService {
     branch: string,
     options: GitRunOptions = {},
   ): Promise<boolean> {
-    const result = await this.Run(["ls-remote", "--heads", "origin", branch], {
+    const result = await this.Run(['ls-remote', '--heads', 'origin', branch], {
       ...options,
       allowFailure: true,
     });
@@ -136,13 +136,13 @@ export class GitService {
     const exists = await this.RemoteBranchExists(branch, options);
     if (!exists) {
       await this.RunChecked(
-        ["push", "--set-upstream", "origin", branch],
+        ['push', '--set-upstream', 'origin', branch],
         options,
       );
       return;
     }
 
-    await this.RunChecked(["push", "origin", branch], options);
+    await this.RunChecked(['push', 'origin', branch], options);
   }
 
   /**
@@ -157,7 +157,7 @@ export class GitService {
     const exists = await this.RemoteBranchExists(branch, options);
     if (!exists) {
       await this.RunChecked(
-        ["push", "--set-upstream", "origin", branch],
+        ['push', '--set-upstream', 'origin', branch],
         options,
       );
     }
@@ -174,9 +174,9 @@ export interface GitRunOptions {
   cwd?: string;
   dryRun?: boolean;
   env?: Record<string, string>;
-  stdin?: "inherit" | "null" | "piped";
-  stdout?: "inherit" | "piped";
-  stderr?: "inherit" | "piped";
+  stdin?: 'inherit' | 'null' | 'piped';
+  stdout?: 'inherit' | 'piped';
+  stderr?: 'inherit' | 'piped';
   allowFailure?: boolean;
 }
 
@@ -190,6 +190,6 @@ export interface GitRunResult {
 export class GitCommandError extends Error {
   public constructor(command: string, public result: GitRunResult) {
     super(`git command failed: ${command}\n${result.stderr || result.stdout}`);
-    this.name = "GitCommandError";
+    this.name = 'GitCommandError';
   }
 }

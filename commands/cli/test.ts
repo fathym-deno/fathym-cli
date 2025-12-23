@@ -71,8 +71,8 @@
  * @module
  */
 
-import { z } from "zod";
-import { DFSFileHandler } from "@fathym/dfs";
+import { z } from 'zod';
+import { DFSFileHandler } from '@fathym/dfs';
 import {
   CLIDFSContextManager,
   Command,
@@ -80,7 +80,7 @@ import {
   CommandParams,
   type CommandStatus,
   runCommandWithLogs,
-} from "@fathym/cli";
+} from '@fathym/cli';
 
 /**
  * Result data for the test command.
@@ -100,9 +100,9 @@ export interface TestResult {
 export const TestArgsSchema = z.tuple([
   z
     .string()
-    .meta({ argName: "testFile" })
+    .meta({ argName: 'testFile' })
     .optional()
-    .describe("Test file to run (default: test/my-cli/intents/.intents.ts)"),
+    .describe('Test file to run (default: test/my-cli/intents/.intents.ts)'),
 ]);
 
 /**
@@ -121,19 +121,19 @@ export const TestArgsSchema = z.tuple([
  */
 export const TestFlagsSchema = z
   .object({
-    coverage: z.string().optional().describe("Directory for coverage output"),
-    filter: z.string().optional().describe("Run only tests with this name"),
-    "no-check": z.boolean().optional().describe("Skip type checking"),
+    coverage: z.string().optional().describe('Directory for coverage output'),
+    filter: z.string().optional().describe('Run only tests with this name'),
+    'no-check': z.boolean().optional().describe('Skip type checking'),
     watch: z
       .boolean()
       .optional()
-      .describe("Watch for file changes and rerun tests"),
-    doc: z.boolean().optional().describe("Type-check and run jsdoc tests"),
-    shuffle: z.boolean().optional().describe("Run tests in random order"),
+      .describe('Watch for file changes and rerun tests'),
+    doc: z.boolean().optional().describe('Type-check and run jsdoc tests'),
+    shuffle: z.boolean().optional().describe('Run tests in random order'),
     config: z
       .string()
       .optional()
-      .describe("Path to .cli.ts (default: ./.cli.ts)"),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
   })
   .passthrough();
 
@@ -152,7 +152,7 @@ export class TestParams extends CommandParams<
    * Defaults to './intents/.intents.ts' if not specified.
    */
   get TestFile(): string {
-    return this.Arg(0) ?? "./intents/.intents.ts";
+    return this.Arg(0) ?? './intents/.intents.ts';
   }
 
   /**
@@ -166,14 +166,14 @@ export class TestParams extends CommandParams<
    */
   get DenoFlags(): string[] {
     const mapFlag = (key: string, val: unknown): string | undefined => {
-      if (key === "baseTemplatesDir") return undefined;
+      if (key === 'baseTemplatesDir') return undefined;
       if (val === true) return `--${key}`;
       if (val === false) return undefined;
       return `--${key}=${val}`;
     };
 
     return Object.entries(this.Flags)
-      .filter(([k]) => k !== "config")
+      .filter(([k]) => k !== 'config')
       .map(([k, v]) => mapFlag(k, v))
       .filter(Boolean) as string[];
   }
@@ -183,7 +183,7 @@ export class TestParams extends CommandParams<
    * Used to locate the project root for test execution.
    */
   get ConfigPath(): string | undefined {
-    return this.Flag("config");
+    return this.Flag('config');
   }
 }
 
@@ -193,7 +193,7 @@ export class TestParams extends CommandParams<
  * Wraps `deno test` with flag mapping and project DFS resolution.
  * Tests run with full permissions (-A flag).
  */
-export default Command("test", "Run CLI tests using Deno")
+export default Command('test', 'Run CLI tests using Deno')
   .Args(TestArgsSchema)
   .Flags(TestFlagsSchema)
   .Params(TestParams)
@@ -202,10 +202,10 @@ export default Command("test", "Run CLI tests using Deno")
 
     await dfsCtx.RegisterProjectDFS(
       ctx.Params.ConfigPath || ctx.Params.TestFile,
-      "CLI",
+      'CLI',
     );
 
-    const cliDFS = await dfsCtx.GetDFS("CLI");
+    const cliDFS = await dfsCtx.GetDFS('CLI');
 
     return {
       CLIDFS: cliDFS,
@@ -221,30 +221,30 @@ export default Command("test", "Run CLI tests using Deno")
     > => {
       const rootPath = Services.CLIDFS.Root.replace(
         /[-/\\^$*+?.()|[\]{}]/g,
-        "\\$&",
+        '\\$&',
       );
 
       const testFileRel = Params.TestFile.replace(
         new RegExp(`^${rootPath}[\\/]*`),
-        "",
+        '',
       );
 
       const testPath = await Services.CLIDFS.ResolvePath(testFileRel);
       const denoFlags = Params.DenoFlags;
 
       Log.Info(`🧪 Running tests from: ${testFileRel}`);
-      Log.Info(`➡️  deno test -A ${denoFlags.join(" ")} ${testPath}`);
+      Log.Info(`➡️  deno test -A ${denoFlags.join(' ')} ${testPath}`);
 
-      await runCommandWithLogs(["test", "-A", ...denoFlags, testPath], Log, {
+      await runCommandWithLogs(['test', '-A', ...denoFlags, testPath], Log, {
         exitOnFail: true,
         cwd: Services.CLIDFS.Root,
       });
 
-      Log.Success("✅ Tests passed successfully");
+      Log.Success('✅ Tests passed successfully');
 
       return {
         Code: 0,
-        Message: "Tests passed successfully",
+        Message: 'Tests passed successfully',
         Data: { testFile: testFileRel, denoFlags },
       };
     },

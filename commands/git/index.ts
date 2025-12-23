@@ -13,14 +13,9 @@
  * @module
  */
 
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { z } from "zod";
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { z } from 'zod';
 
 /**
  * Result data for the git command (workflow).
@@ -42,26 +37,23 @@ import {
   type PromptService,
   type TaskDefinition,
   TaskPipeline,
-} from "../../src/services/.exports.ts";
-import {
-  GitTargetFlagSchema,
-  ResolveGitOpsWorkingDFS,
-} from "../../src/git/.exports.ts";
+} from '../../src/services/.exports.ts';
+import { GitTargetFlagSchema, ResolveGitOpsWorkingDFS } from '../../src/git/.exports.ts';
 
 const ArgsSchema = z.tuple([]);
 
 const FlagsSchema = z
   .object({
-    message: z.string().optional().describe("Commit message to use"),
+    message: z.string().optional().describe('Commit message to use'),
     rebase: z.boolean().optional().describe(
-      "Rebase onto origin/integration instead of merging",
+      'Rebase onto origin/integration instead of merging',
     ),
-    "dry-run": z.boolean().optional().describe(
-      "Print commands without executing them",
+    'dry-run': z.boolean().optional().describe(
+      'Print commands without executing them',
     ),
-    "no-push": z.boolean().optional().describe("Skip pushing to origin"),
-    "no-sync": z.boolean().optional().describe(
-      "Skip integration sync (fetch/merge/pull/prune)",
+    'no-push': z.boolean().optional().describe('Skip pushing to origin'),
+    'no-sync': z.boolean().optional().describe(
+      'Skip integration sync (fetch/merge/pull/prune)',
     ),
   })
   .merge(GitTargetFlagSchema)
@@ -72,23 +64,23 @@ class GitParams extends CommandParams<
   z.infer<typeof FlagsSchema>
 > {
   get Message(): string | undefined {
-    return this.Flag("message");
+    return this.Flag('message');
   }
 
   get Rebase(): boolean {
-    return this.Flag("rebase") ?? false;
+    return this.Flag('rebase') ?? false;
   }
 
   override get DryRun(): boolean {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 
   get NoPush(): boolean {
-    return this.Flag("no-push") ?? false;
+    return this.Flag('no-push') ?? false;
   }
 
   get NoSync(): boolean {
-    return this.Flag("no-sync") ?? false;
+    return this.Flag('no-sync') ?? false;
   }
 }
 
@@ -109,8 +101,8 @@ type GitPipelineContext = {
 };
 
 export default Command(
-  "Git Workflow",
-  "Commit changes and sync with integration",
+  'Git Workflow',
+  'Commit changes and sync with integration',
 )
   .Args(ArgsSchema)
   .Flags(FlagsSchema)
@@ -173,12 +165,12 @@ export default Command(
 function buildTasks(): TaskDefinition<GitPipelineContext>[] {
   return [
     {
-      title: "Verify git repository",
+      title: 'Verify git repository',
       run: async (ctx, runtime) => {
         const isRepo = await ctx.git.IsRepository({ cwd: ctx.cwd });
         if (!isRepo) {
           throw new Error(
-            "Not a git repository. Run inside a repository or set --config to target one.",
+            'Not a git repository. Run inside a repository or set --config to target one.',
           );
         }
 
@@ -187,67 +179,63 @@ function buildTasks(): TaskDefinition<GitPipelineContext>[] {
       },
     },
     {
-      title: "Commit local changes",
+      title: 'Commit local changes',
       skip: async (ctx) => {
         ctx.hasChanges = await ctx.git.HasUncommittedChanges({ cwd: ctx.cwd });
-        return ctx.hasChanges ? false : "No changes detected";
+        return ctx.hasChanges ? false : 'No changes detected';
       },
       run: async (ctx, runtime) => {
-        await ctx.git.RunChecked(["add", "-A"], gitOptions(ctx));
+        await ctx.git.RunChecked(['add', '-A'], gitOptions(ctx));
 
         const message = ctx.params.Message ??
-          (ctx.params.DryRun
-            ? "dry-run commit"
-            : await ctx.prompt.Input("Enter commit message"));
+          (ctx.params.DryRun ? 'dry-run commit' : await ctx.prompt.Input('Enter commit message'));
 
         ctx.commitMessage = message;
-        await ctx.git.RunChecked(["commit", "-m", message], gitOptions(ctx));
+        await ctx.git.RunChecked(['commit', '-m', message], gitOptions(ctx));
         runtime.UpdateTitle(`Committed (${message})`);
       },
     },
     {
-      title: "Fetch from origin",
-      skip: (ctx) => syncSkip(ctx, "--no-sync flag set"),
+      title: 'Fetch from origin',
+      skip: (ctx) => syncSkip(ctx, '--no-sync flag set'),
       run: async (ctx) => {
-        await ctx.git.RunChecked(["fetch", "--all"], gitOptions(ctx));
+        await ctx.git.RunChecked(['fetch', '--all'], gitOptions(ctx));
       },
     },
     {
-      title: "Sync with integration",
-      skip: (ctx) => syncSkip(ctx, "--no-sync flag set"),
+      title: 'Sync with integration',
+      skip: (ctx) => syncSkip(ctx, '--no-sync flag set'),
       run: async (ctx, runtime) => {
         const action = ctx.params.Rebase
-          ? ["rebase", "origin/integration"]
-          : ["merge", "origin/integration"];
+          ? ['rebase', 'origin/integration']
+          : ['merge', 'origin/integration'];
 
         await ctx.git.RunChecked(action, gitOptions(ctx));
         runtime.UpdateTitle(
-          ctx.params.Rebase
-            ? "Rebased onto origin/integration"
-            : "Merged origin/integration",
+          ctx.params.Rebase ? 'Rebased onto origin/integration' : 'Merged origin/integration',
         );
       },
     },
     {
-      title: "Pull latest changes",
-      skip: (ctx) => syncSkip(ctx, "--no-sync flag set"),
+      title: 'Pull latest changes',
+      skip: (ctx) => syncSkip(ctx, '--no-sync flag set'),
       run: async (ctx) => {
         await ctx.git.EnsureUpstream(ctx.currentBranch!, gitOptions(ctx));
-        await ctx.git.RunChecked(["pull"], gitOptions(ctx));
+        await ctx.git.RunChecked(['pull'], gitOptions(ctx));
       },
     },
     {
-      title: "Push to origin",
-      skip: (ctx) => (ctx.params.NoPush ? "--no-push flag set" : false),
+      title: 'Push to origin',
+      skip: (ctx) => (ctx.params.NoPush ? '--no-push flag set' : false),
       run: async (ctx) => {
         await ctx.git.PushWithUpstream(ctx.currentBranch!, gitOptions(ctx));
       },
     },
     {
-      title: "Fetch prune",
-      skip: (ctx) => syncSkip(ctx, "--no-sync flag set"),
+      title: 'Fetch prune',
+      skip: (ctx) => syncSkip(ctx, '--no-sync flag set'),
       run: async (ctx) => {
-        await ctx.git.RunChecked(["fetch", "--prune"], gitOptions(ctx));
+        await ctx.git.RunChecked(['fetch', '--prune'], gitOptions(ctx));
       },
     },
   ];

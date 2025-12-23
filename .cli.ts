@@ -1,22 +1,22 @@
-import { CLI } from "@fathym/cli";
-import { VersionResolver } from "./src/deps/VersionResolver.ts";
-import { VersionComparator } from "./src/deps/VersionComparator.ts";
-import { CliffyPromptService } from "./src/services/PromptService.ts";
-import { UrlOpener } from "./src/services/UrlOpener.ts";
+import { CLI } from '@fathym/cli';
+import { VersionResolver } from './src/deps/VersionResolver.ts';
+import { VersionComparator } from './src/deps/VersionComparator.ts';
+import { CliffyPromptService } from './src/services/PromptService.ts';
+import { UrlOpener } from './src/services/UrlOpener.ts';
 
-const PACKAGE_NAME = "@fathym/ftm";
+const PACKAGE_NAME = '@fathym/ftm';
 
 export default CLI(
-  "Fathym CLI",
-  "ftm",
-  "0.0.0",
-  "Open-source Fathym CLI",
+  'Fathym CLI',
+  'ftm',
+  '0.0.0',
+  'Open-source Fathym CLI',
 )
-  .Commands(["./commands", "jsr:@fathym/ftm@0/commands"])
-  .ConfigDFS(".ftm")
+  .Commands(['./commands', 'jsr:@fathym/ftm@0/commands'])
+  .ConfigDFS('.ftm')
   // NOTE: .Plugins() not yet implemented in CLIModuleBuilder
   // .Plugins(['jsr:@fathym/cli-mcp-server/plugin'])
-  .Templates("./templates")
+  .Templates('./templates')
   .OnInit((ioc, _config) => {
     ioc.Register(CliffyPromptService, () => new CliffyPromptService());
     ioc.Register(UrlOpener, () => new UrlOpener());
@@ -41,10 +41,10 @@ export default CLI(
         // Check for updates (silently ignore network errors)
         try {
           const versions = await VersionResolver.getVersionsByChannel(
-            "jsr",
+            'jsr',
             PACKAGE_NAME,
           );
-          const latestProduction = versions.get("production")?.[0]?.version;
+          const latestProduction = versions.get('production')?.[0]?.version;
 
           if (latestProduction) {
             const comparison = VersionComparator.compare(
@@ -55,7 +55,7 @@ export default CLI(
               Log.Warn(`A newer version is available: ${latestProduction}`);
               Log.Warn(`  Current: ${Config.Version}`);
               Log.Warn(`  Upgrade: ftm upgrade`);
-              Log.Warn("");
+              Log.Warn('');
             }
           }
         } catch {

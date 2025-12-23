@@ -1,1 +1,1 @@
-import "./CascadeRunner.test.ts";
+import './CascadeRunner.test.ts';

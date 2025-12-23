@@ -4,7 +4,7 @@
  * @module
  */
 
-import { Group } from "@fathym/cli";
+import { Group } from '@fathym/cli';
 
-export default Group("config")
-  .Description("Configuration management commands");
+export default Group('config')
+  .Description('Configuration management commands');

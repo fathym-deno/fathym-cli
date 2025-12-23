@@ -1,29 +1,29 @@
-import { CommandIntentSuite } from "@fathym/cli";
-import PublishCheckCommand from "../../../../../../commands/projects/[projectRef]/publish/check.ts";
+import { CommandIntentSuite } from '@fathym/cli';
+import PublishCheckCommand from '../../../../../../commands/projects/[projectRef]/publish/check.ts';
 
 const cmd = PublishCheckCommand.Build();
-const origin = import.meta.resolve("../../../../../../.cli.ts");
+const origin = import.meta.resolve('../../../../../../.cli.ts');
 
 CommandIntentSuite(
-  "projects:[projectRef]:publish:check Command Suite",
+  'projects:[projectRef]:publish:check Command Suite',
   cmd,
   origin,
 )
-  .Intent("Fails when project not found", (int) =>
+  .Intent('Fails when project not found', (int) =>
     int
-      .Segments({ projectRef: "@nonexistent/package" })
+      .Segments({ projectRef: '@nonexistent/package' })
       .Flags({})
       .ExpectExit(1))
-  .Intent("Dry run shows what would execute", (int) =>
+  .Intent('Dry run shows what would execute', (int) =>
     int
-      .Segments({ projectRef: "./deno.jsonc" })
-      .Flags({ "dry-run": true })
-      .ExpectLogs("DRY RUN", "deno publish", "--dry-run", "--allow-dirty")
+      .Segments({ projectRef: './deno.jsonc' })
+      .Flags({ 'dry-run': true })
+      .ExpectLogs('DRY RUN', 'deno publish', '--dry-run', '--allow-dirty')
       .ExpectExit(0))
-  .Intent("Verbose shows detailed output", (int) =>
+  .Intent('Verbose shows detailed output', (int) =>
     int
-      .Segments({ projectRef: "./deno.jsonc" })
-      .Flags({ "dry-run": true, verbose: true })
-      .ExpectLogs("DRY RUN")
+      .Segments({ projectRef: './deno.jsonc' })
+      .Flags({ 'dry-run': true, verbose: true })
+      .ExpectLogs('DRY RUN')
       .ExpectExit(0))
   .Run();

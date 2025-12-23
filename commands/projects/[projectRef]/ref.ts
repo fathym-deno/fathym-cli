@@ -58,31 +58,26 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { DFSProjectResolver } from "../../../src/projects/ProjectResolver.ts";
-import { VersionResolver } from "../../../src/deps/VersionResolver.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
+import { VersionResolver } from '../../../src/deps/VersionResolver.ts';
 import {
   findPackageReferences,
   type PackageReference,
-} from "../../../src/projects/PackageReferences.ts";
+} from '../../../src/projects/PackageReferences.ts';
 
 /**
  * Valid source types for filtering.
  */
 const SOURCE_TYPES = [
-  "config",
-  "deps",
-  "template",
-  "docs",
-  "other",
-  "all",
+  'config',
+  'deps',
+  'template',
+  'docs',
+  'other',
+  'all',
 ] as const;
 type SourceFilter = (typeof SOURCE_TYPES)[number];
 
@@ -106,12 +101,10 @@ interface ParsedFilters {
  */
 function parseFilters(filter?: string): ParsedFilters {
   if (!filter) {
-    return { sourceTypes: ["all"], projectRefs: [] };
+    return { sourceTypes: ['all'], projectRefs: [] };
   }
 
-  const parts = filter.split(",").map((p) => p.trim()).filter((p) =>
-    p.length > 0
-  );
+  const parts = filter.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
   const sourceTypes: SourceFilter[] = [];
   const projectRefs: string[] = [];
 
@@ -125,7 +118,7 @@ function parseFilters(filter?: string): ParsedFilters {
 
   // Default to 'all' source types if none specified
   if (sourceTypes.length === 0) {
-    sourceTypes.push("all");
+    sourceTypes.push('all');
   }
 
   return { sourceTypes, projectRefs };
@@ -137,7 +130,7 @@ function parseFilters(filter?: string): ParsedFilters {
  */
 const RefSegmentsSchema = z.object({
   projectRef: z.string().describe(
-    "Project name, path to deno.json(c), or directory",
+    'Project name, path to deno.json(c), or directory',
   ),
 });
 
@@ -148,13 +141,13 @@ type RefSegments = z.infer<typeof RefSegmentsSchema>;
  */
 const RefFlagsSchema = z.object({
   json: z.boolean().optional().describe(
-    "Output as JSON for programmatic consumption",
+    'Output as JSON for programmatic consumption',
   ),
   filter: z
     .string()
     .optional()
     .describe(
-      "Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)",
+      'Comma-separated filters: source types (config, deps, template, docs, other) and/or project refs (@scope/pkg, ./path)',
     ),
 });
 
@@ -174,17 +167,17 @@ class RefCommandParams extends CommandParams<
 > {
   /** Project reference from dynamic segment */
   get ProjectRef(): string {
-    return this.Segment("projectRef") ?? "";
+    return this.Segment('projectRef') ?? '';
   }
 
   /** Whether to output as JSON */
   get Json(): boolean {
-    return this.Flag("json") ?? false;
+    return this.Flag('json') ?? false;
   }
 
   /** Raw filter string (comma-separated source types and/or project refs) */
   get Filter(): string | undefined {
-    return this.Flag("filter");
+    return this.Flag('filter');
   }
 }
 
@@ -203,11 +196,11 @@ async function getGitInfo(dir: string): Promise<GitInfo> {
   const result: GitInfo = {};
 
   try {
-    const branchCmd = new Deno.Command("git", {
-      args: ["branch", "--show-current"],
+    const branchCmd = new Deno.Command('git', {
+      args: ['branch', '--show-current'],
       cwd: dir,
-      stdout: "piped",
-      stderr: "piped",
+      stdout: 'piped',
+      stderr: 'piped',
     });
     const branchResult = await branchCmd.output();
     if (branchResult.code === 0) {
@@ -218,11 +211,11 @@ async function getGitInfo(dir: string): Promise<GitInfo> {
   }
 
   try {
-    const remoteCmd = new Deno.Command("git", {
-      args: ["remote", "get-url", "origin"],
+    const remoteCmd = new Deno.Command('git', {
+      args: ['remote', 'get-url', 'origin'],
       cwd: dir,
-      stdout: "piped",
-      stderr: "piped",
+      stdout: 'piped',
+      stderr: 'piped',
     });
     const remoteResult = await remoteCmd.output();
     if (remoteResult.code === 0) {
@@ -247,7 +240,7 @@ async function getJsrVersionsByChannel(
 
   try {
     const versionsByChannel = await versionResolver.getVersionsByChannel(
-      "jsr",
+      'jsr',
       packageName,
     );
 
@@ -279,8 +272,8 @@ interface RefOutput {
 }
 
 export default Command(
-  "projects:[projectRef]:ref",
-  "Display ProjectRef details for a resolved project.",
+  'projects:[projectRef]:ref',
+  'Display ProjectRef details for a resolved project.',
 )
   .Args(RefArgsSchema)
   .Flags(RefFlagsSchema)
@@ -299,13 +292,13 @@ export default Command(
     const { ProjectResolver, VersionResolver } = Services;
 
     if (!Params.ProjectRef) {
-      Log.Error("No project reference provided.");
+      Log.Error('No project reference provided.');
       return {
         Code: 1,
-        Message: "No project reference provided",
+        Message: 'No project reference provided',
         Data: {
-          dir: "",
-          configPath: "",
+          dir: '',
+          configPath: '',
           git: {},
           hasBuild: false,
           tasks: [],
@@ -324,8 +317,8 @@ export default Command(
           Code: 1,
           Message: `No projects found matching '${Params.ProjectRef}'`,
           Data: {
-            dir: "",
-            configPath: "",
+            dir: '',
+            configPath: '',
             git: {},
             hasBuild: false,
             tasks: [],
@@ -338,15 +331,14 @@ export default Command(
       if (projects.length > 1) {
         Log.Error(
           `Found ${projects.length} projects. Please specify a single project:\n` +
-            projects.map((p) => `  - ${p.name ?? p.dir}`).join("\n"),
+            projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
         );
         return {
           Code: 1,
-          Message:
-            `Found ${projects.length} projects, please specify a single project`,
+          Message: `Found ${projects.length} projects, please specify a single project`,
           Data: {
-            dir: "",
-            configPath: "",
+            dir: '',
+            configPath: '',
             git: {},
             hasBuild: false,
             tasks: [],
@@ -367,20 +359,18 @@ export default Command(
         : {};
 
       // Check for build task
-      const hasBuild = project.tasks
-        ? Object.hasOwn(project.tasks, "build")
-        : false;
+      const hasBuild = project.tasks ? Object.hasOwn(project.tasks, 'build') : false;
       const tasks = project.tasks ? Object.keys(project.tasks) : [];
 
       // Parse filter for reference lookup
       const parsedFilters = parseFilters(Params.Filter);
 
       // Convert source types for the API
-      const sourceFilterForApi = parsedFilters.sourceTypes.includes("all")
-        ? "all" as const
+      const sourceFilterForApi = parsedFilters.sourceTypes.includes('all')
+        ? 'all' as const
         : parsedFilters.sourceTypes.filter((
           t,
-        ): t is PackageReference["source"] => t !== "all");
+        ): t is PackageReference['source'] => t !== 'all');
 
       // Find all references to this package in the workspace
       const referencedBy = project.name
@@ -406,7 +396,7 @@ export default Command(
         console.log(JSON.stringify(output, null, 2));
       } else {
         // Human-readable output
-        Log.Info(`Package: ${project.name ?? "(unnamed)"}`);
+        Log.Info(`Package: ${project.name ?? '(unnamed)'}`);
         Log.Info(`Directory: ${project.dir}`);
         Log.Info(`Config: ${project.configPath}`);
 
@@ -417,36 +407,36 @@ export default Command(
           Log.Info(`Git Branch: ${gitInfo.branch}`);
         }
 
-        Log.Info(`Has Build Task: ${hasBuild ? "yes" : "no"}`);
+        Log.Info(`Has Build Task: ${hasBuild ? 'yes' : 'no'}`);
 
         if (tasks.length > 0) {
-          Log.Info(`Tasks: ${tasks.join(", ")}`);
+          Log.Info(`Tasks: ${tasks.join(', ')}`);
         }
 
         // Display JSR versions by channel
         const channelKeys = Object.keys(jsrVersions);
         if (channelKeys.length > 0) {
-          Log.Info("");
-          Log.Info("JSR Versions by Channel:");
+          Log.Info('');
+          Log.Info('JSR Versions by Channel:');
           for (const channel of channelKeys.sort()) {
             Log.Info(`  ${channel}: ${jsrVersions[channel]}`);
           }
         } else if (project.name) {
-          Log.Info("");
-          Log.Info("JSR Versions: (not published or no versions found)");
+          Log.Info('');
+          Log.Info('JSR Versions: (not published or no versions found)');
         }
 
         // Display references to this package
         if (referencedBy.length > 0) {
-          Log.Info("");
+          Log.Info('');
           Log.Info(`Referenced By (${referencedBy.length} files):`);
           for (const ref of referencedBy) {
-            const sourceLabels: Record<PackageReference["source"], string> = {
-              config: "",
-              deps: " [.deps.ts]",
-              template: " [template]",
-              docs: " [docs]",
-              other: " [other]",
+            const sourceLabels: Record<PackageReference['source'], string> = {
+              config: '',
+              deps: ' [.deps.ts]',
+              template: ' [template]',
+              docs: ' [docs]',
+              other: ' [other]',
             };
             const sourceLabel = sourceLabels[ref.source];
             Log.Info(
@@ -454,8 +444,8 @@ export default Command(
             );
           }
         } else if (project.name) {
-          Log.Info("");
-          Log.Info("Referenced By: (no references found)");
+          Log.Info('');
+          Log.Info('Referenced By: (no references found)');
         }
       }
 
@@ -468,12 +458,10 @@ export default Command(
       Log.Error(error instanceof Error ? error.message : String(error));
       return {
         Code: 1,
-        Message: `Ref failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        Message: `Ref failed: ${error instanceof Error ? error.message : String(error)}`,
         Data: {
-          dir: "",
-          configPath: "",
+          dir: '',
+          configPath: '',
           git: {},
           hasBuild: false,
           tasks: [],

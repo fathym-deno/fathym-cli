@@ -1,2 +1,2 @@
-import "./ProjectResolver.test.ts";
-import "./PackageReferences.test.ts";
+import './ProjectResolver.test.ts';
+import './PackageReferences.test.ts';

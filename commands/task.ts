@@ -46,15 +46,10 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { DFSProjectResolver } from "../src/projects/ProjectResolver.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '../src/projects/ProjectResolver.ts';
 
 /**
  * Result data for the task command.
@@ -74,8 +69,8 @@ export interface TaskResult {
  * @property dry-run - Preview what would run without executing
  */
 const TaskFlagsSchema = z.object({
-  "dry-run": z.boolean().optional().describe(
-    "Show what would run without executing",
+  'dry-run': z.boolean().optional().describe(
+    'Show what would run without executing',
   ),
 });
 
@@ -89,12 +84,12 @@ const TaskFlagsSchema = z.object({
 const TaskArgsSchema = z.tuple([
   z
     .string()
-    .describe("Project name, path to deno.json(c), or directory")
-    .meta({ argName: "project" }),
+    .describe('Project name, path to deno.json(c), or directory')
+    .meta({ argName: 'project' }),
   z
     .string()
-    .describe("The deno task name to execute")
-    .meta({ argName: "task" }),
+    .describe('The deno task name to execute')
+    .meta({ argName: 'task' }),
 ]);
 
 /**
@@ -118,11 +113,11 @@ class TaskCommandParams extends CommandParams<
 
   /** Whether to preview without executing */
   override get DryRun(): boolean {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 }
 
-export default Command("task", "Run a deno task from a resolved project.")
+export default Command('task', 'Run a deno task from a resolved project.')
   .Args(TaskArgsSchema)
   .Flags(TaskFlagsSchema)
   .Params(TaskCommandParams)
@@ -157,12 +152,11 @@ export default Command("task", "Run a deno task from a resolved project.")
         if (projects.length > 1) {
           Log.Error(
             `Found ${projects.length} projects. Please specify a single project:\n` +
-              projects.map((p) => `  - ${p.name ?? p.dir}`).join("\n"),
+              projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
           );
           return {
             Code: 1,
-            Message:
-              `Found ${projects.length} projects. Please specify a single project.`,
+            Message: `Found ${projects.length} projects. Please specify a single project.`,
             Data: { task: taskName, project: projectRef, exitCode: 1 },
           };
         }
@@ -172,14 +166,12 @@ export default Command("task", "Run a deno task from a resolved project.")
 
         // Check if the task exists in the project
         if (!project.tasks || !Object.hasOwn(project.tasks, taskName)) {
-          const availableTasks = project.tasks
-            ? Object.keys(project.tasks)
-            : [];
+          const availableTasks = project.tasks ? Object.keys(project.tasks) : [];
           if (availableTasks.length > 0) {
             Log.Error(
               `Task '${taskName}' not found in ${project.configPath}.\n` +
                 `Available tasks:\n` +
-                availableTasks.map((t) => `  - ${t}`).join("\n"),
+                availableTasks.map((t) => `  - ${t}`).join('\n'),
             );
           } else {
             Log.Error(
@@ -209,12 +201,12 @@ export default Command("task", "Run a deno task from a resolved project.")
           `Starting 'deno task ${taskName}' in ${project.dir} (${project.configPath}).`,
         );
 
-        const cmd = new Deno.Command("deno", {
-          args: ["task", taskName],
+        const cmd = new Deno.Command('deno', {
+          args: ['task', taskName],
           cwd: project.dir,
-          stdin: "inherit",
-          stdout: "inherit",
-          stderr: "inherit",
+          stdin: 'inherit',
+          stdout: 'inherit',
+          stderr: 'inherit',
         });
 
         const { code } = await cmd.output();

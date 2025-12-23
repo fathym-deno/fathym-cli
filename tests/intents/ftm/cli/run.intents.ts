@@ -1,96 +1,96 @@
-import { CommandIntentSuite } from "@fathym/cli";
-import RunCommand from "../../../../commands/cli/run.ts";
+import { CommandIntentSuite } from '@fathym/cli';
+import RunCommand from '../../../../commands/cli/run.ts';
 
 CommandIntentSuite(
-  "Run Command Suite",
+  'Run Command Suite',
   RunCommand.Build(),
-  import.meta.resolve("../../../../.cli.ts"),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   // === HELLO COMMAND TESTS ===
   .Intent("Run 'hello' command with default args", (int) =>
     int
-      .Args(["hello"])
-      .Flags({ config: "./tests/.temp/my-cli/.cli.ts" })
+      .Args(['hello'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
-        "👋 Hello, world!",
-        "🎉 CLI run completed",
+        '👋 Hello, world!',
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   .Intent("Run 'hello' command with a name", (int) =>
     int
-      .Args(["hello", "testy"])
-      .Flags({ config: "./tests/.temp/my-cli/.cli.ts" })
+      .Args(['hello', 'testy'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
-        "👋 Hello, testy!",
-        "🎉 CLI run completed",
+        '👋 Hello, testy!',
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   .Intent("Run 'hello' command with loud flag", (int) =>
     int
-      .Args(["hello", "team"])
+      .Args(['hello', 'team'])
       .Flags({
-        config: "./tests/.temp/my-cli/.cli.ts",
+        config: './tests/.temp/my-cli/.cli.ts',
         loud: true,
       })
       .ExpectLogs(
-        "👋 HELLO, TEAM!",
-        "🎉 CLI run completed",
+        '👋 HELLO, TEAM!',
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   // === WAVE COMMAND TESTS (now under secondary group) ===
   .Intent("Run 'secondary/wave' command with default args", (int) =>
     int
-      .Args(["secondary/wave"])
-      .Flags({ config: "./tests/.temp/my-cli/.cli.ts" })
+      .Args(['secondary/wave'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
-        "👋 Waving at friend",
-        "🎉 CLI run completed",
+        '👋 Waving at friend',
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   .Intent("Run 'secondary/wave' command with a name", (int) =>
     int
-      .Args(["secondary/wave", "me"])
-      .Flags({ config: "./tests/.temp/my-cli/.cli.ts" })
+      .Args(['secondary/wave', 'me'])
+      .Flags({ config: './tests/.temp/my-cli/.cli.ts' })
       .ExpectLogs(
-        "👋 Waving at me",
-        "🎉 CLI run completed",
+        '👋 Waving at me',
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   .Intent("Run 'secondary/wave' command with excitement", (int) =>
     int
-      .Args(["secondary/wave", "you"])
+      .Args(['secondary/wave', 'you'])
       .Flags({
-        config: "./tests/.temp/my-cli/.cli.ts",
+        config: './tests/.temp/my-cli/.cli.ts',
         excited: true,
       })
       .ExpectLogs(
-        "👋 Waving at you!!!",
-        "🎉 CLI run completed",
+        '👋 Waving at you!!!',
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   .Intent("Run 'secondary/wave' dry run", (int) =>
     int
-      .Args(["secondary/wave", "nobody"])
+      .Args(['secondary/wave', 'nobody'])
       .Flags({
-        config: "./tests/.temp/my-cli/.cli.ts",
-        "dry-run": true,
+        config: './tests/.temp/my-cli/.cli.ts',
+        'dry-run': true,
       })
       .ExpectLogs(
         '🛑 Dry run: "👋 Waving at nobody" would have been printed.',
-        "🎉 CLI run completed",
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   .Intent("Run 'secondary/wave' dry run with excitement", (int) =>
     int
-      .Args(["secondary/wave", "everyone"])
+      .Args(['secondary/wave', 'everyone'])
       .Flags({
-        config: "./tests/.temp/my-cli/.cli.ts",
-        "dry-run": true,
+        config: './tests/.temp/my-cli/.cli.ts',
+        'dry-run': true,
         excited: true,
       })
       .ExpectLogs(
         '🛑 Dry run: "👋 Waving at everyone!!!" would have been printed.',
-        "🎉 CLI run completed",
+        '🎉 CLI run completed',
       )
       .ExpectExit(0))
   // // === Schema-driven help validation ===

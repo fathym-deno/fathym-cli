@@ -1,7 +1,7 @@
-import { CommandIntentSuite } from "@fathym/cli";
-import ConfigSetCommand from "../../../../commands/cli/config/set.ts";
-import ConfigGetCommand from "../../../../commands/cli/config/get.ts";
-import type { ConfigFileService } from "../../../../src/services/ConfigFileService.ts";
+import { CommandIntentSuite } from '@fathym/cli';
+import ConfigSetCommand from '../../../../commands/cli/config/set.ts';
+import ConfigGetCommand from '../../../../commands/cli/config/get.ts';
+import type { ConfigFileService } from '../../../../src/services/ConfigFileService.ts';
 
 // Config intents test the config set/get commands using mocked ConfigFileService.
 // This avoids needing actual ConfigDFS registration in tests.
@@ -33,7 +33,7 @@ function createMockConfigService(): ConfigFileService {
 }
 
 function getNestedValue(obj: Record<string, unknown>, key: string): unknown {
-  return key.split(".").reduce<unknown>(
+  return key.split('.').reduce<unknown>(
     (o, k) => (o as Record<string, unknown>)?.[k],
     obj,
   );
@@ -44,11 +44,11 @@ function setNestedValue(
   key: string,
   value: unknown,
 ): void {
-  const keys = key.split(".");
+  const keys = key.split('.');
   const last = keys.pop()!;
   let current = obj;
   for (const k of keys) {
-    if (!(k in current) || typeof current[k] !== "object") {
+    if (!(k in current) || typeof current[k] !== 'object') {
       current[k] = {};
     }
     current = current[k] as Record<string, unknown>;
@@ -56,12 +56,12 @@ function setNestedValue(
   current[last] = value;
 }
 
-const CONFIG_FILE = "test-config.json";
+const CONFIG_FILE = 'test-config.json';
 
 CommandIntentSuite(
-  "Config Set Command Suite",
+  'Config Set Command Suite',
   ConfigSetCommand.Build(),
-  import.meta.resolve("../../../../.cli.ts"),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(() => {
     // Clear mock store before tests
@@ -69,52 +69,52 @@ CommandIntentSuite(
       delete mockConfigStore[key];
     }
   })
-  .Intent("Set a simple key", (int) =>
+  .Intent('Set a simple key', (int) =>
     int
-      .Args([CONFIG_FILE, "API_KEY", "my-secret-key"])
+      .Args([CONFIG_FILE, 'API_KEY', 'my-secret-key'])
       .WithServices({ configService: createMockConfigService() })
-      .ExpectLogs("Set API_KEY in test-config.json")
+      .ExpectLogs('Set API_KEY in test-config.json')
       .ExpectExit(0))
-  .Intent("Set a nested key using dot-notation", (int) =>
+  .Intent('Set a nested key using dot-notation', (int) =>
     int
-      .Args([CONFIG_FILE, "azure.ai.apiKey", "nested-secret"])
+      .Args([CONFIG_FILE, 'azure.ai.apiKey', 'nested-secret'])
       .WithServices({ configService: createMockConfigService() })
-      .ExpectLogs("Set azure.ai.apiKey in test-config.json")
+      .ExpectLogs('Set azure.ai.apiKey in test-config.json')
       .ExpectExit(0))
   .Run();
 
 CommandIntentSuite(
-  "Config Get Command Suite",
+  'Config Get Command Suite',
   ConfigGetCommand.Build(),
-  import.meta.resolve("../../../../.cli.ts"),
+  import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(() => {
     // Pre-populate mock store with test data
     mockConfigStore[CONFIG_FILE] = {
-      API_KEY: "test-api-key",
+      API_KEY: 'test-api-key',
       azure: {
         ai: {
-          apiKey: "azure-ai-key",
-          endpoint: "https://example.azure.com",
+          apiKey: 'azure-ai-key',
+          endpoint: 'https://example.azure.com',
         },
       },
     };
   })
-  .Intent("Get a simple key", (int) =>
+  .Intent('Get a simple key', (int) =>
     int
-      .Args([CONFIG_FILE, "API_KEY"])
+      .Args([CONFIG_FILE, 'API_KEY'])
       .WithServices({ configService: createMockConfigService() })
       .ExpectLogs('"test-api-key"')
       .ExpectExit(0))
-  .Intent("Get a nested key using dot-notation", (int) =>
+  .Intent('Get a nested key using dot-notation', (int) =>
     int
-      .Args([CONFIG_FILE, "azure.ai.apiKey"])
+      .Args([CONFIG_FILE, 'azure.ai.apiKey'])
       .WithServices({ configService: createMockConfigService() })
       .ExpectLogs('"azure-ai-key"')
       .ExpectExit(0))
-  .Intent("Get a non-existent key", (int) =>
+  .Intent('Get a non-existent key', (int) =>
     int
-      .Args([CONFIG_FILE, "nonexistent.key"])
+      .Args([CONFIG_FILE, 'nonexistent.key'])
       .WithServices({ configService: createMockConfigService() })
       .ExpectLogs('Key "nonexistent.key" not found')
       .ExpectExit(0))

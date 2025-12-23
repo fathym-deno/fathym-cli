@@ -86,23 +86,23 @@
  * @module
  */
 
-import { dirname } from "@std/path";
-import { toFileUrl } from "@std/path/to-file-url";
-import { z } from "zod";
+import { dirname } from '@std/path';
+import { toFileUrl } from '@std/path/to-file-url';
+import { z } from 'zod';
 import {
   CLIDFSContextManager,
   CLIModuleBuilder,
   Command,
   CommandParams,
   type CommandStatus,
-} from "@fathym/cli";
+} from '@fathym/cli';
 import {
   detectTarget,
   findBinary,
   getBinaryExtension,
   installBinary,
   type InstallLogger,
-} from "../../src/services/InstallService.ts";
+} from '../../src/services/InstallService.ts';
 
 /**
  * Result data for the install command.
@@ -134,19 +134,19 @@ export const InstallArgsSchema = z.tuple([]);
  */
 export const InstallFlagsSchema = z
   .object({
-    to: z.string().optional().describe("Target install dir (default: ~/.bin)"),
+    to: z.string().optional().describe('Target install dir (default: ~/.bin)'),
     config: z
       .string()
       .optional()
-      .describe("Path to .cli.ts (default: ./.cli.ts)"),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     useHome: z
       .boolean()
       .optional()
-      .describe("Use the user home directory as DFS root (default: false)"),
+      .describe('Use the user home directory as DFS root (default: false)'),
     target: z
       .string()
       .optional()
-      .describe("Target platform (auto-detected if not specified)"),
+      .describe('Target platform (auto-detected if not specified)'),
   })
   .passthrough();
 
@@ -165,7 +165,7 @@ export class InstallParams extends CommandParams<
    * Defaults to './.bin' (relative to DFS root).
    */
   get To(): string {
-    return this.Flag("to") ?? "./.bin";
+    return this.Flag('to') ?? './.bin';
   }
 
   /**
@@ -173,7 +173,7 @@ export class InstallParams extends CommandParams<
    * Used to locate the compiled binary in .dist/.
    */
   get ConfigPath(): string | undefined {
-    return this.Flag("config");
+    return this.Flag('config');
   }
 
   /**
@@ -183,7 +183,7 @@ export class InstallParams extends CommandParams<
    * enabling global CLI installation (e.g., `~/.bin/my-cli`).
    */
   get UseHome(): boolean {
-    return this.Flag("useHome") ?? false;
+    return this.Flag('useHome') ?? false;
   }
 
   /**
@@ -193,7 +193,7 @@ export class InstallParams extends CommandParams<
    * from the corresponding target folder in `.dist/exe/<target>/`.
    */
   get Target(): string | undefined {
-    return this.Flag("target");
+    return this.Flag('target');
   }
 }
 
@@ -204,8 +204,8 @@ export class InstallParams extends CommandParams<
  * target auto-detection, and PATH verification.
  */
 export default Command(
-  "install",
-  "Install a compiled CLI binary to your system",
+  'install',
+  'Install a compiled CLI binary to your system',
 )
   .Args(InstallArgsSchema)
   .Flags(InstallFlagsSchema)
@@ -214,16 +214,14 @@ export default Command(
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
     if (ctx.Params.ConfigPath) {
-      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, "CLI");
+      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
     }
 
     const configDFS = ctx.Params.ConfigPath
-      ? await dfsCtx.GetDFS("CLI")
+      ? await dfsCtx.GetDFS('CLI')
       : await dfsCtx.GetExecutionDFS();
 
-    const installDFS = ctx.Params.UseHome
-      ? await dfsCtx.GetUserHomeDFS()
-      : configDFS;
+    const installDFS = ctx.Params.UseHome ? await dfsCtx.GetUserHomeDFS() : configDFS;
 
     return {
       ConfigDFS: configDFS,
@@ -236,8 +234,8 @@ export default Command(
     ): Promise<CommandStatus<InstallResult>> => {
       const { ConfigDFS, InstallDFS } = Services;
 
-      const configPath = await ConfigDFS.ResolvePath(".cli.ts");
-      const configInfo = await ConfigDFS.GetFileInfo(".cli.ts");
+      const configPath = await ConfigDFS.ResolvePath('.cli.ts');
+      const configInfo = await ConfigDFS.GetFileInfo('.cli.ts');
       const target = Params.Target ?? detectTarget();
 
       if (!configInfo) {
@@ -245,7 +243,7 @@ export default Command(
         return {
           Code: 1,
           Message: `Could not find CLI config at: ${configPath}`,
-          Data: { installed: false, binaryPath: "", target },
+          Data: { installed: false, binaryPath: '', target },
         };
       }
 
@@ -257,14 +255,14 @@ export default Command(
         cliModule = cliModule.Build();
       }
       const config = cliModule.Config ?? {};
-      const tokens: string[] = config.Tokens ?? ["cli"];
+      const tokens: string[] = config.Tokens ?? ['cli'];
 
       if (!tokens.length) {
-        Log.Error("❌ No tokens specified in CLI config.");
+        Log.Error('❌ No tokens specified in CLI config.');
         return {
           Code: 1,
-          Message: "No tokens specified in CLI config",
-          Data: { installed: false, binaryPath: "", target },
+          Message: 'No tokens specified in CLI config',
+          Data: { installed: false, binaryPath: '', target },
         };
       }
 
@@ -290,7 +288,7 @@ export default Command(
         return {
           Code: 1,
           Message: `Could not find binary for target: ${target}`,
-          Data: { installed: false, binaryPath: "", target },
+          Data: { installed: false, binaryPath: '', target },
         };
       }
 
@@ -320,16 +318,16 @@ export default Command(
       } catch (err) {
         if (
           err instanceof Error &&
-          err.message === "Binary locked and cannot be replaced"
+          err.message === 'Binary locked and cannot be replaced'
         ) {
-          Log.Error("");
-          Log.Error("Try one of these solutions:");
-          Log.Error("  1. Close all terminal windows running the CLI");
-          Log.Error("  2. Run the install command in a new terminal:");
+          Log.Error('');
+          Log.Error('Try one of these solutions:');
+          Log.Error('  1. Close all terminal windows running the CLI');
+          Log.Error('  2. Run the install command in a new terminal:');
           Log.Error(`     deno task cli:run cli install --useHome --to=.bin`);
           return {
             Code: 1,
-            Message: "Binary locked and cannot be replaced",
+            Message: 'Binary locked and cannot be replaced',
             Data: { installed: false, binaryPath: installedBinaryPath, target },
           };
         }

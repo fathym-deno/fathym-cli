@@ -36,15 +36,10 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { DFSProjectResolver } from "../../../src/projects/ProjectResolver.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 
 /**
  * Result data for the dev command.
@@ -63,7 +58,7 @@ export interface ProjectDevResult {
  */
 const DevSegmentsSchema = z.object({
   projectRef: z.string().describe(
-    "Project name, path to deno.json(c), or directory",
+    'Project name, path to deno.json(c), or directory',
   ),
 });
 
@@ -75,8 +70,8 @@ type DevSegments = z.infer<typeof DevSegmentsSchema>;
  * @property dry-run - Preview what would run without executing
  */
 const DevFlagsSchema = z.object({
-  "dry-run": z.boolean().optional().describe(
-    "Show what would run without executing",
+  'dry-run': z.boolean().optional().describe(
+    'Show what would run without executing',
   ),
 });
 
@@ -97,17 +92,17 @@ class DevCommandParams extends CommandParams<
 > {
   /** Project reference from dynamic segment */
   get ProjectRef(): string {
-    return this.Segment("projectRef") ?? "";
+    return this.Segment('projectRef') ?? '';
   }
 
   /** Whether to preview without executing */
   override get DryRun(): boolean {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 }
 
 export default Command(
-  "projects:[projectRef]:dev",
+  'projects:[projectRef]:dev',
   "Run a project's `deno task dev` by project name or path.",
 )
   .Args(DevArgsSchema)
@@ -131,11 +126,11 @@ export default Command(
       const resolver = Services.ProjectResolver;
 
       if (!Params.ProjectRef) {
-        Log.Error("No project reference provided.");
+        Log.Error('No project reference provided.');
         return {
           Code: 1,
-          Message: "No project reference provided",
-          Data: { project: "", success: false, exitCode: 1 },
+          Message: 'No project reference provided',
+          Data: { project: '', success: false, exitCode: 1 },
         };
       }
 
@@ -154,12 +149,11 @@ export default Command(
         if (projects.length > 1) {
           Log.Error(
             `Found ${projects.length} projects. Please specify a single project:\n` +
-              projects.map((p) => `  - ${p.name ?? p.dir}`).join("\n"),
+              projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
           );
           return {
             Code: 1,
-            Message:
-              `Found ${projects.length} projects, please specify a single project`,
+            Message: `Found ${projects.length} projects, please specify a single project`,
             Data: { project: Params.ProjectRef, success: false, exitCode: 1 },
           };
         }
@@ -194,12 +188,12 @@ export default Command(
           `Starting 'deno task dev' in ${project.dir} (${project.configPath}).`,
         );
 
-        const cmd = new Deno.Command("deno", {
-          args: ["task", "dev"],
+        const cmd = new Deno.Command('deno', {
+          args: ['task', 'dev'],
           cwd: project.dir,
-          stdin: "inherit",
-          stdout: "inherit",
-          stderr: "inherit",
+          stdin: 'inherit',
+          stdout: 'inherit',
+          stderr: 'inherit',
         });
 
         const { code } = await cmd.output();
@@ -216,9 +210,7 @@ export default Command(
         Log.Error(error instanceof Error ? error.message : String(error));
         return {
           Code: 1,
-          Message: `Dev failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          Message: `Dev failed: ${error instanceof Error ? error.message : String(error)}`,
           Data: { project: Params.ProjectRef, success: false, exitCode: 1 },
         };
       }

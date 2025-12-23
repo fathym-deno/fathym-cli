@@ -1,1 +1,1 @@
-export const greeting = "Hello from lib-a";
+export const greeting = 'Hello from lib-a';

@@ -1,4 +1,4 @@
-import { Spinner, SpinnerHandle, SpinnerLogger } from "./Spinner.ts";
+import { Spinner, SpinnerHandle, SpinnerLogger } from './Spinner.ts';
 
 export type PipelineLogger = SpinnerLogger;
 
@@ -51,7 +51,7 @@ export class TaskPipeline {
       const skipState = TaskPipeline.parseSkipResult(skip);
       if (skipState.skip) {
         logger.Info(
-          `⚪ ${task.title}${skipState.reason ? ` (${skipState.reason})` : ""}`,
+          `⚪ ${task.title}${skipState.reason ? ` (${skipState.reason})` : ''}`,
         );
         continue;
       }
@@ -82,11 +82,11 @@ export class TaskPipeline {
       return { skip: false };
     }
 
-    if (typeof value === "boolean") {
+    if (typeof value === 'boolean') {
       return { skip: value };
     }
 
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       return { skip: true, reason: value };
     }
 

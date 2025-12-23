@@ -24,7 +24,7 @@
  */
 export interface DepsReference {
   /** Registry type: 'jsr' or 'npm' */
-  registry: "jsr" | "npm";
+  registry: 'jsr' | 'npm';
 
   /** Package scope (e.g., '@fathym'), undefined for unscoped packages */
   scope?: string;
@@ -96,7 +96,7 @@ export class DepsFileParser {
    */
   parse(content: string): DepsReference[] {
     const refs: DepsReference[] = [];
-    const lines = content.split("\n");
+    const lines = content.split('\n');
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       const line = lines[lineIndex];
@@ -107,7 +107,7 @@ export class DepsFileParser {
 
       let match: RegExpExecArray | null;
       while ((match = DepsFileParser.SPECIFIER_REGEX.exec(line)) !== null) {
-        const registry = match[1] as "jsr" | "npm";
+        const registry = match[1] as 'jsr' | 'npm';
         const packagePart = match[2];
         const version = match[3];
         const subpath = match[4] || undefined;
@@ -117,8 +117,8 @@ export class DepsFileParser {
         let name: string;
         let fullName: string;
 
-        if (packagePart.startsWith("@")) {
-          const slashIndex = packagePart.indexOf("/");
+        if (packagePart.startsWith('@')) {
+          const slashIndex = packagePart.indexOf('/');
           scope = packagePart.substring(0, slashIndex);
           name = packagePart.substring(slashIndex + 1);
           fullName = packagePart;
@@ -158,14 +158,14 @@ export class DepsFileParser {
    */
   parseSpecifier(
     specifier: string,
-  ): Omit<DepsReference, "line" | "column"> | null {
+  ): Omit<DepsReference, 'line' | 'column'> | null {
     // Match without quotes for direct specifier parsing
     const regex = /^(jsr|npm):(@[^/@]+\/[^/@]+|[^/@]+)@([^/]+)(\/.*)?$/;
     const match = regex.exec(specifier);
 
     if (!match) return null;
 
-    const registry = match[1] as "jsr" | "npm";
+    const registry = match[1] as 'jsr' | 'npm';
     const packagePart = match[2];
     const version = match[3];
     const subpath = match[4] || undefined;
@@ -174,8 +174,8 @@ export class DepsFileParser {
     let name: string;
     let fullName: string;
 
-    if (packagePart.startsWith("@")) {
-      const slashIndex = packagePart.indexOf("/");
+    if (packagePart.startsWith('@')) {
+      const slashIndex = packagePart.indexOf('/');
       scope = packagePart.substring(0, slashIndex);
       name = packagePart.substring(slashIndex + 1);
       fullName = packagePart;
@@ -221,18 +221,18 @@ export class DepsFileParser {
     for (const [packageName, newVersion] of updates) {
       // Create regex to match this specific package in specifiers
       // Escape special regex characters in package name
-      const escapedName = packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const escapedName = packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
       // Match both jsr and npm specifiers for this package
       const regex = new RegExp(
         `(["'])(jsr|npm):${escapedName}@([^/"']+)(/[^"']*)?\\1`,
-        "g",
+        'g',
       );
 
       result = result.replace(
         regex,
         (_match, quote, registry, _oldVersion, subpath) => {
-          const newSubpath = subpath || "";
+          const newSubpath = subpath || '';
           return `${quote}${registry}:${packageName}@${newVersion}${newSubpath}${quote}`;
         },
       );
@@ -271,7 +271,7 @@ export class DepsFileParser {
    */
   filterByRegistry(
     refs: DepsReference[],
-    registry: "jsr" | "npm",
+    registry: 'jsr' | 'npm',
   ): DepsReference[] {
     return refs.filter((ref) => ref.registry === registry);
   }
@@ -288,15 +288,15 @@ export class DepsFileParser {
    * @returns Filtered array of references
    */
   filterByPattern(refs: DepsReference[], pattern: string): DepsReference[] {
-    if (!pattern.includes("*")) {
+    if (!pattern.includes('*')) {
       // Exact match
       return refs.filter((ref) => ref.fullName === pattern);
     }
 
     // Convert wildcard pattern to regex
     const regexPattern = pattern
-      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape special chars
-      .replace(/\\\*/g, ".*"); // Convert escaped * back to .*
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
+      .replace(/\\\*/g, '.*'); // Convert escaped * back to .*
 
     const regex = new RegExp(`^${regexPattern}$`);
     return refs.filter((ref) => regex.test(ref.fullName));

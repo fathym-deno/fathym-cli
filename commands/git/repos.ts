@@ -7,19 +7,14 @@
  * @module
  */
 
-import {
-  Command,
-  type CommandLog,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import { z } from "zod";
+import { Command, type CommandLog, CommandParams, type CommandStatus } from '@fathym/cli';
+import { z } from 'zod';
 import {
   type FathymGitHubBranch,
   FathymGitHubLookupService,
   type FathymGitHubOrganization,
   type FathymGitHubRepository,
-} from "../../src/services/.exports.ts";
+} from '../../src/services/.exports.ts';
 
 const GitReposArgs = z.tuple([]);
 
@@ -27,11 +22,11 @@ const GitReposFlags = z.object({
   org: z
     .string()
     .optional()
-    .describe("Organization lookup to inspect (e.g., fathym)."),
+    .describe('Organization lookup to inspect (e.g., fathym).'),
   repo: z
     .string()
     .optional()
-    .describe("Repository lookup to inspect (requires --org)."),
+    .describe('Repository lookup to inspect (requires --org).'),
 });
 
 class GitReposParams extends CommandParams<
@@ -39,11 +34,11 @@ class GitReposParams extends CommandParams<
   z.infer<typeof GitReposFlags>
 > {
   public get Organization(): string | undefined {
-    return this.Flag("org");
+    return this.Flag('org');
   }
 
   public get Repository(): string | undefined {
-    return this.Flag("repo");
+    return this.Flag('repo');
   }
 }
 
@@ -62,8 +57,8 @@ type GitReposResult = {
 };
 
 export default Command(
-  "Git Repository Lookups",
-  "List Fathym GitHub orgs/repos/branches",
+  'Git Repository Lookups',
+  'List Fathym GitHub orgs/repos/branches',
 )
   .Args(GitReposArgs)
   .Flags(GitReposFlags)
@@ -113,16 +108,16 @@ export default Command(
         renderBranches(Log, Params.Organization, Params.Repository, branches);
       }
 
-      Log.Info("");
-      Log.Info("Next steps:");
-      Log.Info("  - Run `ftm git configure -s` to provision a repository.");
+      Log.Info('');
+      Log.Info('Next steps:');
+      Log.Info('  - Run `ftm git configure -s` to provision a repository.');
       Log.Info(
-        "  - Run `ftm git clone --target <path>` after configure completes.",
+        '  - Run `ftm git clone --target <path>` after configure completes.',
       );
 
       return {
         Code: 0,
-        Message: "GitHub lookup metadata retrieved.",
+        Message: 'GitHub lookup metadata retrieved.',
         Data: result,
       };
     },
@@ -133,11 +128,11 @@ function renderOrganizations(
   organizations: FathymGitHubOrganization[],
 ): void {
   if (organizations.length === 0) {
-    Log.Warn("No GitHub organizations found for your account.");
+    Log.Warn('No GitHub organizations found for your account.');
     return;
   }
 
-  Log.Info("Organizations:");
+  Log.Info('Organizations:');
   for (const org of organizations) {
     Log.Info(`  - ${org.Name} (${org.Lookup})`);
   }
@@ -155,10 +150,10 @@ function renderRepositories(
     return;
   }
 
-  Log.Info("");
+  Log.Info('');
   Log.Info(`Repositories under ${orgLookup}:`);
   for (const repo of repositories) {
-    const description = repo.Description ? ` – ${repo.Description}` : "";
+    const description = repo.Description ? ` – ${repo.Description}` : '';
     Log.Info(`  - ${repo.Lookup}${description}`);
   }
 }
@@ -174,10 +169,10 @@ function renderBranches(
     return;
   }
 
-  Log.Info("");
+  Log.Info('');
   Log.Info(`Branches for ${orgLookup}/${repoLookup}:`);
   for (const branch of branches) {
-    const protection = branch.Protected ? " (protected)" : "";
+    const protection = branch.Protected ? ' (protected)' : '';
     Log.Info(`  - ${branch.Name}${protection}`);
   }
 }

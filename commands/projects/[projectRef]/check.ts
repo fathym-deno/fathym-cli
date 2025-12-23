@@ -17,15 +17,10 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { DFSProjectResolver } from "../../../src/projects/ProjectResolver.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { DFSProjectResolver } from '../../../src/projects/ProjectResolver.ts';
 
 /**
  * Result data for the check command.
@@ -44,7 +39,7 @@ export interface ProjectCheckResult {
  */
 const CheckSegmentsSchema = z.object({
   projectRef: z.string().describe(
-    "Project name, path to deno.json(c), or directory",
+    'Project name, path to deno.json(c), or directory',
   ),
 });
 
@@ -54,14 +49,14 @@ type CheckSegments = z.infer<typeof CheckSegmentsSchema>;
  * Zod schema for check command flags.
  */
 const CheckFlagsSchema = z.object({
-  "dry-run": z.boolean().optional().describe(
-    "Show what would run without executing",
+  'dry-run': z.boolean().optional().describe(
+    'Show what would run without executing',
   ),
-  "verbose": z.boolean().optional().describe(
-    "Show detailed output",
+  'verbose': z.boolean().optional().describe(
+    'Show detailed output',
   ),
-  "all": z.boolean().optional().describe(
-    "Type-check all code, including remote modules and npm packages",
+  'all': z.boolean().optional().describe(
+    'Type-check all code, including remote modules and npm packages',
   ),
 });
 
@@ -79,25 +74,25 @@ class CheckCommandParams extends CommandParams<
   CheckSegments
 > {
   get ProjectRef(): string {
-    return this.Segment("projectRef") ?? "";
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
-    return this.Flag("verbose") ?? false;
+    return this.Flag('verbose') ?? false;
   }
 
   get All(): boolean {
-    return this.Flag("all") ?? false;
+    return this.Flag('all') ?? false;
   }
 
   override get DryRun(): boolean {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 }
 
 export default Command(
-  "projects:[projectRef]:check",
-  "Type check project code with deno check.",
+  'projects:[projectRef]:check',
+  'Type check project code with deno check.',
 )
   .Args(CheckArgsSchema)
   .Flags(CheckFlagsSchema)
@@ -118,11 +113,11 @@ export default Command(
       const resolver = Services.ProjectResolver;
 
       if (!Params.ProjectRef) {
-        Log.Error("No project reference provided.");
+        Log.Error('No project reference provided.');
         return {
           Code: 1,
-          Message: "No project reference provided",
-          Data: { project: "", success: false, exitCode: 1 },
+          Message: 'No project reference provided',
+          Data: { project: '', success: false, exitCode: 1 },
         };
       }
 
@@ -141,12 +136,11 @@ export default Command(
         if (projects.length > 1) {
           Log.Error(
             `Found ${projects.length} projects. Please specify a single project:\n` +
-              projects.map((p) => `  - ${p.name ?? p.dir}`).join("\n"),
+              projects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
           );
           return {
             Code: 1,
-            Message:
-              `Found ${projects.length} projects, please specify a single project`,
+            Message: `Found ${projects.length} projects, please specify a single project`,
             Data: { project: Params.ProjectRef, success: false, exitCode: 1 },
           };
         }
@@ -159,15 +153,15 @@ export default Command(
         }
 
         // Build check args - use mod.ts or main entry if available
-        const args = ["check"];
+        const args = ['check'];
         if (Params.All) {
-          args.push("--all");
+          args.push('--all');
         }
-        args.push("**/*.ts");
+        args.push('**/*.ts');
 
         if (Params.DryRun) {
           Log.Info(
-            `[DRY RUN] Would run: deno ${args.join(" ")} in ${project.dir}`,
+            `[DRY RUN] Would run: deno ${args.join(' ')} in ${project.dir}`,
           );
           return {
             Code: 0,
@@ -176,12 +170,12 @@ export default Command(
           };
         }
 
-        const cmd = new Deno.Command("deno", {
+        const cmd = new Deno.Command('deno', {
           args,
           cwd: project.dir,
-          stdin: "inherit",
-          stdout: "inherit",
-          stderr: "inherit",
+          stdin: 'inherit',
+          stdout: 'inherit',
+          stderr: 'inherit',
         });
 
         const { code } = await cmd.output();

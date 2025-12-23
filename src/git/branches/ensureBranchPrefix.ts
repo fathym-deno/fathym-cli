@@ -6,7 +6,7 @@ export function EnsureBranchPrefix(name: string, prefix: string): string {
     return name;
   }
 
-  const normalizedPrefix = prefix.endsWith("/") ? prefix : `${prefix}/`;
+  const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
   if (name.startsWith(normalizedPrefix)) {
     return name;
   }

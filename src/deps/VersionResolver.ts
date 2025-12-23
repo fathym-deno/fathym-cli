@@ -12,7 +12,7 @@
  * @module
  */
 
-import { VersionComparator } from "./VersionComparator.ts";
+import { VersionComparator } from './VersionComparator.ts';
 
 /**
  * Represents an available version from a registry.
@@ -62,7 +62,7 @@ export interface NpmRegistryResponse {
   name: string;
 
   /** Distribution tags (latest, next, etc.) */
-  "dist-tags": Record<string, string>;
+  'dist-tags': Record<string, string>;
 
   /** Map of version to package metadata */
   versions: Record<
@@ -128,7 +128,7 @@ export class VersionResolver {
    * @returns Array of available versions, sorted newest first
    */
   async getVersions(
-    registry: "jsr" | "npm",
+    registry: 'jsr' | 'npm',
     packageName: string,
     options: ResolveOptions = {},
   ): Promise<AvailableVersion[]> {
@@ -141,7 +141,7 @@ export class VersionResolver {
 
     let versions: AvailableVersion[];
 
-    if (registry === "jsr") {
+    if (registry === 'jsr') {
       versions = await this.fetchJsrVersions(packageName, options);
     } else {
       versions = await this.fetchNpmVersions(packageName, options);
@@ -166,7 +166,7 @@ export class VersionResolver {
    * @returns Latest version string or undefined if not found
    */
   async getLatest(
-    registry: "jsr" | "npm",
+    registry: 'jsr' | 'npm',
     packageName: string,
     channel?: string,
     options: ResolveOptions = {},
@@ -185,7 +185,7 @@ export class VersionResolver {
    * @returns Map of channel (or 'production') to version list
    */
   async getVersionsByChannel(
-    registry: "jsr" | "npm",
+    registry: 'jsr' | 'npm',
     packageName: string,
     options: ResolveOptions = {},
   ): Promise<Map<string, AvailableVersion[]>> {
@@ -193,7 +193,7 @@ export class VersionResolver {
     const grouped = new Map<string, AvailableVersion[]>();
 
     for (const version of versions) {
-      const key = version.channel ?? "production";
+      const key = version.channel ?? 'production';
       if (!grouped.has(key)) {
         grouped.set(key, []);
       }
@@ -213,7 +213,7 @@ export class VersionResolver {
    * @returns true if version exists
    */
   async hasVersion(
-    registry: "jsr" | "npm",
+    registry: 'jsr' | 'npm',
     packageName: string,
     version: string,
     options: ResolveOptions = {},
@@ -234,11 +234,9 @@ export class VersionResolver {
 
     const response = await fetch(url, {
       headers: {
-        Accept: "application/json",
+        Accept: 'application/json',
       },
-      signal: options.timeout
-        ? AbortSignal.timeout(options.timeout)
-        : undefined,
+      signal: options.timeout ? AbortSignal.timeout(options.timeout) : undefined,
     });
 
     if (!response.ok) {
@@ -283,19 +281,15 @@ export class VersionResolver {
   ): Promise<AvailableVersion[]> {
     // Build URL: https://registry.npmjs.org/package-name
     // Handle scoped packages
-    const encodedName = packageName.startsWith("@")
-      ? packageName.replace("/", "%2F")
-      : packageName;
+    const encodedName = packageName.startsWith('@') ? packageName.replace('/', '%2F') : packageName;
 
     const url = `https://registry.npmjs.org/${encodedName}`;
 
     const response = await fetch(url, {
       headers: {
-        Accept: "application/json",
+        Accept: 'application/json',
       },
-      signal: options.timeout
-        ? AbortSignal.timeout(options.timeout)
-        : undefined,
+      signal: options.timeout ? AbortSignal.timeout(options.timeout) : undefined,
     });
 
     if (!response.ok) {
@@ -323,9 +317,7 @@ export class VersionResolver {
       versions.push({
         version,
         channel: parsed.channel,
-        publishedAt: data.time?.[version]
-          ? new Date(data.time[version])
-          : undefined,
+        publishedAt: data.time?.[version] ? new Date(data.time[version]) : undefined,
         yanked: !!info.deprecated,
       });
     }

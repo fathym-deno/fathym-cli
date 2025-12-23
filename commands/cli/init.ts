@@ -58,7 +58,7 @@
  * @module
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 import {
   CLIDFSContextManager,
   Command,
@@ -66,8 +66,8 @@ import {
   type CommandStatus,
   TemplateLocator,
   TemplateScaffolder,
-} from "@fathym/cli";
-import { join } from "@std/path";
+} from '@fathym/cli';
+import { join } from '@std/path';
 
 /**
  * Result data for the init command.
@@ -88,7 +88,7 @@ export interface InitResult {
  *                 when omitted or explicitly set to '.'.
  */
 export const InitArgsSchema = z.tuple([
-  z.string().optional().describe("Project name").meta({ argName: "name" }),
+  z.string().optional().describe('Project name').meta({ argName: 'name' }),
 ]);
 
 /**
@@ -100,17 +100,17 @@ export const InitArgsSchema = z.tuple([
  */
 export const InitFlagsSchema = z
   .object({
-    template: z.string().optional().describe("Template to use (e.g. init)"),
+    template: z.string().optional().describe('Template to use (e.g. init)'),
 
     baseTemplatesDir: z
       .string()
       .optional()
-      .describe("Root directory for templates (default injected by CLI)"),
+      .describe('Root directory for templates (default injected by CLI)'),
 
     targetDir: z
       .string()
       .optional()
-      .describe("Where to scaffold the project (relative to execution DFS)"),
+      .describe('Where to scaffold the project (relative to execution DFS)'),
   })
   .passthrough();
 
@@ -140,7 +140,7 @@ class InitParams extends CommandParams<
    */
   get Name(): string {
     const arg = this.Arg(0);
-    return !arg || arg === "." ? "." : arg;
+    return !arg || arg === '.' ? '.' : arg;
   }
 
   /**
@@ -148,7 +148,7 @@ class InitParams extends CommandParams<
    * Defaults to 'init' if --template flag is not provided.
    */
   get Template(): string {
-    return this.Flag("template") ?? "init";
+    return this.Flag('template') ?? 'init';
   }
 
   /**
@@ -156,7 +156,7 @@ class InitParams extends CommandParams<
    * When undefined, uses the CLI's default template location.
    */
   get BaseTemplatesDir(): string | undefined {
-    return this.Flag("baseTemplatesDir");
+    return this.Flag('baseTemplatesDir');
   }
 
   /**
@@ -164,7 +164,7 @@ class InitParams extends CommandParams<
    * When specified, scaffolds relative to this path instead of cwd.
    */
   get TargetDir(): string | undefined {
-    return this.Flag("targetDir");
+    return this.Flag('targetDir');
   }
 }
 
@@ -174,7 +174,7 @@ class InitParams extends CommandParams<
  * Uses the fluent Command API to define arguments, flags, services,
  * and the run handler. Services are injected via IoC container.
  */
-export default Command("init", "Initialize a new CLI project")
+export default Command('init', 'Initialize a new CLI project')
   .Args(InitArgsSchema)
   .Flags(InitFlagsSchema)
   .Params(InitParams)
@@ -183,17 +183,17 @@ export default Command("init", "Initialize a new CLI project")
 
     if (ctx.Params.TargetDir) {
       const targetPath = join(Deno.cwd(), ctx.Params.TargetDir);
-      dfsCtxMgr.RegisterCustomDFS("Target", { FileRoot: targetPath });
+      dfsCtxMgr.RegisterCustomDFS('Target', { FileRoot: targetPath });
     }
 
     const buildDFS = ctx.Params.TargetDir
-      ? await dfsCtxMgr.GetDFS("Target")
+      ? await dfsCtxMgr.GetDFS('Target')
       : await dfsCtxMgr.GetExecutionDFS();
 
     return {
       BuildDFS: buildDFS,
       Scaffolder: new TemplateScaffolder(
-        await ioc.Resolve<TemplateLocator>(ioc.Symbol("TemplateLocator")),
+        await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
         buildDFS,
         { name: ctx.Params.Name },
       ),

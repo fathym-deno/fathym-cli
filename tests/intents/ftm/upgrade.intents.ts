@@ -1,16 +1,16 @@
-import { CommandIntentSuite } from "@fathym/cli";
-import UpgradeCommand from "../../../commands/upgrade.ts";
+import { CommandIntentSuite } from '@fathym/cli';
+import UpgradeCommand from '../../../commands/upgrade.ts';
 
 const cmd = UpgradeCommand.Build();
-const origin = import.meta.resolve("../../../.cli.ts");
+const origin = import.meta.resolve('../../../.cli.ts');
 
-CommandIntentSuite("upgrade Command Suite", cmd, origin)
-  .Intent("List shows available versions", (int) =>
+CommandIntentSuite('upgrade Command Suite', cmd, origin)
+  .Intent('List shows available versions', (int) =>
     int
       .Args([])
       .Flags({ list: true })
       .ExpectExit(0))
-  .Intent("Audit mode checks for upgrades", (int) =>
+  .Intent('Audit mode checks for upgrades', (int) =>
     int
       .Args([])
       .Flags({ audit: true })

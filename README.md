@@ -125,21 +125,21 @@ Commands using the `DFSProjectResolver` support these options:
 ### API Usage
 
 ```typescript
-import { DFSProjectResolver, parseRefs } from "@fathym/ftm/projects";
+import { DFSProjectResolver, parseRefs } from '@fathym/ftm/projects';
 
 const resolver = new DFSProjectResolver(dfsHandler);
 
 // Resolve multiple refs
-const projects = await resolver.Resolve("@pkg/a,@pkg/b");
+const projects = await resolver.Resolve('@pkg/a,@pkg/b');
 
 // Ensure single project (throws if multiple)
-const [single] = await resolver.Resolve("@pkg", { singleOnly: true });
+const [single] = await resolver.Resolve('@pkg', { singleOnly: true });
 
 // Get first match only
-const [first] = await resolver.Resolve("./packages/", { useFirst: true });
+const [first] = await resolver.Resolve('./packages/', { useFirst: true });
 
 // Parse refs manually
-const refs = parseRefs("@a, @b, @c"); // ['@a', '@b', '@c']
+const refs = parseRefs('@a, @b, @c'); // ['@a', '@b', '@c']
 ```
 
 ## Status

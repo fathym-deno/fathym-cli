@@ -1,1 +1,1 @@
-import "./ftm/.intents.ts";
+import './ftm/.intents.ts';

@@ -9,14 +9,9 @@
  * @module
  */
 
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { z } from "zod";
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { z } from 'zod';
 
 /**
  * Result data for the git home command.
@@ -40,25 +35,25 @@ import {
   type TaskDefinition,
   TaskPipeline,
   UrlOpener,
-} from "../../src/services/.exports.ts";
+} from '../../src/services/.exports.ts';
 import {
   type GitHubRemote,
   GitTargetFlagSchema,
   ResolveGitHubRemoteFromOrigin,
   ResolveGitOpsWorkingDFS,
-} from "../../src/git/.exports.ts";
+} from '../../src/git/.exports.ts';
 
 const GitHomeArgsSchema = z.tuple([
   z
     .string()
-    .describe("GitHub organization (e.g., fathym)")
+    .describe('GitHub organization (e.g., fathym)')
     .optional()
-    .meta({ argName: "organization" }),
+    .meta({ argName: 'organization' }),
   z
     .string()
-    .describe("Repository name (e.g., ftm-eac-cli)")
+    .describe('Repository name (e.g., ftm-eac-cli)')
     .optional()
-    .meta({ argName: "repository" }),
+    .meta({ argName: 'repository' }),
 ]);
 
 const GitHomeFlagsSchema = z.object({
@@ -66,12 +61,12 @@ const GitHomeFlagsSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Optional repository section to open (pulls, issues, settings, etc.)",
+      'Optional repository section to open (pulls, issues, settings, etc.)',
     ),
-  "use-local": z
+  'use-local': z
     .boolean()
     .optional()
-    .describe("Infer organization/repository from the local git remote"),
+    .describe('Infer organization/repository from the local git remote'),
 }).merge(GitTargetFlagSchema);
 
 class GitHomeParams extends CommandParams<
@@ -87,11 +82,11 @@ class GitHomeParams extends CommandParams<
   }
 
   get Section(): string | undefined {
-    return this.Flag("section");
+    return this.Flag('section');
   }
 
   get UseLocal(): boolean {
-    return this.Flag("use-local") ?? false;
+    return this.Flag('use-local') ?? false;
   }
 }
 
@@ -118,8 +113,8 @@ type GitHomePipelineContext = {
 };
 
 export default Command(
-  "Open Repo Home",
-  "Open the configured GitHub repository in your browser",
+  'Open Repo Home',
+  'Open the configured GitHub repository in your browser',
 )
   .Args(GitHomeArgsSchema)
   .Flags(GitHomeFlagsSchema)
@@ -176,13 +171,13 @@ export default Command(
 function buildTasks(): TaskDefinition<GitHomePipelineContext>[] {
   return [
     {
-      title: "Load local git remote",
-      skip: (ctx) => (ctx.params.UseLocal ? false : "--use-local flag not set"),
+      title: 'Load local git remote',
+      skip: (ctx) => (ctx.params.UseLocal ? false : '--use-local flag not set'),
       run: async (ctx, runtime) => {
         const isRepo = await ctx.git.IsRepository({ cwd: ctx.cwd });
         if (!isRepo) {
           throw new Error(
-            "Not a git repository. Use --use-local only inside a repository.",
+            'Not a git repository. Use --use-local only inside a repository.',
           );
         }
 
@@ -191,7 +186,7 @@ function buildTasks(): TaskDefinition<GitHomePipelineContext>[] {
         });
         if (!remote) {
           throw new Error(
-            "Unable to determine the origin remote. Provide --organization/--repository explicitly.",
+            'Unable to determine the origin remote. Provide --organization/--repository explicitly.',
           );
         }
 
@@ -202,25 +197,25 @@ function buildTasks(): TaskDefinition<GitHomePipelineContext>[] {
       },
     },
     {
-      title: "Resolve organization",
+      title: 'Resolve organization',
       run: async (ctx, runtime) => {
         ctx.organization = await resolveOrganization(ctx);
         runtime.UpdateTitle(`Organization: ${ctx.organization}`);
       },
     },
     {
-      title: "Resolve repository",
+      title: 'Resolve repository',
       run: async (ctx, runtime) => {
         ctx.repository = await resolveRepository(ctx);
         runtime.UpdateTitle(`Repository: ${ctx.repository}`);
       },
     },
     {
-      title: "Open GitHub home",
+      title: 'Open GitHub home',
       run: async (ctx, runtime) => {
         if (!ctx.organization || !ctx.repository) {
           throw new Error(
-            "Organization and repository must be resolved before opening GitHub.",
+            'Organization and repository must be resolved before opening GitHub.',
           );
         }
 
@@ -252,12 +247,12 @@ async function resolveOrganization(
     }
   }
 
-  const answer = (await ctx.prompt.Input("Which GitHub organization?")).trim();
+  const answer = (await ctx.prompt.Input('Which GitHub organization?')).trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error("GitHub organization is required.");
+  throw new Error('GitHub organization is required.');
 }
 
 async function resolveRepository(ctx: GitHomePipelineContext): Promise<string> {
@@ -274,12 +269,12 @@ async function resolveRepository(ctx: GitHomePipelineContext): Promise<string> {
     }
   }
 
-  const answer = (await ctx.prompt.Input("Which GitHub repository?")).trim();
+  const answer = (await ctx.prompt.Input('Which GitHub repository?')).trim();
   if (answer) {
     return answer;
   }
 
-  throw new Error("GitHub repository is required.");
+  throw new Error('GitHub repository is required.');
 }
 
 function buildRepositoryUrl(
@@ -294,8 +289,8 @@ function buildRepositoryUrl(
 
 function sanitizeSection(section?: string): string {
   if (!section) {
-    return "";
+    return '';
   }
 
-  return section.replace(/^\/*/, "").trim();
+  return section.replace(/^\/*/, '').trim();
 }

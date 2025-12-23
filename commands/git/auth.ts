@@ -7,13 +7,10 @@
  * @module
  */
 
-import { Command, CommandParams, type CommandStatus } from "@fathym/cli";
-import { z } from "zod";
-import { UrlOpener } from "../../src/services/UrlOpener.ts";
-import {
-  FathymApiClient,
-  FathymConfigStore,
-} from "../../src/services/.exports.ts";
+import { Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import { z } from 'zod';
+import { UrlOpener } from '../../src/services/UrlOpener.ts';
+import { FathymApiClient, FathymConfigStore } from '../../src/services/.exports.ts';
 
 /**
  * Result data for the git auth command.
@@ -31,11 +28,11 @@ const AuthFlagsSchema = z.object({
   edit: z
     .boolean()
     .optional()
-    .describe("Open the OAuth management page (forces edit mode)."),
+    .describe('Open the OAuth management page (forces edit mode).'),
   self: z
     .boolean()
     .optional()
-    .describe("Use the active enterprise lookup instead of the parent."),
+    .describe('Use the active enterprise lookup instead of the parent.'),
 });
 
 class GitAuthCommandParams extends CommandParams<
@@ -43,11 +40,11 @@ class GitAuthCommandParams extends CommandParams<
   z.infer<typeof AuthFlagsSchema>
 > {
   public get ForceEdit(): boolean {
-    return this.Flag("edit") ?? false;
+    return this.Flag('edit') ?? false;
   }
 
   public get UseSelf(): boolean {
-    return this.Flag("self") ?? false;
+    return this.Flag('self') ?? false;
   }
 }
 
@@ -65,11 +62,11 @@ type EaCResponse = {
   };
 };
 
-const OAUTH_BASE = "https://www.fathym.com/.oauth/GitHubOAuth";
+const OAUTH_BASE = 'https://www.fathym.com/.oauth/GitHubOAuth';
 
 export default Command(
-  "Git Authentication",
-  "Authenticate git access via Fathym",
+  'Git Authentication',
+  'Authenticate git access via Fathym',
 )
   .Args(AuthArgsSchema)
   .Flags(AuthFlagsSchema)
@@ -100,7 +97,7 @@ export default Command(
 
       let query: string;
       if (Params.ForceEdit) {
-        query = "oauth-force-edit=true";
+        query = 'oauth-force-edit=true';
       } else {
         const targetLookup = await resolveTargetEnterprise(
           Services,
@@ -141,7 +138,7 @@ async function resolveTargetEnterprise(
 
   if (!parent) {
     throw new Error(
-      "Parent enterprise lookup not found. Re-run with --self to use the active enterprise.",
+      'Parent enterprise lookup not found. Re-run with --self to use the active enterprise.',
     );
   }
 

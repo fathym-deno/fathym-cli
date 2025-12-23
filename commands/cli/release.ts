@@ -78,18 +78,13 @@
  * @module
  */
 
-import { join } from "@std/path";
-import { parse as parseJsonc } from "@std/jsonc";
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import { DEFAULT_TARGETS } from "../../src/config/FathymCLIConfig.ts";
-import CompileCommand from "./compile.ts";
-import ScriptsCommand from "./install/scripts.ts";
+import { join } from '@std/path';
+import { parse as parseJsonc } from '@std/jsonc';
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import { DEFAULT_TARGETS } from '../../src/config/FathymCLIConfig.ts';
+import CompileCommand from './compile.ts';
+import ScriptsCommand from './install/scripts.ts';
 
 /**
  * Result data for the release command.
@@ -110,7 +105,7 @@ export interface ReleaseResult {
  */
 async function detectGitHubRepo(cwd: string): Promise<string | undefined> {
   try {
-    const gitConfigPath = join(cwd, ".git", "config");
+    const gitConfigPath = join(cwd, '.git', 'config');
     const content = await Deno.readTextFile(gitConfigPath);
 
     // Match GitHub remote URL patterns
@@ -122,7 +117,7 @@ async function detectGitHubRepo(cwd: string): Promise<string | undefined> {
     );
 
     const match = httpsMatch || sshMatch;
-    return match ? match[1].replace(/\.git$/, "") : undefined;
+    return match ? match[1].replace(/\.git$/, '') : undefined;
   } catch {
     return undefined;
   }
@@ -146,23 +141,23 @@ export const ReleaseFlagsSchema = z
     config: z
       .string()
       .optional()
-      .describe("Path to .cli.ts (default: ./.cli.ts)"),
+      .describe('Path to .cli.ts (default: ./.cli.ts)'),
     targets: z
       .string()
       .optional()
-      .describe("Comma-separated targets (default: all 5 platforms)"),
-    "skip-scripts": z
+      .describe('Comma-separated targets (default: all 5 platforms)'),
+    'skip-scripts': z
       .boolean()
       .optional()
-      .describe("Skip generating install scripts"),
+      .describe('Skip generating install scripts'),
     repo: z
       .string()
       .optional()
-      .describe("GitHub repository for install scripts"),
+      .describe('GitHub repository for install scripts'),
     version: z
       .string()
       .optional()
-      .describe("Version to embed in the compiled binary (default: 0.0.0)"),
+      .describe('Version to embed in the compiled binary (default: 0.0.0)'),
   })
   .passthrough();
 
@@ -174,24 +169,24 @@ export class ReleaseParams extends CommandParams<
   z.infer<typeof ReleaseFlagsSchema>
 > {
   get ConfigPath(): string | undefined {
-    return this.Flag("config");
+    return this.Flag('config');
   }
 
   get Targets(): string[] | undefined {
-    const targets = this.Flag("targets");
-    return targets ? targets.split(",").map((t) => t.trim()) : undefined;
+    const targets = this.Flag('targets');
+    return targets ? targets.split(',').map((t) => t.trim()) : undefined;
   }
 
   get SkipScripts(): boolean {
-    return this.Flag("skip-scripts") ?? false;
+    return this.Flag('skip-scripts') ?? false;
   }
 
   get Repo(): string | undefined {
-    return this.Flag("repo");
+    return this.Flag('repo');
   }
 
   get Version(): string {
-    return this.Flag("version") ?? "0.0.0";
+    return this.Flag('version') ?? '0.0.0';
   }
 }
 
@@ -199,8 +194,8 @@ export class ReleaseParams extends CommandParams<
  * Release command - orchestrates a full CLI release.
  */
 export default Command(
-  "release",
-  "Build and compile CLI for all target platforms",
+  'release',
+  'Build and compile CLI for all target platforms',
 )
   .Args(ReleaseArgsSchema)
   .Flags(ReleaseFlagsSchema)
@@ -209,12 +204,10 @@ export default Command(
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
     if (ctx.Params.ConfigPath) {
-      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, "CLI");
+      await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigPath, 'CLI');
     }
 
-    const dfs = ctx.Params.ConfigPath
-      ? await dfsCtx.GetDFS("CLI")
-      : await dfsCtx.GetExecutionDFS();
+    const dfs = ctx.Params.ConfigPath ? await dfsCtx.GetDFS('CLI') : await dfsCtx.GetExecutionDFS();
 
     return { DFS: dfs };
   })
@@ -230,9 +223,9 @@ export default Command(
       const { DFS } = Services;
 
       // Load config
-      const configPath = Params.ConfigPath || ".cli.ts";
+      const configPath = Params.ConfigPath || '.cli.ts';
 
-      const cliName = Config.Tokens?.[0] ?? "cli";
+      const cliName = Config.Tokens?.[0] ?? 'cli';
       const version = Config.Version;
 
       // Detect GitHub repo
@@ -244,19 +237,19 @@ export default Command(
       // Read package name from deno.jsonc
       let packageName = `@scope/${cliName}`; // fallback
       try {
-        const denoJsoncPath = await DFS.ResolvePath("deno.jsonc");
+        const denoJsoncPath = await DFS.ResolvePath('deno.jsonc');
         const denoContent = await Deno.readTextFile(denoJsoncPath);
         const denoConfig = parseJsonc(denoContent) as Record<string, unknown>;
-        if (typeof denoConfig.name === "string") {
+        if (typeof denoConfig.name === 'string') {
           packageName = denoConfig.name;
         }
       } catch {
         // Try deno.json as fallback
         try {
-          const denoJsonPath = await DFS.ResolvePath("deno.json");
+          const denoJsonPath = await DFS.ResolvePath('deno.json');
           const denoContent = await Deno.readTextFile(denoJsonPath);
           const denoConfig = JSON.parse(denoContent) as Record<string, unknown>;
-          if (typeof denoConfig.name === "string") {
+          if (typeof denoConfig.name === 'string') {
             packageName = denoConfig.name;
           }
         } catch {
@@ -265,20 +258,20 @@ export default Command(
       }
 
       Log.Info(`🚀 Starting release for ${Config.Name} v${version}`);
-      Log.Info("");
+      Log.Info('');
 
       // Determine targets
       const targets = Params.Targets ?? [...DEFAULT_TARGETS];
       const useAllTargets = !Params.Targets; // Use --all flag if no specific targets provided
-      Log.Info(`📦 Targets: ${targets.join(", ")}`);
-      Log.Info("");
+      Log.Info(`📦 Targets: ${targets.join(', ')}`);
+      Log.Info('');
 
       // Step 1: Compile (includes build internally)
-      Log.Info("━".repeat(50));
+      Log.Info('━'.repeat(50));
       Log.Info(
         `Step 1/2: Building and compiling for ${targets.length} targets`,
       );
-      Log.Info("━".repeat(50));
+      Log.Info('━'.repeat(50));
 
       if (useAllTargets) {
         // Use --all flag for default targets (more efficient)
@@ -298,67 +291,67 @@ export default Command(
           });
         }
       }
-      Log.Info("");
+      Log.Info('');
 
       // Step 2: Generate install scripts
       const scriptsGenerated = !Params.SkipScripts;
       if (scriptsGenerated) {
-        Log.Info("━".repeat(50));
-        Log.Info("Step 2/2: Generating install scripts");
-        Log.Info("━".repeat(50));
+        Log.Info('━'.repeat(50));
+        Log.Info('Step 2/2: Generating install scripts');
+        Log.Info('━'.repeat(50));
         await Scripts([], {
           config: configPath,
           ...(Params.Repo ? { repo: Params.Repo } : {}),
         });
       } else {
-        Log.Info("━".repeat(50));
-        Log.Info("Step 2/2: Skipping install scripts (--skip-scripts)");
-        Log.Info("━".repeat(50));
+        Log.Info('━'.repeat(50));
+        Log.Info('Step 2/2: Skipping install scripts (--skip-scripts)');
+        Log.Info('━'.repeat(50));
       }
 
-      Log.Info("");
-      Log.Info("━".repeat(50));
-      Log.Info("📋 Release Summary");
-      Log.Info("━".repeat(50));
+      Log.Info('');
+      Log.Info('━'.repeat(50));
+      Log.Info('📋 Release Summary');
+      Log.Info('━'.repeat(50));
       Log.Info(`   CLI: ${Config.Name} v${version}`);
-      Log.Info(`   Tokens: ${Config.Tokens?.join(", ")}`);
+      Log.Info(`   Tokens: ${Config.Tokens?.join(', ')}`);
       Log.Info(`   Targets: ${targets.length} platforms`);
-      Log.Info("");
-      Log.Info("📁 Generated files in .dist/:");
+      Log.Info('');
+      Log.Info('📁 Generated files in .dist/:');
 
       for (const target of targets) {
-        const ext = target.includes("windows") ? ".exe" : "";
+        const ext = target.includes('windows') ? '.exe' : '';
         Log.Info(`   - ${target}/${cliName}${ext}`);
       }
 
       if (scriptsGenerated) {
-        Log.Info("   - install.sh");
-        Log.Info("   - install.ps1");
+        Log.Info('   - install.sh');
+        Log.Info('   - install.ps1');
       }
 
-      Log.Info("");
-      Log.Success("🎉 Release artifacts ready!");
-      Log.Info("");
-      Log.Info("📤 Next steps:");
-      Log.Info("");
-      Log.Info("   If using CI/CD (recommended):");
-      Log.Info("   - Commit and push to trigger your release workflow");
+      Log.Info('');
+      Log.Success('🎉 Release artifacts ready!');
+      Log.Info('');
+      Log.Info('📤 Next steps:');
+      Log.Info('');
+      Log.Info('   If using CI/CD (recommended):');
+      Log.Info('   - Commit and push to trigger your release workflow');
       Log.Info(
-        "   - CI will publish to JSR and create GitHub releases automatically",
+        '   - CI will publish to JSR and create GitHub releases automatically',
       );
-      Log.Info("");
-      Log.Info("   Users can install via:");
-      Log.Info("");
-      Log.Info("      # Deno (recommended, cross-platform)");
+      Log.Info('');
+      Log.Info('   Users can install via:');
+      Log.Info('');
+      Log.Info('      # Deno (recommended, cross-platform)');
       Log.Info(`      deno run -A jsr:${packageName}/install`);
       if (repo) {
-        Log.Info("");
-        Log.Info("      # macOS/Linux");
+        Log.Info('');
+        Log.Info('      # macOS/Linux');
         Log.Info(
           `      curl -fsSL https://github.com/${repo}/releases/latest/download/install.sh | bash`,
         );
-        Log.Info("");
-        Log.Info("      # Windows PowerShell");
+        Log.Info('');
+        Log.Info('      # Windows PowerShell');
         Log.Info(
           `      iwr -useb https://github.com/${repo}/releases/latest/download/install.ps1 | iex`,
         );

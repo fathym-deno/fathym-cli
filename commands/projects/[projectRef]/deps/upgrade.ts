@@ -36,26 +36,18 @@
  * @module
  */
 
-import { z } from "zod";
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { dirname, relative } from "@std/path";
-import { parse as parseJsonc } from "@std/jsonc";
-import { DFSProjectResolver } from "../../../../src/projects/ProjectResolver.ts";
-import {
-  DepsFileParser,
-  type DepsReference,
-} from "../../../../src/deps/DepsFileParser.ts";
-import { VersionComparator } from "../../../../src/deps/VersionComparator.ts";
-import { VersionResolver } from "../../../../src/deps/VersionResolver.ts";
+import { z } from 'zod';
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { dirname, relative } from '@std/path';
+import { parse as parseJsonc } from '@std/jsonc';
+import { DFSProjectResolver } from '../../../../src/projects/ProjectResolver.ts';
+import { DepsFileParser, type DepsReference } from '../../../../src/deps/DepsFileParser.ts';
+import { VersionComparator } from '../../../../src/deps/VersionComparator.ts';
+import { VersionResolver } from '../../../../src/deps/VersionResolver.ts';
 
 /** Upgrade mode options */
-type UpgradeMode = "all" | "jsr" | "npm" | "local-only";
+type UpgradeMode = 'all' | 'jsr' | 'npm' | 'local-only';
 
 /**
  * Result data for the deps:upgrade command.
@@ -76,7 +68,7 @@ export interface DepsUpgradeResult {
  */
 const UpgradeSegmentsSchema = z.object({
   projectRef: z.string().describe(
-    "Project name, path to deno.json(c), or directory",
+    'Project name, path to deno.json(c), or directory',
   ),
 });
 
@@ -86,24 +78,24 @@ type UpgradeSegments = z.infer<typeof UpgradeSegmentsSchema>;
  * Zod schema for deps:upgrade command flags.
  */
 const UpgradeFlagsSchema = z.object({
-  "dry-run": z.boolean().optional().describe(
-    "Show what would be upgraded without making changes",
+  'dry-run': z.boolean().optional().describe(
+    'Show what would be upgraded without making changes',
   ),
-  "verbose": z.boolean().optional().describe(
-    "Show detailed upgrade information",
+  'verbose': z.boolean().optional().describe(
+    'Show detailed upgrade information',
   ),
-  "mode": z
-    .enum(["all", "jsr", "npm", "local-only"])
+  'mode': z
+    .enum(['all', 'jsr', 'npm', 'local-only'])
     .optional()
-    .describe("Upgrade mode: all, jsr, npm, or local-only"),
-  "channel": z.string().optional().describe(
-    "Target feature channel (e.g., integration, hmis)",
+    .describe('Upgrade mode: all, jsr, npm, or local-only'),
+  'channel': z.string().optional().describe(
+    'Target feature channel (e.g., integration, hmis)',
   ),
-  "package": z.string().optional().describe(
-    "Filter to specific package(s), supports wildcards (e.g., @fathym/eac*)",
+  'package': z.string().optional().describe(
+    'Filter to specific package(s), supports wildcards (e.g., @fathym/eac*)',
   ),
-  "interactive": z.boolean().optional().describe(
-    "Prompt before each upgrade",
+  'interactive': z.boolean().optional().describe(
+    'Prompt before each upgrade',
   ),
 });
 
@@ -121,31 +113,31 @@ class UpgradeParams extends CommandParams<
   UpgradeSegments
 > {
   get ProjectRef(): string {
-    return this.Segment("projectRef") ?? "";
+    return this.Segment('projectRef') ?? '';
   }
 
   get Verbose(): boolean {
-    return this.Flag("verbose") ?? false;
+    return this.Flag('verbose') ?? false;
   }
 
   get Mode(): UpgradeMode {
-    return this.Flag("mode") ?? "all";
+    return this.Flag('mode') ?? 'all';
   }
 
   get Channel(): string | undefined {
-    return this.Flag("channel");
+    return this.Flag('channel');
   }
 
   get PackageFilter(): string | undefined {
-    return this.Flag("package");
+    return this.Flag('package');
   }
 
   get Interactive(): boolean {
-    return this.Flag("interactive") ?? false;
+    return this.Flag('interactive') ?? false;
   }
 
   override get DryRun(): boolean {
-    return this.Flag("dry-run") ?? false;
+    return this.Flag('dry-run') ?? false;
   }
 }
 
@@ -154,16 +146,16 @@ class UpgradeParams extends CommandParams<
  */
 interface PendingUpgrade {
   packageName: string;
-  registry: "jsr" | "npm";
+  registry: 'jsr' | 'npm';
   currentVersion: string;
   newVersion: string;
-  source: "import-map" | "deps-file";
+  source: 'import-map' | 'deps-file';
   filePath: string;
 }
 
 export default Command(
-  "projects:[projectRef]:deps:upgrade",
-  "Upgrade dependencies in deno.jsonc and .deps.ts files.",
+  'projects:[projectRef]:deps:upgrade',
+  'Upgrade dependencies in deno.jsonc and .deps.ts files.',
 )
   .Args(UpgradeArgsSchema)
   .Flags(UpgradeFlagsSchema)
@@ -194,10 +186,10 @@ export default Command(
       } = Services;
 
       if (!Params.ProjectRef) {
-        Log.Error("No project reference provided.");
+        Log.Error('No project reference provided.');
         return {
           Code: 1,
-          Message: "No project reference provided",
+          Message: 'No project reference provided',
           Data: {
             totalUpgrades: 0,
             totalSkipped: 0,
@@ -231,8 +223,8 @@ export default Command(
 
         // For local-only mode, get all local package names
         let localPackageNames: Set<string> | undefined;
-        if (Params.Mode === "local-only") {
-          const allProjects = await ProjectResolver.Resolve("**");
+        if (Params.Mode === 'local-only') {
+          const allProjects = await ProjectResolver.Resolve('**');
           localPackageNames = new Set(
             allProjects.filter((p) => p.name).map((p) => p.name!),
           );
@@ -299,9 +291,7 @@ export default Command(
           );
 
           for (const upgrade of pendingUpgrades) {
-            const sourceLabel = upgrade.source === "import-map"
-              ? "import"
-              : ".deps.ts";
+            const sourceLabel = upgrade.source === 'import-map' ? 'import' : '.deps.ts';
             Log.Info(
               `  ${upgrade.packageName}: ${upgrade.currentVersion} → ${upgrade.newVersion} (${sourceLabel})`,
             );
@@ -325,15 +315,15 @@ export default Command(
                 const answer = prompt(
                   `Upgrade ${upgrade.packageName} to ${upgrade.newVersion}? [y/N]`,
                 );
-                if (answer?.toLowerCase() !== "y") {
+                if (answer?.toLowerCase() !== 'y') {
                   totalSkipped++;
                   continue;
                 }
               }
             }
 
-            const isImportMap = filePath.endsWith(".jsonc") ||
-              filePath.endsWith(".json");
+            const isImportMap = filePath.endsWith('.jsonc') ||
+              filePath.endsWith('.json');
 
             if (isImportMap) {
               await applyImportMapUpgrades(filePath, fileUpgrades, DFS);
@@ -378,9 +368,7 @@ export default Command(
         Log.Error(error instanceof Error ? error.message : String(error));
         return {
           Code: 1,
-          Message: `Deps upgrade failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          Message: `Deps upgrade failed: ${error instanceof Error ? error.message : String(error)}`,
           Data: {
             totalUpgrades: 0,
             totalSkipped: 0,
@@ -428,12 +416,12 @@ async function collectImportMapUpgrades(
     return upgrades;
   }
 
-  if (!config || typeof config !== "object" || !("imports" in config)) {
+  if (!config || typeof config !== 'object' || !('imports' in config)) {
     return upgrades;
   }
 
   const imports = (config as { imports: unknown }).imports;
-  if (!imports || typeof imports !== "object") {
+  if (!imports || typeof imports !== 'object') {
     return upgrades;
   }
 
@@ -441,16 +429,16 @@ async function collectImportMapUpgrades(
   for (
     const [_key, value] of Object.entries(imports as Record<string, unknown>)
   ) {
-    if (typeof value !== "string") continue;
+    if (typeof value !== 'string') continue;
 
     const parsed = depsParser.parseSpecifier(value);
     if (!parsed) continue;
 
     // Apply mode filter
-    if (mode === "jsr" && parsed.registry !== "jsr") continue;
-    if (mode === "npm" && parsed.registry !== "npm") continue;
+    if (mode === 'jsr' && parsed.registry !== 'jsr') continue;
+    if (mode === 'npm' && parsed.registry !== 'npm') continue;
     if (
-      mode === "local-only" && localPackageNames &&
+      mode === 'local-only' && localPackageNames &&
       !localPackageNames.has(parsed.fullName)
     ) {
       continue;
@@ -473,7 +461,7 @@ async function collectImportMapUpgrades(
 
       if (!latestVersion) {
         if (verbose) {
-          const channelLabel = channel ? ` (${channel})` : "";
+          const channelLabel = channel ? ` (${channel})` : '';
           log.Info(`  ${parsed.fullName}: No version found${channelLabel}`);
         }
         continue;
@@ -494,7 +482,7 @@ async function collectImportMapUpgrades(
         registry: parsed.registry,
         currentVersion: parsed.version,
         newVersion: latestVersion,
-        source: "import-map",
+        source: 'import-map',
         filePath: configPath,
       });
     } catch (error) {
@@ -542,10 +530,10 @@ async function collectDepsFileUpgrades(
     if (!entry.isFile) continue;
 
     // Check if this file is within the project directory
-    const entryPath = entry.path.replace(/\\/g, "/");
-    const projPath = relProjectDir.replace(/\\/g, "/");
+    const entryPath = entry.path.replace(/\\/g, '/');
+    const projPath = relProjectDir.replace(/\\/g, '/');
     if (
-      !entryPath.startsWith(projPath) && !entryPath.startsWith(projPath + "/")
+      !entryPath.startsWith(projPath) && !entryPath.startsWith(projPath + '/')
     ) {
       continue;
     }
@@ -578,7 +566,7 @@ async function collectDepsFileUpgrades(
               registry: ref.registry,
               currentVersion: ref.version,
               newVersion: cachedVersion,
-              source: "deps-file",
+              source: 'deps-file',
               filePath: fullPath,
             });
           }
@@ -587,10 +575,10 @@ async function collectDepsFileUpgrades(
       }
 
       // Apply mode filter
-      if (mode === "jsr" && ref.registry !== "jsr") continue;
-      if (mode === "npm" && ref.registry !== "npm") continue;
+      if (mode === 'jsr' && ref.registry !== 'jsr') continue;
+      if (mode === 'npm' && ref.registry !== 'npm') continue;
       if (
-        mode === "local-only" && localPackageNames &&
+        mode === 'local-only' && localPackageNames &&
         !localPackageNames.has(packageName)
       ) {
         continue;
@@ -613,7 +601,7 @@ async function collectDepsFileUpgrades(
         if (!latestVersion) {
           processedPackages.set(packageName, ref.version);
           if (verbose) {
-            const channelLabel = channel ? ` (${channel})` : "";
+            const channelLabel = channel ? ` (${channel})` : '';
             log.Info(`  ${packageName}: No version found${channelLabel}`);
           }
           continue;
@@ -634,7 +622,7 @@ async function collectDepsFileUpgrades(
           registry: ref.registry,
           currentVersion: ref.version,
           newVersion: latestVersion,
-          source: "deps-file",
+          source: 'deps-file',
           filePath: fullPath,
         });
       } catch (error) {
@@ -691,17 +679,15 @@ async function applyImportMapUpgrades(
     // Replace version in the import value
     const escapedName = upgrade.packageName.replace(
       /[.*+?^${}()|[\]\\]/g,
-      "\\$&",
+      '\\$&',
     );
     const regex = new RegExp(
-      `(["'])(jsr|npm):${escapedName}@${
-        escapeRegex(upgrade.currentVersion)
-      }(/[^"']*)?\\1`,
-      "g",
+      `(["'])(jsr|npm):${escapedName}@${escapeRegex(upgrade.currentVersion)}(/[^"']*)?\\1`,
+      'g',
     );
 
     text = text.replace(regex, (_match, quote, registry, subpath) => {
-      const newSubpath = subpath || "";
+      const newSubpath = subpath || '';
       return `${quote}${registry}:${upgrade.packageName}@${upgrade.newVersion}${newSubpath}${quote}`;
     });
   }
@@ -757,5 +743,5 @@ async function applyDepsFileUpgrades(
  * Escape special regex characters.
  */
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

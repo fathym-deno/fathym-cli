@@ -10,14 +10,9 @@
  * @module
  */
 
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import type { DFSFileHandler } from "@fathym/dfs";
-import { z } from "zod";
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import type { DFSFileHandler } from '@fathym/dfs';
+import { z } from 'zod';
 import {
   CliffyPromptService,
   FathymApiClient,
@@ -29,25 +24,25 @@ import {
   type PromptService,
   type TaskDefinition,
   TaskPipeline,
-} from "../../src/services/.exports.ts";
+} from '../../src/services/.exports.ts';
 import {
   type GitHubRemote,
   GitTargetFlagSchema,
   ResolveGitHubRemoteFromOrigin,
   ResolveGitOpsWorkingDFS,
-} from "../../src/git/.exports.ts";
+} from '../../src/git/.exports.ts';
 
 const GitConfigureArgsSchema = z.tuple([
   z
     .string()
-    .describe("GitHub organization (e.g., fathym)")
+    .describe('GitHub organization (e.g., fathym)')
     .optional()
-    .meta({ argName: "organization" }),
+    .meta({ argName: 'organization' }),
   z
     .string()
-    .describe("Repository name (e.g., cli)")
+    .describe('Repository name (e.g., cli)')
     .optional()
-    .meta({ argName: "repository" }),
+    .meta({ argName: 'repository' }),
 ]);
 
 const GitConfigureFlagsSchema = z.object({
@@ -55,13 +50,13 @@ const GitConfigureFlagsSchema = z.object({
     .string()
     .optional()
     .describe(
-      "License template to apply (mit, apache, gpl3, or custom entry).",
+      'License template to apply (mit, apache, gpl3, or custom entry).',
     ),
-  "skip-local": z
+  'skip-local': z
     .boolean()
     .optional()
     .describe(
-      "Skip inferring organization/repository from the local git remote.",
+      'Skip inferring organization/repository from the local git remote.',
     ),
 }).merge(GitTargetFlagSchema);
 
@@ -78,11 +73,11 @@ class GitConfigureParams extends CommandParams<
   }
 
   get License(): string | undefined {
-    return this.Flag("license");
+    return this.Flag('license');
   }
 
   get SkipLocal(): boolean {
-    return this.Flag("skip-local") ?? false;
+    return this.Flag('skip-local') ?? false;
   }
 }
 
@@ -111,7 +106,7 @@ type GitConfigurePipelineContext = {
   lookup: FathymGitHubLookupService;
   api: FathymApiClient;
   params: GitConfigureParams;
-  defaults?: Awaited<ReturnType<GitConfigStore["GetDefaults"]>>;
+  defaults?: Awaited<ReturnType<GitConfigStore['GetDefaults']>>;
   remote?: GitHubRemote;
   organization?: string;
   repository?: string;
@@ -120,8 +115,8 @@ type GitConfigurePipelineContext = {
 };
 
 export default Command(
-  "Configure Repository",
-  "Provision a GitHub repository with Fathym defaults",
+  'Configure Repository',
+  'Provision a GitHub repository with Fathym defaults',
 )
   .Args(GitConfigureArgsSchema)
   .Flags(GitConfigureFlagsSchema)
@@ -166,16 +161,16 @@ export default Command(
       await TaskPipeline.Run(ctx, buildTasks(), Log);
 
       if (!ctx.organization || !ctx.repository) {
-        throw new Error("Organization and repository resolution failed.");
+        throw new Error('Organization and repository resolution failed.');
       }
 
-      Log.Info("");
+      Log.Info('');
       Log.Info(`Configured repository: ${ctx.organization}/${ctx.repository}`);
-      Log.Info("Next steps:");
+      Log.Info('Next steps:');
       Log.Info(
-        "  - Run `ftm git clone --target <path>` to clone the repository.",
+        '  - Run `ftm git clone --target <path>` to clone the repository.',
       );
-      Log.Info("  - Run `ftm git` regularly to keep your branch in sync.");
+      Log.Info('  - Run `ftm git` regularly to keep your branch in sync.');
 
       return {
         Code: 0,
@@ -194,12 +189,12 @@ export default Command(
 function buildTasks(): TaskDefinition<GitConfigurePipelineContext>[] {
   return [
     {
-      title: "Detect local git remote",
-      skip: (ctx) => (ctx.params.SkipLocal ? "--skip-local flag set" : false),
+      title: 'Detect local git remote',
+      skip: (ctx) => (ctx.params.SkipLocal ? '--skip-local flag set' : false),
       run: async (ctx, runtime) => {
         const isRepo = await ctx.git.IsRepository({ cwd: ctx.cwd });
         if (!isRepo) {
-          runtime.UpdateTitle("Detect local git remote (not a git repository)");
+          runtime.UpdateTitle('Detect local git remote (not a git repository)');
           return;
         }
 
@@ -212,41 +207,39 @@ function buildTasks(): TaskDefinition<GitConfigurePipelineContext>[] {
             `Detected ${remote.organization}/${remote.repository}`,
           );
         } else {
-          runtime.UpdateTitle("No origin remote found");
+          runtime.UpdateTitle('No origin remote found');
         }
       },
     },
     {
-      title: "Select organization",
+      title: 'Select organization',
       run: async (ctx, runtime) => {
         ctx.organization = await resolveOrganization(ctx);
         runtime.UpdateTitle(`Organization: ${ctx.organization}`);
       },
     },
     {
-      title: "Select repository",
+      title: 'Select repository',
       run: async (ctx, runtime) => {
         ctx.repository = await resolveRepository(ctx);
         runtime.UpdateTitle(`Repository: ${ctx.repository}`);
       },
     },
     {
-      title: "Select license",
+      title: 'Select license',
       run: async (ctx, runtime) => {
         ctx.license = await resolveLicense(ctx);
         runtime.UpdateTitle(
-          ctx.license
-            ? `License template: ${ctx.license}`
-            : "License template: none",
+          ctx.license ? `License template: ${ctx.license}` : 'License template: none',
         );
       },
     },
     {
-      title: "Configure repository",
+      title: 'Configure repository',
       run: async (ctx, runtime) => {
         if (!ctx.organization || !ctx.repository) {
           throw new Error(
-            "Organization and repository must be resolved before configuring.",
+            'Organization and repository must be resolved before configuring.',
           );
         }
 
@@ -255,7 +248,7 @@ function buildTasks(): TaskDefinition<GitConfigurePipelineContext>[] {
           Record<string, unknown>
         >(
           `/github/organizations/${ctx.organization}/repositories/${ctx.repository}/configure`,
-          { License: ctx.license ?? "" },
+          { License: ctx.license ?? '' },
         );
 
         ctx.configureResponse = response;
@@ -263,7 +256,7 @@ function buildTasks(): TaskDefinition<GitConfigurePipelineContext>[] {
       },
     },
     {
-      title: "Persist defaults",
+      title: 'Persist defaults',
       run: async (ctx, runtime) => {
         if (!ctx.organization || !ctx.repository) {
           return;
@@ -306,23 +299,23 @@ async function resolveOrganization(
 
   const list = await ctx.lookup.ListOrganizations();
   if (list.length === 0) {
-    const answer = (await ctx.prompt.Input("Which GitHub organization?"))
+    const answer = (await ctx.prompt.Input('Which GitHub organization?'))
       .trim();
     if (answer) {
       return answer;
     }
 
-    throw new Error("GitHub organization is required.");
+    throw new Error('GitHub organization is required.');
   }
 
-  const selection = await ctx.prompt.Select("Select a GitHub organization", {
+  const selection = await ctx.prompt.Select('Select a GitHub organization', {
     options: buildOrganizationOptions(ctx, list),
   });
 
-  if (selection === "__custom__") {
-    const custom = (await ctx.prompt.Input("Organization name:")).trim();
+  if (selection === '__custom__') {
+    const custom = (await ctx.prompt.Input('Organization name:')).trim();
     if (!custom) {
-      throw new Error("GitHub organization is required.");
+      throw new Error('GitHub organization is required.');
     }
     return custom;
   }
@@ -335,7 +328,7 @@ async function resolveRepository(
 ): Promise<string> {
   if (!ctx.organization) {
     throw new Error(
-      "Organization must be resolved before selecting a repository.",
+      'Organization must be resolved before selecting a repository.',
     );
   }
 
@@ -354,22 +347,22 @@ async function resolveRepository(
 
   const repos = await ctx.lookup.ListRepositories(ctx.organization);
   if (repos.length === 0) {
-    const answer = (await ctx.prompt.Input("Which GitHub repository?")).trim();
+    const answer = (await ctx.prompt.Input('Which GitHub repository?')).trim();
     if (answer) {
       return answer;
     }
 
-    throw new Error("GitHub repository is required.");
+    throw new Error('GitHub repository is required.');
   }
 
-  const selection = await ctx.prompt.Select("Select a GitHub repository", {
+  const selection = await ctx.prompt.Select('Select a GitHub repository', {
     options: buildRepositoryOptions(ctx, repos),
   });
 
-  if (selection === "__custom__") {
-    const custom = (await ctx.prompt.Input("Repository name:")).trim();
+  if (selection === '__custom__') {
+    const custom = (await ctx.prompt.Input('Repository name:')).trim();
     if (!custom) {
-      throw new Error("GitHub repository is required.");
+      throw new Error('GitHub repository is required.');
     }
 
     return custom;
@@ -386,22 +379,22 @@ async function resolveLicense(
     return provided;
   }
 
-  const selection = await ctx.prompt.Select("Select license template", {
+  const selection = await ctx.prompt.Select('Select license template', {
     options: [
-      { name: "MIT License", value: "mit" },
-      { name: "Apache License 2.0", value: "apache" },
-      { name: "GNU General Public License v3.0", value: "gpl3" },
-      { name: "Enter custom template name", value: "__custom__" },
-      { name: "No template", value: "__none__" },
+      { name: 'MIT License', value: 'mit' },
+      { name: 'Apache License 2.0', value: 'apache' },
+      { name: 'GNU General Public License v3.0', value: 'gpl3' },
+      { name: 'Enter custom template name', value: '__custom__' },
+      { name: 'No template', value: '__none__' },
     ],
   });
 
-  if (selection === "__custom__") {
-    const custom = (await ctx.prompt.Input("License template name:")).trim();
+  if (selection === '__custom__') {
+    const custom = (await ctx.prompt.Input('License template name:')).trim();
     return custom || undefined;
   }
 
-  if (selection === "__none__") {
+  if (selection === '__none__') {
     return undefined;
   }
 
@@ -418,9 +411,7 @@ function buildOrganizationOptions(
   }));
 
   if (!ctx.params.SkipLocal && ctx.remote?.organization) {
-    const exists = options.find((opt) =>
-      opt.value === ctx.remote!.organization
-    );
+    const exists = options.find((opt) => opt.value === ctx.remote!.organization);
     if (!exists) {
       options.unshift({
         name: `Use local (${ctx.remote.organization})`,
@@ -429,7 +420,7 @@ function buildOrganizationOptions(
     }
   }
 
-  options.push({ name: "Enter a custom organization", value: "__custom__" });
+  options.push({ name: 'Enter a custom organization', value: '__custom__' });
 
   return options;
 }
@@ -453,7 +444,7 @@ function buildRepositoryOptions(
     }
   }
 
-  options.push({ name: "Enter a custom repository", value: "__custom__" });
+  options.push({ name: 'Enter a custom repository', value: '__custom__' });
 
   return options;
 }

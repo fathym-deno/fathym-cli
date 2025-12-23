@@ -1,4 +1,4 @@
-import type { GitRunOptions, GitService } from "../../services/GitService.ts";
+import type { GitRunOptions, GitService } from '../../services/GitService.ts';
 
 export interface GitHubRemote {
   organization: string;
@@ -13,12 +13,12 @@ export async function ResolveGitHubRemoteFromOrigin(
   options: GitRunOptions = {},
 ): Promise<GitHubRemote | undefined> {
   try {
-    const result = await git.Run(["remote", "get-url", "origin"], {
+    const result = await git.Run(['remote', 'get-url', 'origin'], {
       ...options,
       allowFailure: true,
     });
 
-    const remote = (result.stdout ?? "").trim();
+    const remote = (result.stdout ?? '').trim();
     if (!remote) {
       return undefined;
     }

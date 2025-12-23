@@ -15,14 +15,9 @@
  * @module
  */
 
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandParams,
-  type CommandStatus,
-} from "@fathym/cli";
-import { z } from "zod";
-import { ConfigFileService } from "../../../src/services/ConfigFileService.ts";
+import { CLIDFSContextManager, Command, CommandParams, type CommandStatus } from '@fathym/cli';
+import { z } from 'zod';
+import { ConfigFileService } from '../../../src/services/ConfigFileService.ts';
 
 /**
  * Result data for the config set command.
@@ -37,9 +32,9 @@ export interface ConfigSetResult {
 }
 
 const ArgsSchema = z.tuple([
-  z.string().describe("Config file path (relative to ConfigDFS)"),
+  z.string().describe('Config file path (relative to ConfigDFS)'),
   z.string().describe('Key (dot-notation, e.g., "azure.apiKey")'),
-  z.string().describe("Value to set"),
+  z.string().describe('Value to set'),
 ]);
 
 const FlagsSchema = z.object({});
@@ -59,7 +54,7 @@ class ConfigSetParams extends CommandParams<
   }
 }
 
-export default Command("cli/config/set", "Set a value in a JSON config file")
+export default Command('cli/config/set', 'Set a value in a JSON config file')
   .Args(ArgsSchema)
   .Flags(FlagsSchema)
   .Params(ConfigSetParams)

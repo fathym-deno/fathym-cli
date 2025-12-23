@@ -1,4 +1,4 @@
-import { Runner } from "@fathym/cli";
+import { Runner } from '@fathym/cli';
 
 await Runner()
   .FromArgs(Deno.args)

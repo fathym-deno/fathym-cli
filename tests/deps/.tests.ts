@@ -1,2 +1,2 @@
-import "./DepsFileParser.test.ts";
-import "./VersionComparator.test.ts";
+import './DepsFileParser.test.ts';
+import './VersionComparator.test.ts';
