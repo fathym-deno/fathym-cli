@@ -3,9 +3,7 @@ import GitReposCommand from '../../../../commands/git/repos.ts';
 import GitIntentTestCLI from './.test.cli.ts';
 import { MockFathymGitHubLookupService } from './_mocks.ts';
 
-const cmd = GitReposCommand.Build();
-
-CommandIntentSuite('git repos Command Suite', cmd, GitIntentTestCLI)
+CommandIntentSuite('git repos Command Suite', GitReposCommand, GitIntentTestCLI)
   .Intent('lists organizations and next steps', (int) =>
     int
       .WithServices({

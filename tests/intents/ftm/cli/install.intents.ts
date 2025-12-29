@@ -3,7 +3,7 @@ import InstallCommand from '../../../../commands/cli/install.ts';
 
 CommandIntentSuite(
   'Install Command Suite',
-  InstallCommand.Build(),
+  InstallCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Install CLI binary to system path', (int) =>

@@ -1,10 +1,9 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import FmtCommand from '../../../../../commands/projects/[projectRef]/fmt.ts';
 
-const cmd = FmtCommand.Build();
 const origin = import.meta.resolve('../../../../../.cli.ts');
 
-CommandIntentSuite('projects:[projectRef]:fmt Command Suite', cmd, origin)
+CommandIntentSuite('projects:[projectRef]:fmt Command Suite', FmtCommand, origin)
   .Intent('Fails when project not found', (int) =>
     int
       .Segments({ projectRef: '@nonexistent/package' })

@@ -11,9 +11,7 @@ import {
   MockPromptService,
 } from './_mocks.ts';
 
-const cmd = GitConfigureCommand.Build();
-
-CommandIntentSuite('git configure Command Suite', cmd, GitIntentTestCLI)
+CommandIntentSuite('git configure Command Suite', GitConfigureCommand, GitIntentTestCLI)
   .Intent('configures with provided organization and repository', (int) => {
     const config = new MockGitConfigStore();
     const api = new MockFathymApiClient();

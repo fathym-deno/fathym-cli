@@ -3,7 +3,7 @@ import CompileCommand from '../../../../commands/cli/compile.ts';
 
 CommandIntentSuite(
   'Compile Command Suite',
-  CompileCommand.Build(),
+  CompileCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Compile CLI binary from build output', (int) =>

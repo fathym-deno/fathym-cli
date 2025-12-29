@@ -197,11 +197,11 @@ export default Command(
   .Segments(BuildSegmentsSchema)
   .Params(BuildCommandParams)
   .Commands({
-    Task: TaskCommand.Build(),
-    Fmt: FmtCommand.Build(),
-    Lint: LintCommand.Build(),
-    Check: CheckCommand.Build(),
-    Test: TestCommand.Build(),
+    Task: TaskCommand,
+    Fmt: FmtCommand,
+    Lint: LintCommand,
+    Check: CheckCommand,
+    Test: TestCommand,
   })
   .Services(async (ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);

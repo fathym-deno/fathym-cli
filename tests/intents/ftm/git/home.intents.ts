@@ -9,8 +9,7 @@ import {
   MockUrlOpener,
 } from './_mocks.ts';
 
-const cmd = GitHomeCommand.Build();
-CommandIntentSuite('git home Command Suite', cmd, GitIntentTestCLI)
+CommandIntentSuite('git home Command Suite', GitHomeCommand, GitIntentTestCLI)
   .Intent('fails when --use-local is used outside a repo', (int) =>
     int
       .Flags({ 'use-local': true })

@@ -294,7 +294,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
   .Flags(CompileFlagsSchema)
   .Params(CompileParams)
   .Commands({
-    Build: BuildCommand.Build(),
+    Build: BuildCommand,
   })
   .Services(async (ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);

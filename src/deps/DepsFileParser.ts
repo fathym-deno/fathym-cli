@@ -2,7 +2,7 @@
  * Parser for .deps.ts files with direct JSR/npm specifiers.
  *
  * This module provides utilities for parsing TypeScript files that contain
- * direct package specifiers (e.g., `jsr:@fathym/common@0.2.307-common-release/merge`) and
+ * direct package specifiers (e.g., `jsr:@fathym/common@0.2.309-common-release/merge`) and
  * updating them with new versions.
  *
  * ## Supported Specifier Formats
@@ -153,7 +153,7 @@ export class DepsFileParser {
   /**
    * Parse a single specifier string into its components.
    *
-   * @param specifier - A specifier string like 'jsr:@fathym/common@0.2.307-common-release/merge'
+   * @param specifier - A specifier string like 'jsr:@fathym/common@0.2.309-common-release/merge'
    * @returns Parsed reference or null if the specifier is invalid
    */
   parseSpecifier(

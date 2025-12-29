@@ -4,9 +4,7 @@ import GitCloneCommand from '../../../../commands/git/clone.ts';
 import GitIntentTestCLI from './.test.cli.ts';
 import { createMockDFS, MockGitConfigStore, MockGitService, MockPromptService } from './_mocks.ts';
 
-const cmd = GitCloneCommand.Build();
-
-CommandIntentSuite('git clone Command Suite', cmd, GitIntentTestCLI)
+CommandIntentSuite('git clone Command Suite', GitCloneCommand, GitIntentTestCLI)
   .Intent('fails when repository is not configured', (int) =>
     int
       .Args(['fathym', 'cli'])

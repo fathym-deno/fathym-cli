@@ -73,14 +73,7 @@
 
 import { z } from 'zod';
 import { DFSFileHandler } from '@fathym/dfs';
-import {
-  CLIDFSContextManager,
-  Command,
-  CommandContext,
-  CommandParams,
-  type CommandStatus,
-  runCommandWithLogs,
-} from '@fathym/cli';
+import { CLIDFSContextManager, Command, CommandParams, runCommandWithLogs } from '@fathym/cli';
 
 /**
  * Result data for the test command.
@@ -212,13 +205,7 @@ export default Command('test', 'Run CLI tests using Deno')
     };
   })
   .Run(
-    async ({
-      Params,
-      Log,
-      Services,
-    }: CommandContext<TestParams, { CLIDFS: DFSFileHandler }>): Promise<
-      CommandStatus<TestResult>
-    > => {
+    async ({ Params, Log, Services }) => {
       const rootPath = Services.CLIDFS.Root.replace(
         /[-/\\^$*+?.()|[\]{}]/g,
         '\\$&',

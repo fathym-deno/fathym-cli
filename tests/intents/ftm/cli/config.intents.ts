@@ -60,7 +60,7 @@ const CONFIG_FILE = 'test-config.json';
 
 CommandIntentSuite(
   'Config Set Command Suite',
-  ConfigSetCommand.Build(),
+  ConfigSetCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(() => {
@@ -85,7 +85,7 @@ CommandIntentSuite(
 
 CommandIntentSuite(
   'Config Get Command Suite',
-  ConfigGetCommand.Build(),
+  ConfigGetCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(() => {

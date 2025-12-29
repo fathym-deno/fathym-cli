@@ -1,10 +1,9 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import UpgradeCommand from '../../../commands/upgrade.ts';
 
-const cmd = UpgradeCommand.Build();
 const origin = import.meta.resolve('../../../.cli.ts');
 
-CommandIntentSuite('upgrade Command Suite', cmd, origin)
+CommandIntentSuite('upgrade Command Suite', UpgradeCommand, origin)
   .Intent('List shows available versions', (int) =>
     int
       .Args([])

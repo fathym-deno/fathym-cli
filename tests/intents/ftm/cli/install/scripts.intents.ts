@@ -1,14 +1,13 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import ScriptsCommand from '../../../../../commands/cli/install/scripts.ts';
 
-const cmd = ScriptsCommand.Build();
 const origin = import.meta.resolve('../../../../../.cli.ts');
 
 // Note: The scripts command generates install.sh, install.ps1, and install.ts
 // files. These tests verify that the correct package name is used in the
 // generated Deno install script.
 
-CommandIntentSuite('Install Scripts Command Suite', cmd, origin)
+CommandIntentSuite('Install Scripts Command Suite', ScriptsCommand, origin)
   .Intent('Generates install scripts with correct package name', (int) =>
     int
       .Args([])

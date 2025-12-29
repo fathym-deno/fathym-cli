@@ -3,7 +3,7 @@ import RunCommand from '../../../../commands/cli/run.ts';
 
 CommandIntentSuite(
   'Run Command Suite',
-  RunCommand.Build(),
+  RunCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   // === HELLO COMMAND TESTS ===

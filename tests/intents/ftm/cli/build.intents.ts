@@ -3,7 +3,7 @@ import BuildCommand from '../../../../commands/cli/build.ts';
 
 CommandIntentSuite(
   'Build Command Suite',
-  BuildCommand.Build(),
+  BuildCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Build CLI from scaffolded config', (int) =>

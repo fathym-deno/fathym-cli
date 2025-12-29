@@ -3,7 +3,7 @@ import TestCommand from '../../../../commands/cli/test.ts';
 
 CommandIntentSuite(
   'Test Command Suite',
-  TestCommand.Build(),
+  TestCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .Intent('Run default CLI test file', (int) =>

@@ -4,9 +4,7 @@ import GitAuthCommand from '../../../../commands/git/auth.ts';
 import GitIntentTestCLI from './.test.cli.ts';
 import { MockFathymApiClient, MockFathymConfigStore, MockUrlOpener } from './_mocks.ts';
 
-const cmd = GitAuthCommand.Build();
-
-CommandIntentSuite('git auth Command Suite', cmd, GitIntentTestCLI)
+CommandIntentSuite('git auth Command Suite', GitAuthCommand, GitIntentTestCLI)
   .Intent('opens edit mode when --edit flag passed', (int) => {
     const opener = new MockUrlOpener();
 

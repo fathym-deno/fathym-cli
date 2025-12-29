@@ -5,7 +5,7 @@ const TEMP_CLI_PATH = './tests/.temp/my-cli';
 
 CommandIntentSuite(
   'Init Command Suite',
-  InitCommand.Build(),
+  InitCommand,
   import.meta.resolve('../../../../.cli.ts'),
 )
   .BeforeAll(async () => {
