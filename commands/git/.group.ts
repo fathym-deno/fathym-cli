@@ -7,23 +7,23 @@
  * @module
  */
 
-import { CLIDFSContextManager, Group } from '@fathym/cli';
-import type { DFSFileHandler } from '@fathym/dfs';
-import { RegisterGitOpsTargetDFS } from '../../src/git/.exports.ts';
+import { CLIDFSContextManager, Group } from "@fathym/cli";
+import type { DFSFileHandler } from "@fathym/dfs";
+import { RegisterGitOpsTargetDFS } from "../../src/git/.exports.ts";
 import {
   FathymApiClient,
   FathymConfigStore,
   FathymGitHubLookupService,
   GitConfigStore,
   GitService,
-} from '../../src/services/.exports.ts';
+} from "../../src/services/.exports.ts";
 
 type GitGroupServices = {
   DFSContext: CLIDFSContextManager;
 };
 
-export default Group('git')
-  .Description('Automation helpers for git workflows')
+export default Group("git")
+  .Description("Automation helpers for git workflows")
   .OnInit((ioc) => {
     ioc.Register(GitService, () => new GitService());
 
@@ -55,7 +55,8 @@ export default Group('git')
 
     ioc.Register(
       FathymGitHubLookupService,
-      async () => new FathymGitHubLookupService(await ioc.Resolve(FathymApiClient)),
+      async () =>
+        new FathymGitHubLookupService(await ioc.Resolve(FathymApiClient)),
     );
   })
   .InitCommand((cmd) =>
@@ -75,7 +76,8 @@ export default Group('git')
           Log.Info(`git: using target DFS root ${targetDFS.Root}`);
         }
 
-        return await Commands!.$Command(Params.Flags.args, Params.Flags.flags);
+        // Args/flags inherited automatically from parent context
+        return await Commands!.$Command();
       })
   );
 
@@ -83,7 +85,7 @@ function extractTargetFlag(
   flags: Record<string, unknown>,
 ): string | undefined {
   const value = flags?.target;
-  if (typeof value !== 'string') {
+  if (typeof value !== "string") {
     return undefined;
   }
 

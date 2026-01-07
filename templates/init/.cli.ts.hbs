@@ -70,10 +70,11 @@ export default CLI('My CLI', ['my-cli'], '0.0.0', 'A Test CLI used for whatever 
   //         // ─────────────────────────────────────────────────────────────────────
   //         // EXECUTE MATCHED COMMAND
   //         // IMPORTANT: Must call $Command() or the command never runs!
-  //         // Pass args and flags to forward original invocation
+  //         // Args/flags are inherited automatically from parent context.
+  //         // Only pass explicit args if you need to modify them.
   //         // ─────────────────────────────────────────────────────────────────────
   //
-  //         const exitCode = await Commands!.$Command(Params.Flags.args, Params.Flags.flags);
+  //         const exitCode = await Commands!.$Command();
   //
   //         // ─────────────────────────────────────────────────────────────────────
   //         // POST-COMMAND LOGIC
