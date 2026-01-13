@@ -466,8 +466,10 @@ async function collectCommandSourceMetadata(
     // Module key for EmbeddedCommandModules lookup
     const moduleKey = isMeta ? `${key}:group` : key;
 
-    // Get absolute path for this file
-    const absolutePath = dfs.ResolvePath(relPath);
+    // Get path for this file - use join() for consistent relative paths
+    // that match what EmbeddedDFSFileHandler.ResolvePath() produces at runtime
+    const rootWithSlash = dfs.Root.endsWith('/') ? dfs.Root : `${dfs.Root}/`;
+    const embeddedPath = join(rootWithSlash, relPath);
 
     // Build command entry
     const entryData = commandEntries[key] ?? {
@@ -477,16 +479,18 @@ async function collectCommandSourceMetadata(
     };
 
     // Calculate import path (relative from .build/ to the source)
-    // DFS.Root is the absolute root of the command source
+    // Use absolute path for imports since deno compile resolves at build time
     const normalizedRoot = dfs.Root.replace(/\\/g, '/').replace(/\/$/, '');
     const importPath = `${normalizedRoot}/${normalized}`;
 
     if (isMeta) {
-      entryData.GroupPath = absolutePath;
+      // Store embeddedPath for runtime lookup (matches EmbeddedDFSFileHandler.ResolvePath)
+      entryData.GroupPath = embeddedPath;
       imports.push({ alias, path: importPath });
       modules.push({ key: moduleKey, alias });
     } else {
-      entryData.CommandPath = absolutePath;
+      // Store embeddedPath for runtime lookup (matches EmbeddedDFSFileHandler.ResolvePath)
+      entryData.CommandPath = embeddedPath;
       imports.push({ alias, path: importPath });
       modules.push({ key: moduleKey, alias });
     }
@@ -494,8 +498,9 @@ async function collectCommandSourceMetadata(
     commandEntries[key] = entryData;
 
     // Build DFS entry (commands don't need content, just path mapping)
+    // Store embeddedPath for consistency with the command entries
     dfsEntries[normalized] = {
-      AbsolutePath: absolutePath,
+      AbsolutePath: embeddedPath,
     };
   }
 
