@@ -206,6 +206,7 @@ export default Command('build', 'Prepare static CLI build folder')
       BuildDFS: buildDFS,
       DFSContext: dfsCtx,
       CLIConfig: config,
+      CommandSources: commandSources,
       Details: { outDir, templatesDir, cliModulePath },
       Scaffolder: new TemplateScaffolder(
         await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
@@ -217,7 +218,7 @@ export default Command('build', 'Prepare static CLI build folder')
   .Run(
     async ({ Log, Services, Params }): Promise<CommandStatus<BuildResult>> => {
       const { outDir, templatesDir } = Services.Details;
-      const { BuildDFS, DFSContext, Scaffolder } = Services;
+      const { BuildDFS, DFSContext, CommandSources, Scaffolder } = Services;
 
       // Collect templates and generate embedded templates DFS
       const { embeddedTemplatesPath, templateCount, templatesDFSEntries } = await collectTemplates(
@@ -254,11 +255,17 @@ export default Command('build', 'Prepare static CLI build folder')
         const { DFS, CommandRoot } = commandSourceDFSs[i];
         const sourcePrefix = CommandRoot ? `${CommandRoot}/` : '';
 
-        // Collect metadata from this command source
+        // Get the original relative FileRoot from the command source config
+        // This is what we store in the embedded JSON for runtime consistency
+        const sourceConfig = CommandSources[i];
+        const relativeFileRoot = sourceConfig?.Handler?.FileRoot ?? './commands';
+
+        // Collect metadata from this command source, using the relative root for embedded paths
         const { imports, modules, commandEntries, dfsEntries } = await collectCommandSourceMetadata(
           DFS,
           sourcePrefix,
           i,
+          relativeFileRoot,
         );
 
         // Merge into all
@@ -273,7 +280,7 @@ export default Command('build', 'Prepare static CLI build folder')
             embeddedDFSPath,
             JSON.stringify(
               {
-                Root: DFS.Root,
+                Root: relativeFileRoot,
                 Entries: dfsEntries,
               },
               null,
@@ -281,7 +288,7 @@ export default Command('build', 'Prepare static CLI build folder')
             ),
           );
           Log.Info(`📘 Embedded commands DFS ${i} → ${embeddedDFSPath}`);
-          embeddedCommandSources.push({ fileRoot: DFS.Root, jsonPath: embeddedDFSPath });
+          embeddedCommandSources.push({ fileRoot: relativeFileRoot, jsonPath: embeddedDFSPath });
         }
       }
 
@@ -396,8 +403,10 @@ async function collectTemplates(
     templates[rel] = content;
 
     // Build DFS entry with content for templates
+    // Use relative path (templatesDir + rel) for runtime consistency
+    const relativeTemplatesRoot = templatesDir.endsWith('/') ? templatesDir : `${templatesDir}/`;
     templatesDFSEntries[rel] = {
-      AbsolutePath: fromDFS.ResolvePath(fullPath),
+      AbsolutePath: join(relativeTemplatesRoot, rel),
       Content: content,
     };
   }
@@ -423,12 +432,14 @@ async function collectTemplates(
  * @param dfs - DFS handler for the command source
  * @param sourcePrefix - Optional prefix for command keys (e.g., "shared/")
  * @param sourceIndex - Index of this source (for unique alias prefixes)
+ * @param relativeFileRoot - The original relative FileRoot (e.g., "./commands") for embedded paths
  * @returns Object containing imports, modules, command entries, and DFS entries
  */
 async function collectCommandSourceMetadata(
   dfs: DFSFileHandler,
   sourcePrefix: string,
   sourceIndex: number,
+  relativeFileRoot: string,
 ): Promise<{
   imports: { alias: string; path: string }[];
   modules: { key: string; alias: string }[];
@@ -466,10 +477,13 @@ async function collectCommandSourceMetadata(
     // Module key for EmbeddedCommandModules lookup
     const moduleKey = isMeta ? `${key}:group` : key;
 
-    // Get path for this file - use join() for consistent relative paths
+    // Get path for this file - use the RELATIVE FileRoot for consistent paths
     // that match what EmbeddedDFSFileHandler.ResolvePath() produces at runtime
-    const rootWithSlash = dfs.Root.endsWith('/') ? dfs.Root : `${dfs.Root}/`;
-    const embeddedPath = join(rootWithSlash, relPath);
+    // This ensures compiled CLIs work on any machine, not just the build machine
+    const relativeRootWithSlash = relativeFileRoot.endsWith('/')
+      ? relativeFileRoot
+      : `${relativeFileRoot}/`;
+    const embeddedPath = join(relativeRootWithSlash, normalized);
 
     // Build command entry
     const entryData = commandEntries[key] ?? {
