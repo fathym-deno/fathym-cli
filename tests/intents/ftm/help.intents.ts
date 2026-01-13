@@ -1,3 +1,5 @@
+// @ts-nocheck - This file tests a scaffolded CLI created at runtime by `cli init`.
+// The referenced CLI doesn't exist at type-check time but is created during test execution.
 import { CLIIntentSuite } from '@fathym/cli';
 
 // Help intent suite validates root and command-level help output

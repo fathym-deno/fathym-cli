@@ -1,11 +1,8 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import TestCommand from '../../../../commands/cli/test.ts';
+import CLI from '../../../../.cli.ts';
 
-CommandIntentSuite(
-  'Test Command Suite',
-  TestCommand,
-  import.meta.resolve('../../../../.cli.ts'),
-)
+CommandIntentSuite('Test Command Suite', TestCommand, CLI)
   .Intent('Run default CLI test file', (int) =>
     int
       .Args([]) // defaults to test/my-cli/intents/.intents.ts

@@ -1,8 +1,7 @@
-import './init.intents.ts';
-import './build.intents.ts';
-import './compile.intents.ts';
+// Consolidated scaffolded CLI lifecycle tests (init, build, compile, run, test)
+import './scaffolded-cli.intents.ts';
+
+// Independent command tests
 import './config.intents.ts';
 import './install.intents.ts';
 import './install/.intents.ts';
-import './run.intents.ts';
-import './test.intents.ts';

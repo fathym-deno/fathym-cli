@@ -172,6 +172,9 @@ export default Command('build', 'Prepare static CLI build folder')
   .Services(async (ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
+    // DEBUG: Log config override
+    ctx.Log.Info(`[DEBUG build.ts] ConfigOverride: ${ctx.Params.ConfigOverride}`);
+
     if (ctx.Params.ConfigOverride) {
       await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigOverride, 'CLI');
     }
@@ -179,6 +182,10 @@ export default Command('build', 'Prepare static CLI build folder')
     const buildDFS: DFSFileHandler = ctx.Params.ConfigOverride
       ? await dfsCtx.GetDFS('CLI')
       : await dfsCtx.GetExecutionDFS();
+
+    // DEBUG: Log DFS root and resolve path
+    ctx.Log.Info(`[DEBUG build.ts] DFS Root: ${buildDFS.Root}`);
+    ctx.Log.Info(`[DEBUG build.ts] Resolved .cli.ts: ${await buildDFS.ResolvePath('.cli.ts')}`);
 
     const { configPath, outDir, configDir, templatesDir } = await resolveConfigAndOutDir(
       ctx.Params,

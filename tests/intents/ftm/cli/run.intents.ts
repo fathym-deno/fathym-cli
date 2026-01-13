@@ -1,11 +1,8 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import RunCommand from '../../../../commands/cli/run.ts';
+import CLI from '../../../../.cli.ts';
 
-CommandIntentSuite(
-  'Run Command Suite',
-  RunCommand,
-  import.meta.resolve('../../../../.cli.ts'),
-)
+CommandIntentSuite('Run Command Suite', RunCommand, CLI)
   // === HELLO COMMAND TESTS ===
   .Intent("Run 'hello' command with default args", (int) =>
     int

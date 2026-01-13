@@ -2,6 +2,7 @@ import { CommandIntentSuite } from '@fathym/cli';
 import ConfigSetCommand from '../../../../commands/cli/config/set.ts';
 import ConfigGetCommand from '../../../../commands/cli/config/get.ts';
 import type { ConfigFileService } from '../../../../src/services/ConfigFileService.ts';
+import CLI from '../../../../.cli.ts';
 
 // Config intents test the config set/get commands using mocked ConfigFileService.
 // This avoids needing actual ConfigDFS registration in tests.
@@ -58,11 +59,7 @@ function setNestedValue(
 
 const CONFIG_FILE = 'test-config.json';
 
-CommandIntentSuite(
-  'Config Set Command Suite',
-  ConfigSetCommand,
-  import.meta.resolve('../../../../.cli.ts'),
-)
+CommandIntentSuite('Config Set Command Suite', ConfigSetCommand, CLI)
   .BeforeAll(() => {
     // Clear mock store before tests
     for (const key in mockConfigStore) {
@@ -83,11 +80,7 @@ CommandIntentSuite(
       .ExpectExit(0))
   .Run();
 
-CommandIntentSuite(
-  'Config Get Command Suite',
-  ConfigGetCommand,
-  import.meta.resolve('../../../../.cli.ts'),
-)
+CommandIntentSuite('Config Get Command Suite', ConfigGetCommand, CLI)
   .BeforeAll(() => {
     // Pre-populate mock store with test data
     mockConfigStore[CONFIG_FILE] = {

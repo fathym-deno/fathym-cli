@@ -1,9 +1,8 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import RefCommand from '../../../../../commands/projects/[projectRef]/ref.ts';
+import CLI from '../../../../../.cli.ts';
 
-const origin = import.meta.resolve('../../../../../.cli.ts');
-
-CommandIntentSuite('projects:[projectRef]:ref Command Suite', RefCommand, origin)
+CommandIntentSuite('projects:[projectRef]:ref Command Suite', RefCommand, CLI)
   .Intent('Displays project info for valid project', (int) =>
     int
       .Segments({ projectRef: './deno.jsonc' })

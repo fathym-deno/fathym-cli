@@ -1,7 +1,6 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import UpgradeCommand from '../../../../../commands/projects/[projectRef]/upgrade.ts';
-
-const origin = import.meta.resolve('../../../../../.cli.ts');
+import CLI from '../../../../../.cli.ts';
 
 // Note: The upgrade command modifies files in the workspace.
 // Tests use --dry-run to avoid actual file modifications.
@@ -10,7 +9,7 @@ const origin = import.meta.resolve('../../../../../.cli.ts');
 // With dynamic routing, the project reference comes from [projectRef] segment,
 // and the version comes from positional args.
 
-CommandIntentSuite('projects:[projectRef]:upgrade Command Suite', UpgradeCommand, origin)
+CommandIntentSuite('projects:[projectRef]:upgrade Command Suite', UpgradeCommand, CLI)
   .Intent('Dry run shows what would be upgraded', (int) =>
     int
       .Segments({

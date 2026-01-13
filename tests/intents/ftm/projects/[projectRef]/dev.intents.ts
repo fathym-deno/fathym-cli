@@ -1,9 +1,8 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import DevCommand from '../../../../../commands/projects/[projectRef]/dev.ts';
+import CLI from '../../../../../.cli.ts';
 
-const origin = import.meta.resolve('../../../../../.cli.ts');
-
-CommandIntentSuite('projects:[projectRef]:dev Command Suite', DevCommand, origin)
+CommandIntentSuite('projects:[projectRef]:dev Command Suite', DevCommand, CLI)
   .Intent(
     'Fails when no project reference provided',
     (int) =>

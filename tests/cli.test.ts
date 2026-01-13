@@ -1,18 +1,17 @@
 import { CLIIntent, CLIIntentSuite } from '@fathym/cli';
-
-const origin = './.cli.ts';
+import CLI from '../.cli.ts';
 
 // ═══════════════════════════════════════════════════════════════════
 // Help Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntent('Fathym CLI – help renders CLI info', origin)
+CLIIntent('Fathym CLI – help renders CLI info', CLI)
   .Args(['--help'])
   .ExpectLogs('Fathym CLI', 'Usage:')
   .ExpectExit(0)
   .Run();
 
-CLIIntent('Fathym CLI – shows available commands', origin)
+CLIIntent('Fathym CLI – shows available commands', CLI)
   .Args(['--help'])
   .ExpectLogs('Available Commands')
   .ExpectExit(0)
@@ -22,7 +21,7 @@ CLIIntent('Fathym CLI – shows available commands', origin)
 // CLI Command Group Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – cli command group', origin)
+CLIIntentSuite('Fathym CLI – cli command group', CLI)
   .Intent('cli build help shows description', (int) =>
     int
       .Args(['cli', 'build', '--help'])
@@ -41,7 +40,7 @@ CLIIntentSuite('Fathym CLI – cli command group', origin)
   .Intent('cli install help shows description', (int) =>
     int
       .Args(['cli', 'install', '--help'])
-      .ExpectLogs('Install a compiled CLI binary')
+      .ExpectLogs('Installation commands and utilities')
       .ExpectExit(0))
   .Intent('cli run help shows description', (int) =>
     int
@@ -64,7 +63,7 @@ CLIIntentSuite('Fathym CLI – cli command group', origin)
 // CLI Config Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – cli config commands', origin)
+CLIIntentSuite('Fathym CLI – cli config commands', CLI)
   .Intent('cli config get help', (int) =>
     int
       .Args(['cli', 'config', 'get', '--help'])
@@ -81,7 +80,7 @@ CLIIntentSuite('Fathym CLI – cli config commands', origin)
 // CLI Install Subcommands Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – cli install subcommands', origin)
+CLIIntentSuite('Fathym CLI – cli install subcommands', CLI)
   .Intent('cli install scripts help', (int) =>
     int
       .Args(['cli', 'install', 'scripts', '--help'])
@@ -93,7 +92,7 @@ CLIIntentSuite('Fathym CLI – cli install subcommands', origin)
 // Projects Command Group Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – projects command group help', origin)
+CLIIntentSuite('Fathym CLI – projects command group help', CLI)
   .Intent('projects help shows dynamic segment', (int) =>
     int
       .Args(['projects', '--help'])
@@ -105,7 +104,7 @@ CLIIntentSuite('Fathym CLI – projects command group help', origin)
 // Task Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – task command', origin)
+CLIIntentSuite('Fathym CLI – task command', CLI)
   .Intent('task help shows description', (int) =>
     int
       .Args(['task', '--help'])
@@ -117,7 +116,7 @@ CLIIntentSuite('Fathym CLI – task command', origin)
 // Upgrade Command Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – upgrade command', origin)
+CLIIntentSuite('Fathym CLI – upgrade command', CLI)
   .Intent('upgrade help shows description', (int) =>
     int
       .Args(['upgrade', '--help'])
@@ -129,7 +128,7 @@ CLIIntentSuite('Fathym CLI – upgrade command', origin)
 // Error Handling Tests
 // ═══════════════════════════════════════════════════════════════════
 
-CLIIntentSuite('Fathym CLI – error handling', origin)
+CLIIntentSuite('Fathym CLI – error handling', CLI)
   .Intent('unknown command shows error', (int) =>
     int
       .Args(['notfound'])

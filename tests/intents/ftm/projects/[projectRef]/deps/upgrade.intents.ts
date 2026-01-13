@@ -1,7 +1,6 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import UpgradeCommand from '../../../../../../commands/projects/[projectRef]/deps/upgrade.ts';
-
-const origin = import.meta.resolve('../../../../../../.cli.ts');
+import CLI from '../../../../../../.cli.ts';
 
 // Note: The deps:upgrade command requires network access to query registries,
 // so most tests use dry-run mode to verify command structure without making
@@ -10,7 +9,7 @@ const origin = import.meta.resolve('../../../../../../.cli.ts');
 CommandIntentSuite(
   'projects:[projectRef]:deps:upgrade Command Suite',
   UpgradeCommand,
-  origin,
+  CLI,
 )
   .Intent('Fails when project not found', (int) =>
     int

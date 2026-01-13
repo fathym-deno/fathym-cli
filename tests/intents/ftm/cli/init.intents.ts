@@ -1,13 +1,10 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import InitCommand from '../../../../commands/cli/init.ts';
+import CLI from '../../../../.cli.ts';
 
 const TEMP_CLI_PATH = './tests/.temp/my-cli';
 
-CommandIntentSuite(
-  'Init Command Suite',
-  InitCommand,
-  import.meta.resolve('../../../../.cli.ts'),
-)
+CommandIntentSuite('Init Command Suite', InitCommand, CLI)
   .BeforeAll(async () => {
     await Deno.remove(TEMP_CLI_PATH, { recursive: true }).catch(() => {});
   })

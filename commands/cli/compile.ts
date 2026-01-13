@@ -104,6 +104,7 @@
 
 import { dirname } from '@std/path/dirname';
 import { join } from '@std/path/join';
+import { resolve } from '@std/path/resolve';
 import { toFileUrl } from '@std/path/to-file-url';
 import { z } from 'zod';
 import {
@@ -311,11 +312,22 @@ export default Command('compile', 'Compile the CLI into a native binary')
     ): Promise<CommandStatus<CompileResult>> => {
       const { CLIDFS } = Services;
 
-      const relativeEntry = Params.Entry.replace(
-        CLIDFS.Root.replace(/^\.\/?/, ''),
-        '',
-      ).replace(/^\.\/?/, '');
-      const entryPath = await CLIDFS.ResolvePath(`./${relativeEntry}`);
+      // Convert entry path to absolute (relative paths are resolved from cwd)
+      const absoluteEntry = resolve(Params.Entry);
+      // Normalize both paths for comparison (forward slashes, no trailing slash)
+      const normalizedEntry = absoluteEntry.replace(/\\/g, '/').replace(/\/$/, '');
+      const normalizedRoot = CLIDFS.Root.replace(/\\/g, '/').replace(/\/$/, '');
+
+      // Check if entry is within the DFS root
+      let entryPath: string;
+      if (normalizedEntry.startsWith(normalizedRoot + '/')) {
+        // Entry is within DFS root - make it relative and resolve
+        const relativeEntry = normalizedEntry.slice(normalizedRoot.length + 1);
+        entryPath = await CLIDFS.ResolvePath(`./${relativeEntry}`);
+      } else {
+        // Entry is outside DFS root (or is the root itself) - use absolute path directly
+        entryPath = absoluteEntry;
+      }
       const baseOutputDir = await CLIDFS.ResolvePath(Params.OutputDir);
       const permissions = Params.Permissions;
 
@@ -354,7 +366,7 @@ export default Command('compile', 'Compile the CLI into a native binary')
       // Run build once before compilation
       const { Build } = Commands!;
       await Build([], {
-        config: join(Services.CLIRoot, cliModuleInfo.Path),
+        config: cliModulePath,
         version: Params.Version,
       });
 

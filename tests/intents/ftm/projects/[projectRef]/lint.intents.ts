@@ -1,9 +1,8 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import LintCommand from '../../../../../commands/projects/[projectRef]/lint.ts';
+import CLI from '../../../../../.cli.ts';
 
-const origin = import.meta.resolve('../../../../../.cli.ts');
-
-CommandIntentSuite('projects:[projectRef]:lint Command Suite', LintCommand, origin)
+CommandIntentSuite('projects:[projectRef]:lint Command Suite', LintCommand, CLI)
   .Intent('Fails when project not found', (int) =>
     int
       .Segments({ projectRef: '@nonexistent/package' })

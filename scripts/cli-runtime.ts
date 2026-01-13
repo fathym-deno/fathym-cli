@@ -1,5 +1,6 @@
+import CLI from '../.cli.ts';
 import { Runner } from '@fathym/cli';
 
 await Runner()
-  .FromArgs(Deno.args)
+  .FromModuleBuilder(CLI, Deno.args)
   .Execute();

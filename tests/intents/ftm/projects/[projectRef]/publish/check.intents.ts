@@ -1,12 +1,11 @@
 import { CommandIntentSuite } from '@fathym/cli';
 import PublishCheckCommand from '../../../../../../commands/projects/[projectRef]/publish/check.ts';
-
-const origin = import.meta.resolve('../../../../../../.cli.ts');
+import CLI from '../../../../../../.cli.ts';
 
 CommandIntentSuite(
   'projects:[projectRef]:publish:check Command Suite',
   PublishCheckCommand,
-  origin,
+  CLI,
 )
   .Intent('Fails when project not found', (int) =>
     int
