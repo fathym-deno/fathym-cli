@@ -57,6 +57,7 @@
  * @module
  */
 
+import { dirname } from '@std/path/dirname';
 import { join } from '@std/path/join';
 import { toFileUrl } from '@std/path/to-file-url';
 import { pascalCase } from '@luca/cases';
@@ -73,6 +74,7 @@ import {
   TemplateLocator,
   TemplateScaffolder,
 } from '@fathym/cli';
+import type { EmbeddedDFSEntry } from '@fathym/dfs/handlers';
 
 /**
  * Result data for the build command.
@@ -172,9 +174,6 @@ export default Command('build', 'Prepare static CLI build folder')
   .Services(async (ctx, ioc) => {
     const dfsCtx = await ioc.Resolve(CLIDFSContextManager);
 
-    // DEBUG: Log config override
-    ctx.Log.Info(`[DEBUG build.ts] ConfigOverride: ${ctx.Params.ConfigOverride}`);
-
     if (ctx.Params.ConfigOverride) {
       await dfsCtx.RegisterProjectDFS(ctx.Params.ConfigOverride, 'CLI');
     }
@@ -183,18 +182,31 @@ export default Command('build', 'Prepare static CLI build folder')
       ? await dfsCtx.GetDFS('CLI')
       : await dfsCtx.GetExecutionDFS();
 
-    // DEBUG: Log DFS root and resolve path
-    ctx.Log.Info(`[DEBUG build.ts] DFS Root: ${buildDFS.Root}`);
-    ctx.Log.Info(`[DEBUG build.ts] Resolved .cli.ts: ${await buildDFS.ResolvePath('.cli.ts')}`);
-
-    const { configPath, outDir, configDir, templatesDir } = await resolveConfigAndOutDir(
+    const { outDir, templatesDir } = await resolveConfigAndOutDir(
       ctx.Params,
       buildDFS,
     );
 
+    // Import CLI module to get config early (for command source registration)
+    const cliModulePath = await buildDFS.ResolvePath('.cli.ts');
+    const cliModuleUrl = toFileUrl(cliModulePath).href;
+    let cliModule = (await import(cliModuleUrl)).default;
+    if (cliModule instanceof CLIModuleBuilder) {
+      cliModule = cliModule.Build();
+    }
+    const config = cliModule.Config ?? {};
+
+    // Register command source DFSs from config (defaults to ./commands)
+    // Use the directory containing the CLI config as the origin for resolving relative paths
+    const cliDir = dirname(cliModulePath);
+    const commandSources = config.Commands ?? [{ Handler: { FileRoot: './commands' } }];
+    dfsCtx.RegisterCommandSourceDFSs(commandSources, cliDir);
+
     return {
       BuildDFS: buildDFS,
-      Details: { configPath, outDir, configDir, templatesDir },
+      DFSContext: dfsCtx,
+      CLIConfig: config,
+      Details: { outDir, templatesDir, cliModulePath },
       Scaffolder: new TemplateScaffolder(
         await ioc.Resolve<TemplateLocator>(ioc.Symbol('TemplateLocator')),
         buildDFS,
@@ -205,9 +217,10 @@ export default Command('build', 'Prepare static CLI build folder')
   .Run(
     async ({ Log, Services, Params }): Promise<CommandStatus<BuildResult>> => {
       const { outDir, templatesDir } = Services.Details;
-      const { BuildDFS, Scaffolder } = Services;
+      const { BuildDFS, DFSContext, Scaffolder } = Services;
 
-      const { embeddedTemplatesPath, templateCount } = await collectTemplates(
+      // Collect templates and generate embedded templates DFS
+      const { embeddedTemplatesPath, templateCount, templatesDFSEntries } = await collectTemplates(
         templatesDir,
         outDir,
         BuildDFS,
@@ -215,25 +228,66 @@ export default Command('build', 'Prepare static CLI build folder')
         Log,
       );
 
-      // Import CLI module to get config
-      const cliModulePath = await BuildDFS.ResolvePath('.cli.ts');
-      const cliModuleUrl = toFileUrl(cliModulePath).href;
-      let cliModule = (await import(cliModuleUrl)).default;
-      // Build the module if it's a builder
-      if (cliModule instanceof CLIModuleBuilder) {
-        cliModule = cliModule.Build();
-      }
-      const config = cliModule.Config ?? {};
-
-      const commandsDir = config.Commands ?? './commands';
-
-      const { imports, modules, commandEntries } = await collectCommandMetadata(
-        commandsDir,
-        BuildDFS,
+      // Write embedded templates DFS JSON
+      const embeddedTemplatesDFSPath = join(outDir, 'embedded-templates-dfs.json');
+      await BuildDFS.WriteFile(
+        embeddedTemplatesDFSPath,
+        JSON.stringify(
+          {
+            Root: templatesDir,
+            Entries: templatesDFSEntries,
+          },
+          null,
+          2,
+        ),
       );
+      Log.Info(`📦 Embedded templates DFS → ${embeddedTemplatesDFSPath}`);
 
+      // Collect command metadata from all registered command sources
+      const commandSourceDFSs = await DFSContext.GetCommandSourceDFSs();
+      const allImports: { alias: string; path: string }[] = [];
+      const allModules: { key: string; alias: string }[] = [];
+      const allCommandEntries: Record<string, CLICommandEntry> = {};
+      const embeddedCommandSources: { fileRoot: string; jsonPath: string }[] = [];
+
+      for (let i = 0; i < commandSourceDFSs.length; i++) {
+        const { DFS, CommandRoot } = commandSourceDFSs[i];
+        const sourcePrefix = CommandRoot ? `${CommandRoot}/` : '';
+
+        // Collect metadata from this command source
+        const { imports, modules, commandEntries, dfsEntries } = await collectCommandSourceMetadata(
+          DFS,
+          sourcePrefix,
+          i,
+        );
+
+        // Merge into all
+        allImports.push(...imports);
+        allModules.push(...modules);
+        Object.assign(allCommandEntries, commandEntries);
+
+        // Write embedded DFS JSON for this source (for local sources with entries)
+        if (Object.keys(dfsEntries).length > 0) {
+          const embeddedDFSPath = join(outDir, `embedded-commands-dfs-${i}.json`);
+          await BuildDFS.WriteFile(
+            embeddedDFSPath,
+            JSON.stringify(
+              {
+                Root: DFS.Root,
+                Entries: dfsEntries,
+              },
+              null,
+              2,
+            ),
+          );
+          Log.Info(`📘 Embedded commands DFS ${i} → ${embeddedDFSPath}`);
+          embeddedCommandSources.push({ fileRoot: DFS.Root, jsonPath: embeddedDFSPath });
+        }
+      }
+
+      // Write the combined command entries JSON (for LoadCommandModule lookup)
       const embeddedEntriesPath = await writeCommandEntries(
-        commandEntries,
+        allCommandEntries,
         outDir,
         BuildDFS,
         Log,
@@ -245,8 +299,10 @@ export default Command('build', 'Prepare static CLI build folder')
         context: {
           embeddedTemplatesPath,
           embeddedEntriesPath,
-          imports,
-          modules,
+          embeddedTemplatesDFSPath,
+          embeddedCommandSources,
+          imports: allImports,
+          modules: allModules,
           Version: Params.Version,
         },
       });
@@ -262,7 +318,7 @@ export default Command('build', 'Prepare static CLI build folder')
         Data: {
           outDir,
           version: Params.Version,
-          commandCount: Object.keys(commandEntries).length,
+          commandCount: Object.keys(allCommandEntries).length,
           templateCount,
         },
       };
@@ -284,9 +340,7 @@ async function resolveConfigAndOutDir(
   params: BuildParams,
   dfs: DFSFileHandler,
 ): Promise<{
-  configPath: string;
   outDir: string;
-  configDir: string;
   templatesDir: string;
 }> {
   const configPath = params.ConfigOverride ?? './.cli.ts';
@@ -295,13 +349,10 @@ async function resolveConfigAndOutDir(
     throw new Error(`❌ Cannot find .cli.ts at: ${configPath}`);
   }
 
-  const configDir = dfs.Root;
-
   const outDir = './.build';
-
   const templatesDir = params.TemplatesDir ?? './templates';
 
-  return { configPath, outDir, configDir, templatesDir };
+  return { outDir, templatesDir };
 }
 
 /**
@@ -324,111 +375,131 @@ async function collectTemplates(
   fromDFS: DFSFileHandler,
   toDFS: DFSFileHandler,
   log: CommandLog,
-): Promise<{ embeddedTemplatesPath: string; templateCount: number }> {
+): Promise<{
+  embeddedTemplatesPath: string;
+  templateCount: number;
+  templatesDFSEntries: Record<string, EmbeddedDFSEntry>;
+}> {
   const paths = await fromDFS.LoadAllPaths();
   const templateFiles = paths.filter(
     (p) => p.startsWith(templatesDir) && !p.endsWith('/'),
   );
 
   const templates: Record<string, string> = {};
+  const templatesDFSEntries: Record<string, EmbeddedDFSEntry> = {};
+
   for (const fullPath of templateFiles) {
     const info = await fromDFS.GetFileInfo(fullPath);
     if (!info) continue;
     const rel = fullPath.replace(`${templatesDir}/`, '');
-    templates[rel] = await new Response(info.Contents).text();
+    const content = await new Response(info.Contents).text();
+    templates[rel] = content;
+
+    // Build DFS entry with content for templates
+    templatesDFSEntries[rel] = {
+      AbsolutePath: fromDFS.ResolvePath(fullPath),
+      Content: content,
+    };
   }
 
   const outputPath = join(outDir, 'embedded-templates.json');
-  const stream = new Response(JSON.stringify(templates, null, 2)).body!;
-  await toDFS.WriteFile(outputPath, stream);
+  await toDFS.WriteFile(outputPath, JSON.stringify(templates, null, 2));
   log.Info(`📦 Embedded templates → ${outputPath}`);
+
   return {
     embeddedTemplatesPath: outputPath,
     templateCount: Object.keys(templates).length,
+    templatesDFSEntries,
   };
 }
 
 /**
- * Collects metadata about all commands for static embedding.
+ * Collects metadata from a single command source DFS.
  *
- * Scans the commands directory for `.ts` files, generates import aliases
- * using PascalCase naming, and builds the command entry registry. Handles
- * both command files and `.group.ts` group files.
+ * Scans the DFS for `.ts` files, generates import aliases using PascalCase
+ * naming, and builds the command entry registry. Also builds DFS entries
+ * for embedded DFS file handler.
  *
- * @param commandsDir - Directory containing command modules
- * @param dfs - DFS handler for file operations
- * @returns Object containing imports, modules, and command entries
- *
- * @example Generated imports array
- * ```typescript
- * [
- *   { alias: 'HelloCommand', path: '../commands/hello.ts' },
- *   { alias: 'WaveCommand', path: '../commands/wave.ts' }
- * ]
- * ```
+ * @param dfs - DFS handler for the command source
+ * @param sourcePrefix - Optional prefix for command keys (e.g., "shared/")
+ * @param sourceIndex - Index of this source (for unique alias prefixes)
+ * @returns Object containing imports, modules, command entries, and DFS entries
  */
-async function collectCommandMetadata(
-  commandsDir: string,
+async function collectCommandSourceMetadata(
   dfs: DFSFileHandler,
+  sourcePrefix: string,
+  sourceIndex: number,
 ): Promise<{
   imports: { alias: string; path: string }[];
   modules: { key: string; alias: string }[];
   commandEntries: Record<string, CLICommandEntry>;
+  dfsEntries: Record<string, EmbeddedDFSEntry>;
 }> {
   const paths = await dfs.LoadAllPaths();
-  const entries = paths.filter(
-    (p) => p.startsWith(commandsDir) && p.endsWith('.ts'),
-  );
+  const tsFiles = paths.filter((p) => p.endsWith('.ts'));
 
-  const imports = [];
-  const modules = [];
+  const imports: { alias: string; path: string }[] = [];
+  const modules: { key: string; alias: string }[] = [];
   const commandEntries: Record<string, CLICommandEntry> = {};
+  const dfsEntries: Record<string, EmbeddedDFSEntry> = {};
 
-  // Track seen keys to handle same-named command and group
-  const seenKeys = new Set<string>();
+  for (const relPath of tsFiles) {
+    // Normalize path (remove leading ./)
+    const normalized = relPath.replace(/^\.\//, '').replace(/\\/g, '/');
+    const isMeta = normalized.endsWith('.group.ts');
 
-  for (const path of entries) {
-    const rel = path.replace(`${commandsDir}/`, '').replace(/\\/g, '/');
-    const isMeta = rel.endsWith('.group.ts');
-    const key = isMeta ? rel.replace(/\/\.group\.ts$/, '') : rel.replace(/\.ts$/, '');
+    // Build command key with source prefix
+    const baseKey = isMeta
+      ? normalized.replace(/\/\.group\.ts$/, '')
+      : normalized.replace(/\.ts$/, '');
+    const key = `${sourcePrefix}${baseKey}`;
     const group = key.split('/')[0];
 
-    // Use full path to generate unique alias - avoids collisions when
-    // commands have the same filename in different directories
-    // Replace slashes with dashes before pascalCase to ensure valid JS identifiers
-    // Also sanitize brackets from dynamic segments like [projectRef] → ProjectRef
-    // e.g., "projects/[projectRef]/build" → "projects-projectRef-build" → "ProjectsProjectRefBuild"
+    // Generate unique alias with source index prefix
     const sanitized = key
       .replace(/\//g, '-')
       .replace(/\[/g, '')
       .replace(/\]/g, '');
     const baseName = pascalCase(sanitized);
-    const alias = isMeta ? `${baseName}Group` : `${baseName}Command`;
+    const alias = isMeta ? `S${sourceIndex}${baseName}Group` : `S${sourceIndex}${baseName}Command`;
 
-    // Use different module keys for command vs group when both exist
+    // Module key for EmbeddedCommandModules lookup
     const moduleKey = isMeta ? `${key}:group` : key;
 
+    // Get absolute path for this file
+    const absolutePath = dfs.ResolvePath(relPath);
+
+    // Build command entry
     const entryData = commandEntries[key] ?? {
       CommandPath: undefined,
       GroupPath: undefined,
       ParentGroup: group !== key ? group : undefined,
     };
 
+    // Calculate import path (relative from .build/ to the source)
+    // DFS.Root is the absolute root of the command source
+    const normalizedRoot = dfs.Root.replace(/\\/g, '/').replace(/\/$/, '');
+    const importPath = `${normalizedRoot}/${normalized}`;
+
     if (isMeta) {
-      entryData.GroupPath = await dfs.ResolvePath(path);
-      imports.push({ alias, path: `../commands/${rel}` });
+      entryData.GroupPath = absolutePath;
+      imports.push({ alias, path: importPath });
       modules.push({ key: moduleKey, alias });
     } else {
-      entryData.CommandPath = await dfs.ResolvePath(path);
-      imports.push({ alias, path: `../commands/${rel}` });
+      entryData.CommandPath = absolutePath;
+      imports.push({ alias, path: importPath });
       modules.push({ key: moduleKey, alias });
     }
 
     commandEntries[key] = entryData;
-    seenKeys.add(key);
+
+    // Build DFS entry (commands don't need content, just path mapping)
+    dfsEntries[normalized] = {
+      AbsolutePath: absolutePath,
+    };
   }
 
-  return { imports, modules, commandEntries };
+  return { imports, modules, commandEntries, dfsEntries };
 }
 
 /**
