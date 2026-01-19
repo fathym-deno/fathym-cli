@@ -1,1 +1,0 @@
-import './scripts.intents.ts';
