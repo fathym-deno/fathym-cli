@@ -27,8 +27,8 @@
     "version": "deno run -A jsr:@fathym/common@0.2.310-common-release/build/version"
   },
   "imports": {
-    "@fathym/cli": "../../ref-arch/command-line-interface/src/.exports.ts",
-    "@fathym/cli/ftm-cli": "../../ref-arch/command-line-interface/ftm-cli/.exports.ts",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.243-InitCommand",
+    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.243-InitCommand/ftm-cli",
     "@fathym/ioc": "jsr:@fathym/ioc@0.0.26-ioc-release",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.310-common-release",
