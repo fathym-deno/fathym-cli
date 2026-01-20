@@ -1,4 +1,4 @@
-import './intents/.intents.ts';
+import '../intents/.intents.ts';
 import './projects/.tests.ts';
 import './pipelines/.tests.ts';
 import './deps/.tests.ts';

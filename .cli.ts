@@ -1,5 +1,6 @@
 import { CLI, Plugin } from '@fathym/cli';
 import { FtmCLI } from '@fathym/cli/ftm-cli';
+import { EaCInstallCLI } from '@fathym/eac-install/ftm-eac-install';
 import { VersionResolver } from './src/deps/VersionResolver.ts';
 import { VersionComparator } from './src/deps/VersionComparator.ts';
 import { CliffyPromptService } from './src/services/PromptService.ts';
@@ -9,6 +10,9 @@ const PACKAGE_NAME = '@fathym/ftm';
 
 // Convert ftm-cli (a CLI) to a plugin for composition
 const FtmCLIPlugin = Plugin('ftm-cli', 'CLI Framework Commands').FromCLI(FtmCLI);
+
+// Convert ftm-eac-install (a CLI) to a plugin for EaC project scaffolding
+const EaCInstallPlugin = Plugin('ftm-eac-install', 'EaC Install Commands').FromCLI(EaCInstallCLI);
 
 export default CLI(
   'Fathym CLI',
@@ -21,9 +25,12 @@ export default CLI(
   .Plugins([
     {
       Plugin: FtmCLIPlugin,
-      CommandRoot: 'cli', // Maps ftm-cli commands under 'cli' group (fathym cli build, etc.)
+      CommandRoot: 'cli', // Maps ftm-cli commands under 'cli' group (ftm cli build, etc.)
     },
-    // Future: '@fathym/eac-cli', '@fathym/atomic-cli', etc.
+    {
+      Plugin: EaCInstallPlugin,
+      CommandRoot: 'eac', // Maps ftm-eac-install commands under 'eac' group (ftm eac install, etc.)
+    },
   ])
   .Templates('./templates')
   .OnInit((ioc, _config) => {

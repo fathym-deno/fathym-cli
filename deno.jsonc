@@ -29,6 +29,7 @@
   "imports": {
     "@fathym/cli": "jsr:@fathym/cli@0.0.243-InitCommand",
     "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.243-InitCommand/ftm-cli",
+    "@fathym/eac-install/ftm-eac-install": "jsr:@fathym/eac-install@0.0.92-rework-to-cli/ftm-eac-install",
     "@fathym/ioc": "jsr:@fathym/ioc@0.0.26-ioc-release",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.310-common-release",

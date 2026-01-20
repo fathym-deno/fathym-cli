@@ -1,1 +1,0 @@
-import './ftm/.intents.ts';
