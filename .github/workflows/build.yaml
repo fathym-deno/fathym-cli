@@ -49,7 +49,7 @@ jobs:
 
       - name: Install ftm-cli
         run: |
-          deno run -A jsr:@fathym/cli@0.0.244-InitCommand/ftm-cli/install --to=$HOME/.local/bin
+          deno run -A jsr:@fathym/cli@0.0.245-InitCommand/ftm-cli/install --to=$HOME/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Deno Build
