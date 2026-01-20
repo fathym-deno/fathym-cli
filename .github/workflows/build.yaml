@@ -47,6 +47,9 @@ jobs:
           deno-version: v2.5.6
           # deno-version: vx.x.x
 
+      - name: Install ftm-cli
+        run: deno run -A jsr:@fathym/cli@0.0.243-InitCommand/install
+
       - name: Deno Build
         run: deno task build
 
@@ -68,7 +71,7 @@ jobs:
         run: deno task version -- "${{ steps.version.outputs.version }}"
 
       - name: Compile CLI binaries for all targets
-        run: deno task ftm:run compile --all --entry=./.build/main.ts --version="${{ steps.version.outputs.version }}"
+        run: ftm-cli compile --all --entry=./.build/main.ts --version="${{ steps.version.outputs.version }}"
 
       - name: Regenerate install scripts with version
         run: deno task ftm:install:scripts

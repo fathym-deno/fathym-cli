@@ -17,7 +17,7 @@
     "build:fmt": "deno fmt",
     "build:lint": "deno lint --fix",
     "deploy": "npx rimraf cov && deno task build && fathym git",
-    "cli:run": "deno run -A ./scripts/cli-runtime.ts",
+    "dev": "deno run -A ./.build/dev.ts",
     "ftm:build": "ftm-cli build --config=./.cli.ts",
     "ftm:compile": "ftm-cli compile --all --entry=./.build/main.ts",
     "ftm:compile:local": "ftm-cli compile --entry=./.build/main.ts",
