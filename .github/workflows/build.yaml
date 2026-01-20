@@ -48,7 +48,7 @@ jobs:
           # deno-version: vx.x.x
 
       - name: Install ftm-cli
-        run: deno run -A jsr:@fathym/cli@0.0.243-InitCommand/install
+        run: deno run -A jsr:@fathym/cli@0.0.243-InitCommand/ftm-cli/install
 
       - name: Deno Build
         run: deno task build
