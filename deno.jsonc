@@ -12,7 +12,7 @@
     "exclude": ["!.dist/install.ts"]
   },
   "tasks": {
-    "build": "deno task build:check && deno task test && deno task ftm:build && deno task ftm:compile && deno task ftm:install:scripts && deno task publish:check",
+    "build": "deno task build:check && deno task test && deno task ftm:build && deno task ftm:compile && deno task ftm:test:e2e && deno task ftm:install:scripts && deno task publish:check",
     "build:check": "deno task build:fmt && deno task build:lint",
     "build:fmt": "deno fmt",
     "build:lint": "deno lint --fix",
@@ -22,14 +22,16 @@
     "ftm:compile": "ftm-cli compile --all --entry=./.build/main.ts",
     "ftm:compile:local": "ftm-cli compile --entry=./.build/main.ts",
     "ftm:install:scripts": "ftm-cli install scripts --output=./.dist",
+    "ftm:test:e2e": "deno test -A ./intents/e2e/.intents.ts",
     "publish:check": "deno publish --dry-run --allow-dirty",
     "test": "deno test -A ./tests/.tests.ts",
+    "test:e2e": "deno task ftm:test:e2e",
     "version": "deno run -A jsr:@fathym/common@0.2.310-common-release/build/version"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.247-InitCommand",
-    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.247-InitCommand/ftm-cli",
-    "@fathym/eac-install/ftm-eac-install": "jsr:@fathym/eac-install@0.0.95-rework-to-cli/ftm-eac-install",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.252-InitCommand",
+    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.252-InitCommand/ftm-cli",
+    "@fathym/eac-install/ftm-eac-install": "jsr:@fathym/eac-install@0.0.96-rework-to-cli/ftm-eac-install",
     "@fathym/ioc": "jsr:@fathym/ioc@0.0.26-ioc-release",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.311-common-release",
