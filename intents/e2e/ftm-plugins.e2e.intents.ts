@@ -77,6 +77,115 @@ Deno.test({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Plugin Execution Tests (CRITICAL) - Verify commands actually run
+// ═══════════════════════════════════════════════════════════════════════════
+
+Deno.test({
+  name: 'E2E ftm cli init: Actually executes and creates project files',
+  ignore: !(await binaryExists()),
+  fn: async () => {
+    const testDir = 'projects/open-source/fathym-cli/tests/.temp/test-cli';
+    const testDirParent = 'projects/open-source/fathym-cli/tests/.temp';
+
+    try {
+      // Ensure parent dir exists
+      await Deno.mkdir(testDirParent, { recursive: true });
+
+      // Remove test dir if it exists from previous run
+      try {
+        await Deno.remove(testDir, { recursive: true });
+      } catch {
+        // Ignore if doesn't exist
+      }
+
+      // Run: ftm cli init test-cli --targetDir=projects/open-source/fathym-cli/tests/.temp
+      const { output, code, stderr } = await runFtm([
+        'cli',
+        'init',
+        'test-cli',
+        '--targetDir=projects/open-source/fathym-cli/tests/.temp',
+      ]);
+
+      // DEBUG: Show output if command failed
+      if (code !== 0) {
+        console.error('Command failed with code:', code);
+        console.error('stdout:', output);
+        console.error('stderr:', stderr);
+      }
+
+      // CRITICAL: Verify exit code
+      assert(
+        code === 0,
+        `ftm cli init should exit with code 0, got ${code}. Output: ${output}`,
+      );
+
+      // Verify success output
+      assertMatch(
+        output,
+        /Project created from.*template/i,
+        'Should show project creation message',
+      );
+      assertMatch(
+        output,
+        /Initialized at:/i,
+        'Should show initialization path',
+      );
+
+      // Verify created files exist
+      const requiredFiles = [
+        `${testDir}/.cli.ts`,
+        `${testDir}/deno.jsonc`,
+        `${testDir}/README.md`,
+        `${testDir}/commands/hello.ts`,
+        `${testDir}/intents/hello.intents.ts`,
+      ];
+
+      for (const file of requiredFiles) {
+        try {
+          const stat = await Deno.stat(file);
+          assert(stat.isFile, `${file} should be a file`);
+        } catch (error) {
+          assert(false, `Required file ${file} was not created. Error: ${error}`);
+        }
+      }
+
+      // Verify .cli.ts contains expected fluent API config
+      const cliContent = await Deno.readTextFile(`${testDir}/.cli.ts`);
+      assertStringIncludes(
+        cliContent,
+        'CLI(',
+        '.cli.ts should contain CLI() fluent API call',
+      );
+      assertStringIncludes(
+        cliContent,
+        '.Commands',
+        '.cli.ts should contain .Commands configuration',
+      );
+
+      // Verify deno.jsonc contains build tasks
+      const denoConfig = await Deno.readTextFile(`${testDir}/deno.jsonc`);
+      assertStringIncludes(
+        denoConfig,
+        'build',
+        'deno.jsonc should contain build task',
+      );
+      assertStringIncludes(
+        denoConfig,
+        'compile',
+        'deno.jsonc should contain compile task',
+      );
+    } finally {
+      // Clean up - remove test directory
+      try {
+        await Deno.remove(testDir, { recursive: true });
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Plugin Composition Tests - EaC Install Plugin (CRITICAL)
 // ═══════════════════════════════════════════════════════════════════════════
 

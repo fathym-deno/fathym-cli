@@ -243,20 +243,20 @@ Deno.test('Upgrade - Allows upgrade from pre-release to production', () => {
 
 Deno.test('Upgrade - Constructs correct JSR install script URL', () => {
   const packageName = '@fathym/ftm';
-  const targetVersion = '0.0.72-integration';
+  const targetVersion = '0.0.123-ftm-release';
 
   const installUrl = `jsr:${packageName}@${targetVersion}/install`;
 
-  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.72-integration/install');
+  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.123-ftm-release/install');
 });
 
 Deno.test('Upgrade - Constructs correct JSR install script URL for production', () => {
   const packageName = '@fathym/ftm';
-  const targetVersion = '0.0.72';
+  const targetVersion = '0.0.79';
 
   const installUrl = `jsr:${packageName}@${targetVersion}/install`;
 
-  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.72/install');
+  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.79/install');
 });
 
 // =============================================================================
