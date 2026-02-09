@@ -1,0 +1,11 @@
+{
+  "name": "@fathym/test-middle-a",
+  "version": "0.0.1",
+  "exports": "./mod.ts",
+  "imports": {
+    "@fathym/test-root": "jsr:@fathym/test-root@0.0.1"
+  },
+  "tasks": {
+    "build": "echo 'Building @fathym/test-middle-a'"
+  }
+}

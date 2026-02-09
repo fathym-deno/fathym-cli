@@ -1,0 +1,52 @@
+{
+  "root": "@fathym/test-root",
+  "channel": "test-release",
+  "layers": [
+    {
+      "index": 0,
+      "packages": [
+        {
+          "name": "@fathym/test-root",
+          "dir": "tests/fixtures/cascade-workspace/root",
+          "branch": "main",
+          "dependsOn": [],
+          "hasBuild": true
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "packages": [
+        {
+          "name": "@fathym/test-middle-a",
+          "dir": "tests/fixtures/cascade-workspace/middle-a",
+          "branch": "main",
+          "dependsOn": ["@fathym/test-root"],
+          "hasBuild": true
+        },
+        {
+          "name": "@fathym/test-middle-b",
+          "dir": "tests/fixtures/cascade-workspace/middle-b",
+          "branch": "main",
+          "dependsOn": ["@fathym/test-root"],
+          "hasBuild": true
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "packages": [
+        {
+          "name": "@fathym/test-leaf",
+          "dir": "tests/fixtures/cascade-workspace/leaf",
+          "branch": "main",
+          "dependsOn": ["@fathym/test-middle-a", "@fathym/test-middle-b"],
+          "hasBuild": true
+        }
+      ]
+    }
+  ],
+  "totalPackages": 4,
+  "skipped": [],
+  "generatedAt": "2026-02-09T00:00:00.000Z"
+}

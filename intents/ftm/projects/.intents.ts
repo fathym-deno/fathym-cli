@@ -16,3 +16,9 @@ import './[projectRef]/imports/sync.intents.ts';
 
 // [projectRef]/publish subgroup
 import './[projectRef]/publish/check.intents.ts';
+
+// [projectRef]/cascade subgroup
+import './[projectRef]/cascade/schedule.intents.ts';
+
+// cascade (workspace-level) subgroup
+import './cascade/run.intents.ts';

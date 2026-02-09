@@ -1,0 +1,8 @@
+{
+  "name": "@fathym/test-root",
+  "version": "0.0.1",
+  "exports": "./mod.ts",
+  "tasks": {
+    "build": "echo 'Building @fathym/test-root'"
+  }
+}

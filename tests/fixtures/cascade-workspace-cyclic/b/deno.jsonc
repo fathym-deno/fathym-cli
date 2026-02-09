@@ -1,0 +1,11 @@
+{
+  "name": "@fathym/test-b",
+  "version": "0.0.1",
+  "exports": "./mod.ts",
+  "imports": {
+    "@fathym/test-a": "jsr:@fathym/test-a@0.0.1"
+  },
+  "tasks": {
+    "build": "echo 'Building @fathym/test-b'"
+  }
+}
