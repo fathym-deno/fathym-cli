@@ -6,10 +6,16 @@
     "./deps": "./src/deps/.exports.ts",
     "./projects": "./src/projects/.exports.ts",
     "./utils": "./src/utils/.exports.ts",
-    "./install": "./.dist/install.ts"
+    "./install": "./.dist/install.ts",
+    ".": "./.dist/cli.exports.ts",
+    "./commands": "./.dist/commands.exports.ts"
   },
   "publish": {
-    "exclude": ["!.dist/install.ts"]
+    "exclude": [
+      "!.dist/cli.exports.ts",
+      "!.dist/commands.exports.ts",
+      "!.dist/install.ts"
+    ]
   },
   "tasks": {
     "build": "deno task build:check && deno task test && deno task ftm:build && deno task ftm:compile && deno task ftm:test:e2e && deno task ftm:install:scripts && deno task publish:check",
@@ -23,15 +29,15 @@
     "ftm:compile:local": "ftm-cli compile --entry=./.build/main.ts",
     "ftm:install:scripts": "ftm-cli install scripts --output=./.dist",
     "ftm:test:e2e": "deno test -A ./intents/e2e/.intents.ts",
-    "publish:check": "deno publish --dry-run --allow-dirty",
+    "publish:check": "deno publish --dry-run --allow-dirty --allow-slow-types",
     "test": "deno test -A ./tests/.tests.ts",
     "test:e2e": "deno task ftm:test:e2e",
     "version": "deno run -A jsr:@fathym/common@0.2.310-common-release/build/version"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.269-InitCommand",
-    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.269-InitCommand/ftm-cli",
-    "@fathym/eac-install/ftm-eac-install": "jsr:@fathym/eac-install@0.0.98-rework-to-cli/ftm-eac-install",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.274-InitCommand",
+    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.274-InitCommand/ftm-cli",
+    "@fathym/eac-install": "jsr:@fathym/eac-install@0.0.105-rework-to-cli",
     "@fathym/ioc": "jsr:@fathym/ioc@0.0.26-ioc-release",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.311-common-release",
@@ -46,8 +52,12 @@
   },
   "lint": {
     "rules": {
-      "tags": ["recommended"],
-      "include": ["ban-untagged-todo"]
+      "tags": [
+        "recommended"
+      ],
+      "include": [
+        "ban-untagged-todo"
+      ]
     }
   },
   "fmt": {

@@ -247,7 +247,7 @@ Deno.test('Upgrade - Constructs correct JSR install script URL', () => {
 
   const installUrl = `jsr:${packageName}@${targetVersion}/install`;
 
-  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.125-ftm-release/install');
+  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.123-ftm-release/install');
 });
 
 Deno.test('Upgrade - Constructs correct JSR install script URL for production', () => {
@@ -256,7 +256,7 @@ Deno.test('Upgrade - Constructs correct JSR install script URL for production', 
 
   const installUrl = `jsr:${packageName}@${targetVersion}/install`;
 
-  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.125-ftm-release/install');
+  assertEquals(installUrl, 'jsr:@fathym/ftm@0.0.79/install');
 });
 
 // =============================================================================
