@@ -79,7 +79,7 @@ jobs:
         run: deno task ftm:install:scripts
 
       - name: Publish package
-        run: deno publish --allow-dirty
+        run: deno publish --allow-dirty --allow-slow-types
 
       - name: Tag commit ${{ steps.version.outputs.version }}
         run: |
