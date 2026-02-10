@@ -26,13 +26,13 @@ Deno.test('DepsFileParser.parse - Parses JSR scoped package', () => {
 });
 
 Deno.test('DepsFileParser.parse - Parses JSR package with channel version', () => {
-  const content = `export { type EverythingAsCode } from "jsr:@fathym/eac@0.2.248-hmis";`;
+  const content = `export { type EverythingAsCode } from "jsr:@fathym/eac@0.2.251-hmis";`;
   const refs = parser.parse(content);
 
   assertEquals(refs.length, 1);
   assertEquals(refs[0].registry, 'jsr');
   assertEquals(refs[0].fullName, '@fathym/eac');
-  assertEquals(refs[0].version, '0.2.248-hmis');
+  assertEquals(refs[0].version, '0.2.251-hmis');
   assertEquals(refs[0].subpath, undefined);
 });
 
@@ -274,7 +274,7 @@ export { b } from 'npm:b@1.0.0';
 Deno.test('DepsFileParser.filterByPattern - Exact match', () => {
   const content = `
 export { a } from 'jsr:@fathym/common@0.2.310-common-release';
-export { b } from 'jsr:@fathym/eac@0.2.248-hmis';
+export { b } from 'jsr:@fathym/eac@0.2.251-hmis';
 `;
   const refs = parser.parse(content);
   const filtered = parser.filterByPattern(refs, '@fathym/common');
@@ -285,7 +285,7 @@ export { b } from 'jsr:@fathym/eac@0.2.248-hmis';
 
 Deno.test('DepsFileParser.filterByPattern - Wildcard suffix match', () => {
   const content = `
-export { a } from 'jsr:@fathym/eac@0.2.248-hmis';
+export { a } from 'jsr:@fathym/eac@0.2.251-hmis';
 export { b } from 'jsr:@fathym/eac-identity@0.0.87-eac-cascade';
 export { c } from 'jsr:@fathym/common@0.2.310-common-release';
 `;
@@ -303,7 +303,7 @@ export { c } from 'jsr:@fathym/common@0.2.310-common-release';
 Deno.test('DepsFileParser.filterByPattern - Wildcard scope match', () => {
   const content = `
 export { a } from 'jsr:@fathym/common@0.2.310-common-release';
-export { b } from 'jsr:@fathym/eac@0.2.248-hmis';
+export { b } from 'jsr:@fathym/eac@0.2.251-hmis';
 export { c } from 'jsr:@std/path@1.0.0';
 `;
   const refs = parser.parse(content);
