@@ -82,7 +82,9 @@ export interface LayerExecutionResult {
  * Complete result of executing a cascade schedule.
  */
 export interface CascadeExecutionResult {
-  /** Root package name */
+  /** Root package names (all roots from Layer 0) */
+  roots: string[];
+  /** First root package name (backward compatibility) */
   root: string;
   /** Release channel */
   channel: string;
@@ -283,8 +285,12 @@ export class CascadeExecutor {
 
     const totalDuration = Date.now() - startTime;
 
+    // Handle both roots array and legacy root field
+    const roots = schedule.roots ?? [schedule.root];
+
     return {
-      root: schedule.root,
+      roots,
+      root: roots[0],
       channel: schedule.channel,
       layers: layerResults,
       totalDuration,
@@ -342,8 +348,10 @@ export class CascadeExecutor {
    * @throws Error if schedule is invalid
    */
   private validateSchedule(schedule: CascadeSchedule): void {
-    if (!schedule.root) {
-      throw new Error('Invalid schedule: missing root package');
+    // Accept either roots array or legacy root field
+    const hasRoot = schedule.root || (schedule.roots && schedule.roots.length > 0);
+    if (!hasRoot) {
+      throw new Error('Invalid schedule: missing root package(s)');
     }
 
     if (!schedule.channel) {

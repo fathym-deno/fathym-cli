@@ -130,18 +130,32 @@ export interface CascadeLayer {
 }
 
 /**
- * The complete cascade schedule from a starting package.
+ * The complete cascade schedule from starting package(s).
  *
  * This is the output of the schedule command and the input to the
  * run command. It contains everything needed to execute the full
  * cascade release in the correct order.
+ *
+ * Supports multiple root packages for cascading from several starting
+ * points simultaneously. When multiple roots are provided, they all
+ * appear in layer 0 and the dependency graph is merged.
  */
 export interface CascadeSchedule {
   /**
-   * The root package that started the cascade.
+   * The root package(s) that started the cascade.
    *
-   * This is the package the user specified when running the cascade.
-   * It will always be in layer 0.
+   * These are the package(s) the user specified when running the cascade.
+   * They will always be in layer 0.
+   *
+   * For single-root cascades, this is an array with one element.
+   * For multi-root cascades, all roots appear in layer 0.
+   */
+  roots: string[];
+
+  /**
+   * @deprecated Use `roots` instead. Kept for backward compatibility.
+   * When reading, returns the first root. When multiple roots exist,
+   * prefer using `roots` array.
    */
   root: string;
 
@@ -150,6 +164,9 @@ export interface CascadeSchedule {
    *
    * For a branch like "feature/dfs-release", the channel is "dfs-release".
    * This channel is used to identify which JSR versions to track.
+   *
+   * When multiple roots are on different branches, this is the channel
+   * from the first root. Each package's individual branch is in its metadata.
    */
   channel: string;
 

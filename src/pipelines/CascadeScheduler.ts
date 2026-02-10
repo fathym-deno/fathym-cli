@@ -2,29 +2,37 @@
  * Cascade scheduler - discovers dependency graph and sorts into parallel layers.
  *
  * The CascadeScheduler is the core engine for cascade automation. It:
- * 1. Discovers the full dependency graph starting from a root package
+ * 1. Discovers the full dependency graph starting from root package(s)
  * 2. Detects cycles (which would make the cascade impossible)
  * 3. Topologically sorts packages into layers for parallel execution
  *
  * ## How Discovery Works
  *
- * Starting from the root package, the scheduler performs a BFS traversal:
- * 1. Find all packages that reference the root (via `findPackageReferences`)
+ * Starting from the root package(s), the scheduler performs a BFS traversal:
+ * 1. Find all packages that reference each root (via `findPackageReferences`)
  * 2. For each referencing package, repeat the discovery
  * 3. Build a graph of package → dependents relationships
  * 4. Stop when maxDepth is reached or no new packages are found
  *
+ * ## Multi-Root Support
+ *
+ * The scheduler supports multiple root packages for cascading from several
+ * starting points simultaneously. When multiple roots are provided:
+ * - All roots are placed in Layer 0 (released in parallel)
+ * - Dependency graphs are merged (shared dependents appear once)
+ * - A package in Layer N depends on ALL its dependencies being in 0..N-1
+ *
  * ## How Layering Works
  *
  * After discovery, packages are sorted into layers:
- * - Layer 0: Root package only (no dependencies in this cascade)
+ * - Layer 0: Root package(s) (no dependencies in this cascade)
  * - Layer N: Packages whose ALL dependencies are in layers 0..N-1
  *
  * This ensures that when we release layer N, all its dependencies have
  * already been released. Packages in the same layer are independent and
  * can be released in parallel.
  *
- * @example Build a cascade schedule
+ * @example Build a cascade schedule from single root
  * ```typescript
  * const scheduler = new CascadeScheduler(resolver);
  * const schedule = await scheduler.buildSchedule('@fathym/dfs');
@@ -32,6 +40,15 @@
  * for (const layer of schedule.layers) {
  *   console.log(`Layer ${layer.index}:`, layer.packages.map(p => p.name));
  * }
+ * ```
+ *
+ * @example Build a cascade schedule from multiple roots
+ * ```typescript
+ * const scheduler = new CascadeScheduler(resolver);
+ * const schedule = await scheduler.buildSchedule(['@fathym/dfs', '@fathym/reference-runtime']);
+ *
+ * // Layer 0 contains both @fathym/dfs and @fathym/reference-runtime
+ * // Shared dependents appear in later layers
  * ```
  *
  * @module
@@ -63,19 +80,27 @@ export class CascadeScheduler {
   constructor(private readonly resolver: DFSProjectResolver) {}
 
   /**
-   * Build a cascade schedule starting from a root package.
+   * Build a cascade schedule starting from root package(s).
    *
-   * Discovers all packages that depend on the root (transitively),
+   * Discovers all packages that depend on the root(s) (transitively),
    * detects cycles, and sorts into parallel layers.
    *
-   * @param rootPackage - Package name or path to start from
+   * Supports multiple root packages - when provided, all roots appear
+   * in Layer 0 and their dependency graphs are merged.
+   *
+   * @param rootPackages - Package name(s) or path(s) to start from
    * @param options - Discovery options
    * @returns Complete cascade schedule
    * @throws Error if root package not found or cycle detected
    *
-   * @example Basic usage
+   * @example Single root
    * ```typescript
    * const schedule = await scheduler.buildSchedule('@fathym/dfs');
+   * ```
+   *
+   * @example Multiple roots
+   * ```typescript
+   * const schedule = await scheduler.buildSchedule(['@fathym/dfs', '@fathym/reference-runtime']);
    * ```
    *
    * @example With depth limit
@@ -84,37 +109,54 @@ export class CascadeScheduler {
    * ```
    */
   async buildSchedule(
-    rootPackage: string,
+    rootPackages: string | string[],
     options?: CascadeScheduleOptions,
   ): Promise<CascadeSchedule> {
-    // 1. Resolve the root package
-    const rootProjects = await this.resolver.Resolve(rootPackage);
+    // Normalize to array
+    const rootInputs = Array.isArray(rootPackages) ? rootPackages : [rootPackages];
 
-    if (rootProjects.length === 0) {
-      throw new Error(`Root package not found: ${rootPackage}`);
+    if (rootInputs.length === 0) {
+      throw new Error('At least one root package is required');
     }
 
-    if (rootProjects.length > 1) {
-      throw new Error(
-        `Multiple projects match '${rootPackage}'. Please specify a single project:\n` +
-          rootProjects.map((p) => `  - ${p.name ?? p.dir}`).join('\n'),
-      );
+    // 1. Resolve all root packages
+    const resolvedRoots: Array<{ name: string; dir: string; branch: string }> = [];
+
+    for (const rootPackage of rootInputs) {
+      const rootProjects = await this.resolver.Resolve(rootPackage);
+
+      if (rootProjects.length === 0) {
+        throw new Error(`Root package not found: ${rootPackage}`);
+      }
+
+      // For multi-root, we accept all resolved projects from each input
+      for (const project of rootProjects) {
+        const name = project.name;
+
+        if (!name) {
+          throw new Error(
+            `Root project does not have a package name defined in deno.json(c): ${project.dir}`,
+          );
+        }
+
+        // Skip duplicates (same package resolved from multiple inputs)
+        if (!resolvedRoots.some((r) => r.name === name)) {
+          const branch = await this.getGitBranch(project.dir);
+          resolvedRoots.push({ name, dir: project.dir, branch });
+        }
+      }
     }
 
-    const rootProject = rootProjects[0];
-    const rootName = rootProject.name;
-
-    if (!rootName) {
-      throw new Error(
-        `Root project does not have a package name defined in deno.json(c)`,
-      );
+    if (resolvedRoots.length === 0) {
+      throw new Error('No valid root packages resolved');
     }
 
-    // Get channel from branch
-    const channel = this.extractChannel(await this.getGitBranch(rootProject.dir));
+    // Get channel from first root's branch (others may differ)
+    const channel = this.extractChannel(resolvedRoots[0].branch);
+    const rootNames = resolvedRoots.map((r) => r.name);
 
-    // 2. Discover the dependency graph via BFS
-    const graph = await this.discoverGraph(rootName, options);
+    // 2. Discover the dependency graph via BFS from ALL roots
+    const graph = await this.discoverGraphMultiRoot(rootNames, options);
 
     // 3. Detect cycles
     const cycleResult = this.detectCycles(graph);
@@ -124,8 +166,8 @@ export class CascadeScheduler {
       );
     }
 
-    // 4. Topological sort into layers
-    const layers = this.topologicalSort(graph, rootName);
+    // 4. Topological sort into layers (with multiple roots in layer 0)
+    const layers = this.topologicalSortMultiRoot(graph, rootNames);
 
     // 5. Collect skipped packages
     const skipped: string[] = [];
@@ -137,7 +179,8 @@ export class CascadeScheduler {
 
     // 6. Build the schedule
     return {
-      root: rootName,
+      roots: rootNames,
+      root: rootNames[0], // Backward compatibility
       channel,
       layers,
       totalPackages: layers.reduce((sum, l) => sum + l.packages.length, 0),
@@ -246,6 +289,123 @@ export class CascadeScheduler {
           const dependentNode = graph.get(dependentName)!;
           dependentNode.dependsOn.add(project.name);
           dependentNode.package.dependsOn.push(project.name);
+        }
+
+        // Queue the dependent for processing
+        if (!visited.has(dependentName)) {
+          queue.push([dependentName, depth + 1]);
+        }
+      }
+    }
+
+    // Second pass: ensure all dependsOn relationships are bidirectional
+    for (const node of graph.values()) {
+      for (const depName of node.dependsOn) {
+        const depNode = graph.get(depName);
+        if (depNode) {
+          depNode.dependents.add(node.name);
+        }
+      }
+    }
+
+    return graph;
+  }
+
+  /**
+   * Discover dependency graph via BFS from multiple roots.
+   *
+   * For each root package, finds all packages that reference it.
+   * Merges the graphs, handling shared dependents (packages that
+   * depend on multiple roots).
+   *
+   * @param rootNames - Array of root package names to start from
+   * @param options - Discovery options
+   * @returns Merged map of package name to graph node
+   */
+  private async discoverGraphMultiRoot(
+    rootNames: string[],
+    options?: CascadeScheduleOptions,
+  ): Promise<Map<string, CascadeGraphNode>> {
+    const graph = new Map<string, CascadeGraphNode>();
+    const visited = new Set<string>();
+
+    // BFS queue: [packageName, depth, fromRoot]
+    // All roots start at depth 0
+    const queue: Array<[string, number]> = rootNames.map((name) => [name, 0]);
+
+    // Default source filter: only config and deps (not docs/templates)
+    const sourceFilter = options?.sourceFilter ?? ['config', 'deps'];
+
+    while (queue.length > 0) {
+      const [currentName, depth] = queue.shift()!;
+
+      // Skip if already processed
+      if (visited.has(currentName)) continue;
+      visited.add(currentName);
+
+      // Check depth limit
+      if (options?.maxDepth !== undefined && depth > options.maxDepth) {
+        continue;
+      }
+
+      // Resolve the package
+      const projects = await this.resolver.Resolve(currentName);
+      if (projects.length !== 1) continue;
+
+      const project = projects[0];
+      if (!project.name) continue;
+
+      // Get git branch for this project
+      const branch = await this.getGitBranch(project.dir);
+
+      // Create package metadata
+      const pkg: CascadeLayerPackage = {
+        name: project.name,
+        dir: project.dir,
+        configPath: project.configPath,
+        branch,
+        currentVersion: undefined,
+        dependsOn: [],
+        hasBuild: project.tasks ? Object.hasOwn(project.tasks, 'build') : false,
+      };
+
+      // Create graph node
+      const node: CascadeGraphNode = {
+        name: project.name,
+        package: pkg,
+        dependsOn: new Set<string>(),
+        dependents: new Set<string>(),
+        depth,
+      };
+
+      graph.set(project.name, node);
+
+      // Find all packages that reference this package (its dependents)
+      const references = await findPackageReferences(
+        project.name,
+        this.resolver,
+        { sourceFilter: sourceFilter as PackageReference['source'][] },
+      );
+
+      // Extract unique project names from references
+      const dependentNames = new Set<string>();
+      for (const ref of references) {
+        if (ref.projectName && ref.projectName !== project.name) {
+          dependentNames.add(ref.projectName);
+        }
+      }
+
+      // Add each dependent to the graph
+      for (const dependentName of dependentNames) {
+        node.dependents.add(dependentName);
+
+        // The dependent depends on the current package
+        if (graph.has(dependentName)) {
+          const dependentNode = graph.get(dependentName)!;
+          dependentNode.dependsOn.add(project.name);
+          if (!dependentNode.package.dependsOn.includes(project.name)) {
+            dependentNode.package.dependsOn.push(project.name);
+          }
         }
 
         // Queue the dependent for processing
@@ -379,6 +539,105 @@ export class CascadeScheduler {
     // Process remaining layers
     let currentLayer = 1;
     let remaining = graph.size - 1; // Exclude root which is already placed
+
+    while (remaining > 0) {
+      const layerPackages: CascadeLayerPackage[] = [];
+
+      // Find all packages whose dependencies are all satisfied
+      for (const node of graph.values()) {
+        if (placed.has(node.name)) continue;
+
+        // Check if all dependencies are satisfied
+        let allSatisfied = true;
+        for (const depName of node.dependsOn) {
+          if (graph.has(depName) && !placed.has(depName)) {
+            allSatisfied = false;
+            break;
+          }
+        }
+
+        if (allSatisfied) {
+          layerPackages.push(node.package);
+        }
+      }
+
+      if (layerPackages.length === 0) {
+        // No progress made - this shouldn't happen if there's no cycle
+        // but handle gracefully
+        break;
+      }
+
+      // Add layer
+      layers.push({
+        index: currentLayer,
+        packages: layerPackages,
+      });
+
+      // Mark packages as placed
+      for (const pkg of layerPackages) {
+        placed.add(pkg.name);
+        remaining--;
+      }
+
+      currentLayer++;
+    }
+
+    return layers;
+  }
+
+  /**
+   * Topological sort with layer grouping for multiple roots.
+   *
+   * Groups packages into layers where each layer's packages have all
+   * dependencies satisfied by prior layers. All roots are placed in Layer 0.
+   *
+   * @param graph - The dependency graph
+   * @param rootNames - Array of root package names
+   * @returns Ordered layers for parallel execution
+   */
+  private topologicalSortMultiRoot(
+    graph: Map<string, CascadeGraphNode>,
+    rootNames: string[],
+  ): CascadeLayer[] {
+    const layers: CascadeLayer[] = [];
+    const _rootSet = new Set(rootNames); // Keep for potential future use
+
+    // Track which packages have been placed in a layer
+    const placed = new Set<string>();
+
+    // Track in-degree (number of unsatisfied dependencies) for each package
+    const inDegree = new Map<string, number>();
+
+    for (const node of graph.values()) {
+      // Count dependencies that are within our cascade scope
+      let count = 0;
+      for (const depName of node.dependsOn) {
+        if (graph.has(depName)) {
+          count++;
+        }
+      }
+      inDegree.set(node.name, count);
+    }
+
+    // All roots are layer 0 (placed together, released in parallel)
+    const layer0Packages: CascadeLayerPackage[] = [];
+    for (const rootName of rootNames) {
+      if (graph.has(rootName)) {
+        layer0Packages.push(graph.get(rootName)!.package);
+        placed.add(rootName);
+      }
+    }
+
+    if (layer0Packages.length > 0) {
+      layers.push({
+        index: 0,
+        packages: layer0Packages,
+      });
+    }
+
+    // Process remaining layers
+    let currentLayer = 1;
+    let remaining = graph.size - layer0Packages.length;
 
     while (remaining > 0) {
       const layerPackages: CascadeLayerPackage[] = [];

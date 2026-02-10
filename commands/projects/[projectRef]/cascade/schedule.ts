@@ -1,15 +1,21 @@
 /**
- * Schedule command - generate cascade release schedule for a package.
+ * Schedule command - generate cascade release schedule for package(s).
  *
  * The projects:[projectRef]:cascade:schedule command discovers all packages
- * that depend on the target package and generates a topologically sorted
+ * that depend on the target package(s) and generates a topologically sorted
  * release schedule with parallel layer grouping.
  *
  * ## Usage
  *
  * ```bash
- * # Generate cascade schedule (human-readable)
+ * # Generate cascade schedule for single package
  * ftm projects @fathym/dfs cascade schedule
+ *
+ * # Generate cascade for multiple packages (comma-separated)
+ * ftm projects @fathym/dfs,@fathym/reference-runtime cascade schedule
+ *
+ * # Generate cascade for all packages in a directory
+ * ftm projects ./projects/ref-arch cascade schedule
  *
  * # Output as JSON for programmatic consumption
  * ftm projects @fathym/dfs cascade schedule --json
@@ -21,18 +27,26 @@
  * ## Output
  *
  * The command displays:
- * - Root package and release channel
+ * - Root package(s) and release channel
  * - Layers with packages that can be released in parallel
  * - Dependency relationships between packages
  * - Total package count
  *
+ * ## Multi-Root Support
+ *
+ * When multiple packages are specified (via comma-separation or directory):
+ * - All roots appear in Layer 0 (released in parallel)
+ * - Dependency graphs are merged
+ * - Shared dependents appear once in the appropriate layer
+ * - A package appears in the layer after ALL its dependencies
+ *
  * ## How It Works
  *
  * 1. **Discovery Phase (BFS):**
- *    - Starts from the root package
- *    - Uses `referencedBy` data to find all packages that depend on the root
+ *    - Starts from the root package(s)
+ *    - Uses `referencedBy` data to find all packages that depend on the roots
  *    - Recursively discovers transitive dependents
- *    - Builds a complete dependency graph
+ *    - Builds a complete dependency graph (merged if multi-root)
  *
  * 2. **Cycle Detection:**
  *    - Checks for circular dependencies in the discovered graph
@@ -40,7 +54,7 @@
  *
  * 3. **Topological Sort:**
  *    - Orders packages so dependencies come before dependents
- *    - Groups packages into layers by depth from root
+ *    - Groups packages into layers by depth from roots
  *    - Packages in the same layer have no interdependencies (parallel-safe)
  *
  * 4. **Schedule Generation:**
@@ -50,8 +64,9 @@
  * ## Schedule Structure
  *
  * The generated schedule contains:
- * - `root` - The starting package name
- * - `channel` - Release channel derived from git branch
+ * - `roots` - Array of starting package names (Layer 0)
+ * - `root` - First root package (backward compatibility)
+ * - `channel` - Release channel derived from first root's branch
  * - `layers` - Ordered array of layers, each containing parallel-safe packages
  * - `totalPackages` - Count of all packages in the schedule
  * - `skipped` - Packages that were skipped (e.g., already at target version)
@@ -64,14 +79,22 @@
  * # Generate schedule and execute
  * ftm projects @fathym/dfs cascade schedule --json | ftm projects cascade run
  *
+ * # Multi-root cascade
+ * ftm projects @fathym/dfs,@fathym/reference-runtime cascade schedule --json | ftm projects cascade run
+ *
  * # Or save schedule and execute separately
  * ftm projects @fathym/dfs cascade schedule --json > schedule.json
  * ftm projects cascade run --schedule-file=schedule.json
  * ```
  *
- * @example Generate schedule
+ * @example Generate schedule for single package
  * ```bash
  * ftm projects @fathym/dfs cascade schedule
+ * ```
+ *
+ * @example Generate schedule for multiple packages
+ * ```bash
+ * ftm projects @fathym/dfs,@fathym/reference-runtime cascade schedule
  * ```
  *
  * @example JSON output for piping to run command
@@ -97,10 +120,11 @@ import type { CascadeSchedule } from '../../../../src/pipelines/CascadeScheduleT
 /**
  * Segments schema for the schedule command.
  * Receives the project reference from the dynamic [projectRef] segment.
+ * Supports comma-separated package names and directory paths for multi-root.
  */
 const ScheduleSegmentsSchema = z.object({
   projectRef: z.string().describe(
-    'Package name or project reference to generate schedule for',
+    'Package name(s) or project reference(s). Comma-separated for multi-root (e.g., "@fathym/dfs,@fathym/ref")',
   ),
 });
 
@@ -212,8 +236,16 @@ export default Command(
         console.log(JSON.stringify(schedule, null, 2));
       } else {
         // Human-readable output
-        Log.Info(`### Cascade Schedule for ${schedule.root}`);
+        const rootsLabel = schedule.roots.length > 1
+          ? `Roots: ${schedule.roots.join(', ')}`
+          : `Root: ${schedule.roots[0]}`;
+        const titleLabel = schedule.roots.length > 1
+          ? `### Cascade Schedule for ${schedule.roots.length} roots`
+          : `### Cascade Schedule for ${schedule.roots[0]}`;
+
+        Log.Info(titleLabel);
         Log.Info('');
+        Log.Info(rootsLabel);
         Log.Info(`Channel: ${schedule.channel}`);
         Log.Info(`Generated: ${schedule.generatedAt}`);
         if (schedule.maxDepth !== undefined) {
@@ -241,9 +273,12 @@ export default Command(
         }
       }
 
+      const rootsMsg = schedule.roots.length > 1
+        ? `${schedule.roots.length} roots`
+        : schedule.roots[0];
       return {
         Code: 0,
-        Message: `Schedule generated for ${schedule.root}`,
+        Message: `Schedule generated for ${rootsMsg}`,
         Data: schedule,
       };
     } catch (error) {
