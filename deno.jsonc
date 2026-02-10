@@ -1,6 +1,6 @@
 {
   "name": "@fathym/ftm",
-  "version": "0.0.0",
+  "version": "0.0.80-ftm-release",
   "exports": {
     "./config": "./src/config/.exports.ts",
     "./deps": "./src/deps/.exports.ts",
