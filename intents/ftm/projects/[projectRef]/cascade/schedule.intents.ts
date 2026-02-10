@@ -45,4 +45,31 @@ CommandIntentSuite(
       .Flags({ 'max-depth': 1 })
       .ExpectLogs('Cascade Schedule', 'Layer')
       .ExpectExit(0))
+  // TDD: Verify dependsOn is properly populated for cascade layering
+  // The log output includes "depends on: X" when dependsOn is populated
+  .Intent('Middle packages depend on root', (int) =>
+    int
+      .Segments({
+        projectRef: './tests/fixtures/cascade-workspace/root/deno.jsonc',
+      })
+      // Human-readable output shows dependencies in format:
+      // "└─ @fathym/test-middle-a depends on: @fathym/test-root"
+      .ExpectLogs(
+        'Cascade Schedule',
+        'Layer 1:',
+        'depends on: @fathym/test-root',
+      )
+      .ExpectExit(0))
+  .Intent('Leaf package depends on middle packages', (int) =>
+    int
+      .Segments({
+        projectRef: './tests/fixtures/cascade-workspace/root/deno.jsonc',
+      })
+      // Leaf should depend on both middle-a and middle-b
+      .ExpectLogs(
+        'Layer 2:',
+        '@fathym/test-leaf',
+        'depends on:',
+      )
+      .ExpectExit(0))
   .Run();

@@ -298,12 +298,17 @@ export class CascadeScheduler {
       }
     }
 
-    // Second pass: ensure all dependsOn relationships are bidirectional
+    // Second pass: populate dependsOn from dependents (the reverse edge)
+    // During BFS, we populate node.dependents correctly, but the dependent node
+    // doesn't exist in the graph yet when discovered. This pass fixes that.
     for (const node of graph.values()) {
-      for (const depName of node.dependsOn) {
-        const depNode = graph.get(depName);
-        if (depNode) {
-          depNode.dependents.add(node.name);
+      for (const dependentName of node.dependents) {
+        const dependentNode = graph.get(dependentName);
+        if (dependentNode && !dependentNode.dependsOn.has(node.name)) {
+          dependentNode.dependsOn.add(node.name);
+          if (!dependentNode.package.dependsOn.includes(node.name)) {
+            dependentNode.package.dependsOn.push(node.name);
+          }
         }
       }
     }
@@ -415,12 +420,17 @@ export class CascadeScheduler {
       }
     }
 
-    // Second pass: ensure all dependsOn relationships are bidirectional
+    // Second pass: populate dependsOn from dependents (the reverse edge)
+    // During BFS, we populate node.dependents correctly, but the dependent node
+    // doesn't exist in the graph yet when discovered. This pass fixes that.
     for (const node of graph.values()) {
-      for (const depName of node.dependsOn) {
-        const depNode = graph.get(depName);
-        if (depNode) {
-          depNode.dependents.add(node.name);
+      for (const dependentName of node.dependents) {
+        const dependentNode = graph.get(dependentName);
+        if (dependentNode && !dependentNode.dependsOn.has(node.name)) {
+          dependentNode.dependsOn.add(node.name);
+          if (!dependentNode.package.dependsOn.includes(node.name)) {
+            dependentNode.package.dependsOn.push(node.name);
+          }
         }
       }
     }
