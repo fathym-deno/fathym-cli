@@ -5,6 +5,7 @@
     "./config": "./src/config/.exports.ts",
     "./deps": "./src/deps/.exports.ts",
     "./projects": "./src/projects/.exports.ts",
+    "./services": "./src/services/.exports.ts",
     "./utils": "./src/utils/.exports.ts",
     "./install": "./.dist/install.ts",
     ".": "./.dist/cli.exports.ts",
@@ -35,9 +36,9 @@
     "version": "deno run -A jsr:@fathym/common@0.2.310-common-release/build/version"
   },
   "imports": {
-    "@fathym/cli": "jsr:@fathym/cli@0.0.277-InitCommand",
-    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.277-InitCommand/ftm-cli",
-    "@fathym/eac-install": "jsr:@fathym/eac-install@0.0.107-rework-to-cli",
+    "@fathym/cli": "jsr:@fathym/cli@0.0.280-InitCommand",
+    "@fathym/cli/ftm-cli": "jsr:@fathym/cli@0.0.280-InitCommand/ftm-cli",
+    "@fathym/eac-install": "jsr:@fathym/eac-install@0.0.108-rework-to-cli",
     "@fathym/ioc": "jsr:@fathym/ioc@0.0.26-ioc-release",
     "@std/jsonc": "jsr:@std/jsonc@1.0.2",
     "@fathym/common": "jsr:@fathym/common@0.2.311-common-release",
