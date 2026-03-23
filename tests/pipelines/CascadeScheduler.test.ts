@@ -37,7 +37,10 @@ function createMockResolver(
   } as DFSProjectResolver;
 }
 
-function createProject(name: string, tasks: Record<string, string> = {}): ProjectRef {
+function createProject(
+  name: string,
+  tasks: Record<string, string> = {},
+): ProjectRef {
   return {
     name,
     dir: `/workspace/projects/${name.replace('@', '').replace('/', '-')}`,
@@ -427,7 +430,10 @@ Deno.test('CascadeScheduler - Multi-root schedule places all roots in layer 0', 
 
   try {
     // Build schedule with multiple roots
-    const schedule = await scheduler.buildSchedule(['@test/root1', '@test/root2']);
+    const schedule = await scheduler.buildSchedule([
+      '@test/root1',
+      '@test/root2',
+    ]);
 
     // Verify both roots are present
     assertEquals(schedule.roots.length, 2);
