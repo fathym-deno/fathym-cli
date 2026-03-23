@@ -182,126 +182,137 @@ export default Command(
   .Args(RunArgsSchema)
   .Flags(RunFlagsSchema)
   .Params(RunCommandParams)
-  .Run(async ({ Params, Log }): Promise<CommandStatus<CascadeExecutionResult | null>> => {
-    const emptyResult: CascadeExecutionResult | null = null;
+  .Run(
+    async (
+      { Params, Log },
+    ): Promise<CommandStatus<CascadeExecutionResult | null>> => {
+      const emptyResult: CascadeExecutionResult | null = null;
 
-    try {
-      // Get schedule input
-      let scheduleInput: string;
+      try {
+        // Get schedule input
+        let scheduleInput: string;
 
-      if (Params.ScheduleFile) {
-        // Read from file
-        scheduleInput = Params.ScheduleFile;
-      } else {
-        // Read from stdin
-        Log.Info('Reading schedule from stdin...');
-        scheduleInput = await readStdin();
-
-        if (!scheduleInput.trim()) {
-          Log.Error('No schedule provided. Use --schedule-file or pipe from schedule command.');
-          return {
-            Code: 1,
-            Message: 'No schedule provided',
-            Data: emptyResult,
-          };
-        }
-      }
-
-      // Parse the schedule
-      const schedule = await parseSchedule(scheduleInput);
-
-      // Create executor with progress callbacks
-      const callbacks = Params.Json ? {} : {
-        onLayerStart: (layer: CascadeLayer) => {
-          const packageCount = layer.packages.length;
-          const parallelNote = packageCount > 1 ? ` (${packageCount} parallel)` : '';
-          const modeNote = Params.DryRun ? ' [DRY RUN]' : '';
-          Log.Info(`\nLayer ${layer.index}${parallelNote}${modeNote}`);
-        },
-        onPackageStart: (pkg: CascadeLayerPackage, _layerIndex: number) => {
-          Log.Info(`  → ${pkg.name}...`);
-        },
-        onPackageComplete: (
-          result: { name: string; success: boolean; duration: number; error?: string },
-          _layerIndex: number,
-        ) => {
-          const status = result.success ? '✓' : '✗';
-          const duration = formatDuration(result.duration);
-          if (result.success) {
-            Log.Info(`  ${status} ${result.name} (${duration})`);
-          } else {
-            Log.Error(
-              `  ${status} ${result.name} (${duration}): ${result.error || 'unknown error'}`,
-            );
-          }
-        },
-      };
-
-      const executor = new CascadeExecutor(callbacks);
-
-      // Execute the schedule
-      if (!Params.Json) {
-        const modeLabel = Params.DryRun ? ' (DRY RUN)' : '';
-        Log.Info(`### Cascade Execution${modeLabel}`);
-        Log.Info(`Root: ${schedule.root}`);
-        Log.Info(`Channel: ${schedule.channel}`);
-        Log.Info(`Layers: ${schedule.layers.length}`);
-        Log.Info(`Packages: ${schedule.totalPackages}`);
-      }
-
-      const result = await executor.execute(schedule, {
-        dryRun: Params.DryRun,
-        continueOnError: Params.ContinueOnError,
-        commitMessageTemplate: Params.MessageTemplate,
-      });
-
-      // Output results
-      if (Params.Json) {
-        console.log(JSON.stringify(result, null, 2));
-      } else {
-        Log.Info('');
-        Log.Info('### Summary');
-        Log.Info(`Total: ${result.totalPackages} package(s)`);
-        Log.Info(`Success: ${result.successCount}`);
-        Log.Info(`Failed: ${result.failedCount}`);
-        Log.Info(`Duration: ${formatDuration(result.totalDuration)}`);
-
-        if (result.dryRun) {
-          Log.Info('');
-          Log.Info('(Dry-run mode - no changes were made)');
-        }
-
-        if (result.success) {
-          Log.Success('\n✅ Cascade execution complete');
+        if (Params.ScheduleFile) {
+          // Read from file
+          scheduleInput = Params.ScheduleFile;
         } else {
-          Log.Error('\n❌ Cascade execution failed');
+          // Read from stdin
+          Log.Info('Reading schedule from stdin...');
+          scheduleInput = await readStdin();
+
+          if (!scheduleInput.trim()) {
+            Log.Error(
+              'No schedule provided. Use --schedule-file or pipe from schedule command.',
+            );
+            return {
+              Code: 1,
+              Message: 'No schedule provided',
+              Data: emptyResult,
+            };
+          }
         }
+
+        // Parse the schedule
+        const schedule = await parseSchedule(scheduleInput);
+
+        // Create executor with progress callbacks
+        const callbacks = Params.Json ? {} : {
+          onLayerStart: (layer: CascadeLayer) => {
+            const packageCount = layer.packages.length;
+            const parallelNote = packageCount > 1 ? ` (${packageCount} parallel)` : '';
+            const modeNote = Params.DryRun ? ' [DRY RUN]' : '';
+            Log.Info(`\nLayer ${layer.index}${parallelNote}${modeNote}`);
+          },
+          onPackageStart: (pkg: CascadeLayerPackage, _layerIndex: number) => {
+            Log.Info(`  → ${pkg.name}...`);
+          },
+          onPackageComplete: (
+            result: {
+              name: string;
+              success: boolean;
+              duration: number;
+              error?: string;
+            },
+            _layerIndex: number,
+          ) => {
+            const status = result.success ? '✓' : '✗';
+            const duration = formatDuration(result.duration);
+            if (result.success) {
+              Log.Info(`  ${status} ${result.name} (${duration})`);
+            } else {
+              Log.Error(
+                `  ${status} ${result.name} (${duration}): ${result.error || 'unknown error'}`,
+              );
+            }
+          },
+        };
+
+        const executor = new CascadeExecutor(callbacks);
+
+        // Execute the schedule
+        if (!Params.Json) {
+          const modeLabel = Params.DryRun ? ' (DRY RUN)' : '';
+          Log.Info(`### Cascade Execution${modeLabel}`);
+          Log.Info(`Root: ${schedule.root}`);
+          Log.Info(`Channel: ${schedule.channel}`);
+          Log.Info(`Layers: ${schedule.layers.length}`);
+          Log.Info(`Packages: ${schedule.totalPackages}`);
+        }
+
+        const result = await executor.execute(schedule, {
+          dryRun: Params.DryRun,
+          continueOnError: Params.ContinueOnError,
+          commitMessageTemplate: Params.MessageTemplate,
+        });
+
+        // Output results
+        if (Params.Json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          Log.Info('');
+          Log.Info('### Summary');
+          Log.Info(`Total: ${result.totalPackages} package(s)`);
+          Log.Info(`Success: ${result.successCount}`);
+          Log.Info(`Failed: ${result.failedCount}`);
+          Log.Info(`Duration: ${formatDuration(result.totalDuration)}`);
+
+          if (result.dryRun) {
+            Log.Info('');
+            Log.Info('(Dry-run mode - no changes were made)');
+          }
+
+          if (result.success) {
+            Log.Success('\n✅ Cascade execution complete');
+          } else {
+            Log.Error('\n❌ Cascade execution failed');
+          }
+        }
+
+        return {
+          Code: result.success ? 0 : 1,
+          Message: result.success
+            ? `Cascade complete: ${result.successCount} packages`
+            : `Cascade failed: ${result.failedCount} failures`,
+          Data: result,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+
+        if (message.includes('Invalid schedule')) {
+          Log.Error(`Schedule validation failed: ${message}`);
+        } else if (message.includes('not found')) {
+          Log.Error(`File not found: ${message}`);
+        } else if (message.includes('Invalid JSON')) {
+          Log.Error(`Invalid JSON: ${message}`);
+        } else {
+          Log.Error(`Execution failed: ${message}`);
+        }
+
+        return {
+          Code: 1,
+          Message: message,
+          Data: emptyResult,
+        };
       }
-
-      return {
-        Code: result.success ? 0 : 1,
-        Message: result.success
-          ? `Cascade complete: ${result.successCount} packages`
-          : `Cascade failed: ${result.failedCount} failures`,
-        Data: result,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-
-      if (message.includes('Invalid schedule')) {
-        Log.Error(`Schedule validation failed: ${message}`);
-      } else if (message.includes('not found')) {
-        Log.Error(`File not found: ${message}`);
-      } else if (message.includes('Invalid JSON')) {
-        Log.Error(`Invalid JSON: ${message}`);
-      } else {
-        Log.Error(`Execution failed: ${message}`);
-      }
-
-      return {
-        Code: 1,
-        Message: message,
-        Data: emptyResult,
-      };
-    }
-  });
+    },
+  );

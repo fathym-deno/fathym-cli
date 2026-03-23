@@ -213,92 +213,96 @@ export default Command(
       Scheduler: new CascadeScheduler(resolver),
     };
   })
-  .Run(async ({ Params, Log, Services }): Promise<CommandStatus<CascadeSchedule | null>> => {
-    const { Scheduler } = Services;
+  .Run(
+    async (
+      { Params, Log, Services },
+    ): Promise<CommandStatus<CascadeSchedule | null>> => {
+      const { Scheduler } = Services;
 
-    if (!Params.ProjectRef) {
-      Log.Error('No project reference provided.');
-      return {
-        Code: 1,
-        Message: 'No project reference provided',
-        Data: null,
-      };
-    }
+      if (!Params.ProjectRef) {
+        Log.Error('No project reference provided.');
+        return {
+          Code: 1,
+          Message: 'No project reference provided',
+          Data: null,
+        };
+      }
 
-    try {
-      // Build the cascade schedule
-      const schedule = await Scheduler.buildSchedule(Params.ProjectRef, {
-        maxDepth: Params.MaxDepth,
-      });
+      try {
+        // Build the cascade schedule
+        const schedule = await Scheduler.buildSchedule(Params.ProjectRef, {
+          maxDepth: Params.MaxDepth,
+        });
 
-      if (Params.Json) {
-        // JSON output for piping to run command
-        console.log(JSON.stringify(schedule, null, 2));
-      } else {
-        // Human-readable output
-        const rootsLabel = schedule.roots.length > 1
-          ? `Roots: ${schedule.roots.join(', ')}`
-          : `Root: ${schedule.roots[0]}`;
-        const titleLabel = schedule.roots.length > 1
-          ? `### Cascade Schedule for ${schedule.roots.length} roots`
-          : `### Cascade Schedule for ${schedule.roots[0]}`;
-
-        Log.Info(titleLabel);
-        Log.Info('');
-        Log.Info(rootsLabel);
-        Log.Info(`Channel: ${schedule.channel}`);
-        Log.Info(`Generated: ${schedule.generatedAt}`);
-        if (schedule.maxDepth !== undefined) {
-          Log.Info(`Max Depth: ${schedule.maxDepth}`);
-        }
-        Log.Info('');
-
-        if (schedule.layers.length === 0) {
-          Log.Info('No dependent packages found.');
+        if (Params.Json) {
+          // JSON output for piping to run command
+          console.log(JSON.stringify(schedule, null, 2));
         } else {
-          Log.Info('Layers:');
-          for (const layer of schedule.layers) {
-            formatLayer(layer, Log);
+          // Human-readable output
+          const rootsLabel = schedule.roots.length > 1
+            ? `Roots: ${schedule.roots.join(', ')}`
+            : `Root: ${schedule.roots[0]}`;
+          const titleLabel = schedule.roots.length > 1
+            ? `### Cascade Schedule for ${schedule.roots.length} roots`
+            : `### Cascade Schedule for ${schedule.roots[0]}`;
+
+          Log.Info(titleLabel);
+          Log.Info('');
+          Log.Info(rootsLabel);
+          Log.Info(`Channel: ${schedule.channel}`);
+          Log.Info(`Generated: ${schedule.generatedAt}`);
+          if (schedule.maxDepth !== undefined) {
+            Log.Info(`Max Depth: ${schedule.maxDepth}`);
+          }
+          Log.Info('');
+
+          if (schedule.layers.length === 0) {
+            Log.Info('No dependent packages found.');
+          } else {
+            Log.Info('Layers:');
+            for (const layer of schedule.layers) {
+              formatLayer(layer, Log);
+            }
+          }
+
+          Log.Info('');
+          Log.Info(
+            `Total: ${schedule.totalPackages} package(s) in ${schedule.layers.length} layer(s)`,
+          );
+
+          if (schedule.skipped.length > 0) {
+            Log.Info('');
+            Log.Info(`Skipped: ${schedule.skipped.join(', ')}`);
           }
         }
 
-        Log.Info('');
-        Log.Info(
-          `Total: ${schedule.totalPackages} package(s) in ${schedule.layers.length} layer(s)`,
-        );
+        const rootsMsg = schedule.roots.length > 1
+          ? `${schedule.roots.length} roots`
+          : schedule.roots[0];
+        return {
+          Code: 0,
+          Message: `Schedule generated for ${rootsMsg}`,
+          Data: schedule,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
 
-        if (schedule.skipped.length > 0) {
-          Log.Info('');
-          Log.Info(`Skipped: ${schedule.skipped.join(', ')}`);
+        // Check for specific error types for better messaging
+        if (message.includes('cycle') || message.includes('Cycle')) {
+          Log.Error(`Dependency cycle detected: ${message}`);
+        } else if (message.includes('not found')) {
+          Log.Error(`Package not found: ${message}`);
+        } else if (message.includes('Multiple projects')) {
+          Log.Error(`Ambiguous project reference: ${message}`);
+        } else {
+          Log.Error(`Schedule generation failed: ${message}`);
         }
+
+        return {
+          Code: 1,
+          Message: message,
+          Data: null,
+        };
       }
-
-      const rootsMsg = schedule.roots.length > 1
-        ? `${schedule.roots.length} roots`
-        : schedule.roots[0];
-      return {
-        Code: 0,
-        Message: `Schedule generated for ${rootsMsg}`,
-        Data: schedule,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-
-      // Check for specific error types for better messaging
-      if (message.includes('cycle') || message.includes('Cycle')) {
-        Log.Error(`Dependency cycle detected: ${message}`);
-      } else if (message.includes('not found')) {
-        Log.Error(`Package not found: ${message}`);
-      } else if (message.includes('Multiple projects')) {
-        Log.Error(`Ambiguous project reference: ${message}`);
-      } else {
-        Log.Error(`Schedule generation failed: ${message}`);
-      }
-
-      return {
-        Code: 1,
-        Message: message,
-        Data: null,
-      };
-    }
-  });
+    },
+  );
