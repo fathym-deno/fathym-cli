@@ -1,5 +1,6 @@
 import { assertEquals, assertExists, assertRejects } from '@std/assert';
-import { MemoryDFSFileHandler } from '@fathym/dfs/handlers';
+import { LocalDFSFileHandler, MemoryDFSFileHandler } from '@fathym/dfs/handlers';
+import { join } from '@std/path';
 import {
   DFSProjectResolver,
   MultipleProjectsError,
@@ -715,3 +716,45 @@ Deno.test('DFSProjectResolver - Resolve returns relative configPath', async () =
   assertEquals(projects[0].configPath.includes(':'), false);
   assertEquals(projects[0].configPath.startsWith('/'), false);
 });
+
+// =============================================================================
+// Integration Tests: LocalDFSFileHandler with real filesystem
+// These cover the node_modules stack-overflow regression (fixed in
+// @fathym/common SkipDirectories + @fathym/dfs LocalDFSFileHandler defaults).
+// =============================================================================
+
+Deno.test(
+  'DFSProjectResolver - LocalDFS skips node_modules without stack overflow',
+  async () => {
+    const tmpDir = await Deno.makeTempDir({ prefix: 'ftm_test_' });
+    try {
+      // Real project
+      const projectDir = join(tmpDir, 'projects', 'my-app');
+      await Deno.mkdir(projectDir, { recursive: true });
+      await Deno.writeTextFile(
+        join(projectDir, 'deno.jsonc'),
+        JSON.stringify({ name: '@test/my-app', exports: { '.': './mod.ts' } }),
+      );
+
+      // Simulate a node_modules tree deep enough to overflow the call stack
+      // if SkipDirectories is not applied (each level recurses into the next).
+      let nested = join(tmpDir, 'projects', 'my-app', 'node_modules');
+      for (let i = 0; i < 50; i++) {
+        nested = join(nested, `dep-${i}`, 'node_modules');
+        await Deno.mkdir(nested, { recursive: true });
+      }
+      await Deno.writeTextFile(join(nested, 'index.js'), 'module.exports = {};');
+
+      const dfs = new LocalDFSFileHandler({ FileRoot: tmpDir });
+      const resolver = new DFSProjectResolver(dfs);
+
+      // Must complete without throwing RangeError: Maximum call stack size exceeded
+      const projects = await resolver.Resolve();
+
+      assertEquals(projects.length, 1);
+      assertEquals(projects[0].name, '@test/my-app');
+    } finally {
+      await Deno.remove(tmpDir, { recursive: true });
+    }
+  },
+);
