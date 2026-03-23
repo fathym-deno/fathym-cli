@@ -151,7 +151,10 @@ export interface CascadeExecutionCallbacks {
   /**
    * Called when a package completes execution.
    */
-  onPackageComplete?: (result: PackageExecutionResult, layerIndex: number) => void;
+  onPackageComplete?: (
+    result: PackageExecutionResult,
+    layerIndex: number,
+  ) => void;
 }
 
 /**
@@ -349,7 +352,8 @@ export class CascadeExecutor {
    */
   private validateSchedule(schedule: CascadeSchedule): void {
     // Accept either roots array or legacy root field
-    const hasRoot = schedule.root || (schedule.roots && schedule.roots.length > 0);
+    const hasRoot = schedule.root ||
+      (schedule.roots && schedule.roots.length > 0);
     if (!hasRoot) {
       throw new Error('Invalid schedule: missing root package(s)');
     }
@@ -373,17 +377,23 @@ export class CascadeExecutor {
       }
 
       if (!Array.isArray(layer.packages)) {
-        throw new Error(`Invalid schedule: layer ${layer.index} packages must be an array`);
+        throw new Error(
+          `Invalid schedule: layer ${layer.index} packages must be an array`,
+        );
       }
 
       if (layer.packages.length === 0) {
-        throw new Error(`Invalid schedule: layer ${layer.index} has no packages`);
+        throw new Error(
+          `Invalid schedule: layer ${layer.index} has no packages`,
+        );
       }
 
       // Validate each package
       for (const pkg of layer.packages) {
         if (!pkg.name) {
-          throw new Error(`Invalid schedule: package in layer ${layer.index} missing name`);
+          throw new Error(
+            `Invalid schedule: package in layer ${layer.index} missing name`,
+          );
         }
       }
     }
