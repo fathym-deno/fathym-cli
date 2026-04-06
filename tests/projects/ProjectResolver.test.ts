@@ -743,7 +743,10 @@ Deno.test(
         nested = join(nested, `dep-${i}`, 'node_modules');
         await Deno.mkdir(nested, { recursive: true });
       }
-      await Deno.writeTextFile(join(nested, 'index.js'), 'module.exports = {};');
+      await Deno.writeTextFile(
+        join(nested, 'index.js'),
+        'module.exports = {};',
+      );
 
       const dfs = new LocalDFSFileHandler({ FileRoot: tmpDir });
       const resolver = new DFSProjectResolver(dfs);

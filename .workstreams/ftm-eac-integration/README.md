@@ -18,7 +18,8 @@ References:
 
 > **Compose all EaC frameworks into fathym-cli under `ftm eac ...` namespace.**
 
-This workstream integrates all EaC micro frameworks into the Fathym CLI, providing a unified developer experience for EaC runtime development.
+This workstream integrates all EaC micro frameworks into the Fathym CLI,
+providing a unified developer experience for EaC runtime development.
 
 ---
 
@@ -26,12 +27,16 @@ This workstream integrates all EaC micro frameworks into the Fathym CLI, providi
 
 ### For Implementers
 
-- [Track 1: Plugin Composition](./Track1-PluginComposition.workstream.md) - Group registration
-- [Track 2: Core Commands](./Track2-CoreCommands.workstream.md) - ftm eac init/serve/build/describe/validate
-- [Track 3: Islands Commands](./Track3-IslandsCommands.workstream.md) - ftm eac islands
+- [Track 1: Plugin Composition](./Track1-PluginComposition.workstream.md) -
+  Group registration
+- [Track 2: Core Commands](./Track2-CoreCommands.workstream.md) - ftm eac
+  init/serve/build/describe/validate
+- [Track 3: Islands Commands](./Track3-IslandsCommands.workstream.md) - ftm eac
+  islands
 - [Track 4: NATS Commands](./Track4-NATSCommands.workstream.md) - ftm eac nats
 - [Track 5: MCP Commands](./Track5-MCPCommands.workstream.md) - ftm eac mcp
-- [Track 6: Shared Services](./Track6-SharedServices.workstream.md) - EaCService, RuntimeService
+- [Track 6: Shared Services](./Track6-SharedServices.workstream.md) -
+  EaCService, RuntimeService
 - [Track 7: Templates](./Track7-Templates.workstream.md) - Scaffold templates
 - [Track 8: Documentation](./Track8-Documentation.workstream.md) - Usage docs
 

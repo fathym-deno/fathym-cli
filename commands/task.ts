@@ -207,6 +207,11 @@ export default Command('task', 'Run a deno task from a resolved project.')
           stdin: 'inherit',
           stdout: 'inherit',
           stderr: 'inherit',
+          env: {
+            ...Deno.env.toObject(),
+            FAI_AGENT: 'true',
+            FAI_PROCESS_TYPE: `deno-task:${taskName}`,
+          },
         });
 
         const { code } = await cmd.output();

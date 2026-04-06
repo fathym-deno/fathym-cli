@@ -14,7 +14,8 @@ References:
 
 # Architecture
 
-This document details the technical architecture for the ftm-eac-integration workstream.
+This document details the technical architecture for the ftm-eac-integration
+workstream.
 
 ---
 
@@ -22,7 +23,8 @@ This document details the technical architecture for the ftm-eac-integration wor
 
 **The CLI uses fathym-cli's plugin/group system to compose EaC commands.**
 
-Each micro framework contributes commands via a `.group.ts` file that registers with the CLI infrastructure.
+Each micro framework contributes commands via a `.group.ts` file that registers
+with the CLI infrastructure.
 
 ---
 
@@ -138,7 +140,10 @@ export default Command('init', 'Initialize a new EaC project')
 
     await Services.eac.ScaffoldProject(projectName ?? '.', template);
 
-    return { Code: 0, Message: `Project initialized with ${template} template` };
+    return {
+      Code: 0,
+      Message: `Project initialized with ${template} template`,
+    };
   });
 ```
 
@@ -197,7 +202,10 @@ AI schema generation:
 ```typescript
 // src/eac/SchemaService.ts
 export class SchemaService {
-  async Describe(runtime: EaCRuntimeModule, format: 'json' | 'yaml'): Promise<string> {
+  async Describe(
+    runtime: EaCRuntimeModule,
+    format: 'json' | 'yaml',
+  ): Promise<string> {
     const schema = await EaCRuntimeRunner(runtime).Run(Describe({ format }));
     return format === 'json' ? JSON.stringify(schema, null, 2) : toYaml(schema);
   }

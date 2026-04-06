@@ -21,9 +21,8 @@ Execution session tracking for the ftm-eac-integration workstream.
 ```markdown
 ## Session [N]: [Date] - [Brief Description]
 
-**Agent:** [Agent ID or "Human"]
-**Duration:** [Approximate time]
-**Focus:** [Track/Deliverable]
+**Agent:** [Agent ID or "Human"] **Duration:** [Approximate time] **Focus:**
+[Track/Deliverable]
 
 ### Completed
 
@@ -52,8 +51,7 @@ What the next session should pick up.
 
 ### Session 1: 2026-01-14 - Workstream Conversion
 
-**Agent:** Claude (via workstream constellation audit)
-**Duration:** ~30 minutes
+**Agent:** Claude (via workstream constellation audit) **Duration:** ~30 minutes
 **Focus:** Convert single file to group structure
 
 #### Completed

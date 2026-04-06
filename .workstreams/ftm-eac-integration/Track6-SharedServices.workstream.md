@@ -71,10 +71,16 @@ export class RuntimeService {
 ```typescript
 export class SchemaService {
   // Generate JSON/YAML schema
-  async Describe(runtime: EaCRuntimeModule, format: 'json' | 'yaml'): Promise<string>;
+  async Describe(
+    runtime: EaCRuntimeModule,
+    format: 'json' | 'yaml',
+  ): Promise<string>;
 
   // Validate against schema
-  async Validate(runtime: EaCRuntimeModule, strict: boolean): Promise<ValidationResult>;
+  async Validate(
+    runtime: EaCRuntimeModule,
+    strict: boolean,
+  ): Promise<ValidationResult>;
 }
 ```
 

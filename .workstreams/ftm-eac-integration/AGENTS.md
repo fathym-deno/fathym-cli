@@ -21,7 +21,8 @@ How AI agents should work on the ftm-eac-integration workstream.
 ## Quick Start
 
 1. **Read the README** - [README.md](./README.md) for overview
-2. **Review architecture** - [ARCHITECTURE.md](./ARCHITECTURE.md) for command structure
+2. **Review architecture** - [ARCHITECTURE.md](./ARCHITECTURE.md) for command
+   structure
 3. **Check dependencies** - ALL other EaC workstreams must complete first
 4. **Understand CLI patterns** - Review existing fathym-cli commands
 

@@ -4,7 +4,11 @@ import GitImportCommand from '../../../commands/git/import.ts';
 import GitIntentTestCLI from './.test.cli.ts';
 import { createMockDFS, MockGitConfigStore, MockGitService, MockPromptService } from './_mocks.ts';
 
-CommandIntentSuite('git import Command Suite', GitImportCommand, GitIntentTestCLI)
+CommandIntentSuite(
+  'git import Command Suite',
+  GitImportCommand,
+  GitIntentTestCLI,
+)
   .Intent('fails when repository is not configured', (int) =>
     int
       .Args(['fathym', 'cli', 'https://github.com/example/source.git'])

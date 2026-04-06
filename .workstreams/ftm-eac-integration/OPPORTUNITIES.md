@@ -27,8 +27,8 @@ Strategic opportunities identified during workstream execution.
 | **Value**  | HIGH       |
 | **Effort** | MEDIUM     |
 
-**Description:**
-AI agents could use `ftm eac init` commands to scaffold projects based on natural language descriptions.
+**Description:** AI agents could use `ftm eac init` commands to scaffold
+projects based on natural language descriptions.
 
 **Opportunity:**
 
@@ -47,8 +47,8 @@ AI agents could use `ftm eac init` commands to scaffold projects based on natura
 | **Value**  | MEDIUM     |
 | **Effort** | LOW        |
 
-**Description:**
-Make `init` commands interactive, prompting for configuration options.
+**Description:** Make `init` commands interactive, prompting for configuration
+options.
 
 **Opportunity:**
 
@@ -67,8 +67,7 @@ Make `init` commands interactive, prompting for configuration options.
 | **Value**  | HIGH     |
 | **Effort** | HIGH     |
 
-**Description:**
-Add `ftm eac deploy` commands for deploying to cloud platforms.
+**Description:** Add `ftm eac deploy` commands for deploying to cloud platforms.
 
 **Opportunity:**
 
@@ -87,8 +86,8 @@ Add `ftm eac deploy` commands for deploying to cloud platforms.
 | **Value**  | MEDIUM     |
 | **Effort** | MEDIUM     |
 
-**Description:**
-Templates that combine multiple frameworks (Islands + MCP, NATS + API).
+**Description:** Templates that combine multiple frameworks (Islands + MCP,
+NATS + API).
 
 **Opportunity:**
 
@@ -107,8 +106,7 @@ Templates that combine multiple frameworks (Islands + MCP, NATS + API).
 | **Value**  | LOW        |
 | **Effort** | LOW        |
 
-**Description:**
-Shell autocomplete for `ftm eac` commands.
+**Description:** Shell autocomplete for `ftm eac` commands.
 
 **Opportunity:**
 

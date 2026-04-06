@@ -14,7 +14,8 @@ References:
 
 # Agent Learnings
 
-Accumulated context and learnings from working on the ftm-eac-integration workstream.
+Accumulated context and learnings from working on the ftm-eac-integration
+workstream.
 
 ---
 
@@ -135,5 +136,6 @@ return {
 ## Reference Materials
 
 - [Architecture](./ARCHITECTURE.md) - Technical decisions
-- [ftm-eac CLAUDE.md](../../../../everything-as-code/eac/.workstreams/ftm-eac/CLAUDE.md) - Core learnings
+- [ftm-eac CLAUDE.md](../../../../everything-as-code/eac/.workstreams/ftm-eac/CLAUDE.md) -
+  Core learnings
 - Existing CLI commands in `commands/` folder

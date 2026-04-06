@@ -150,7 +150,10 @@ Deno.test({
           const stat = await Deno.stat(file);
           assert(stat.isFile, `${file} should be a file`);
         } catch (error) {
-          assert(false, `Required file ${file} was not created. Error: ${error}`);
+          assert(
+            false,
+            `Required file ${file} was not created. Error: ${error}`,
+          );
         }
       }
 

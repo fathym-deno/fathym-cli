@@ -27,8 +27,8 @@ Active risks and mitigations for the ftm-eac-integration workstream.
 | **Likelihood** | MEDIUM |
 | **Status**     | ACTIVE |
 
-**Description:**
-This workstream depends on ftm-eac, ftm-eac-islands, ftm-eac-nats, and ftm-eac-mcp completing first. Delays in any propagate here.
+**Description:** This workstream depends on ftm-eac, ftm-eac-islands,
+ftm-eac-nats, and ftm-eac-mcp completing first. Delays in any propagate here.
 
 **Impact:**
 
@@ -52,8 +52,8 @@ This workstream depends on ftm-eac, ftm-eac-islands, ftm-eac-nats, and ftm-eac-m
 | **Likelihood** | MEDIUM |
 | **Status**     | ACTIVE |
 
-**Description:**
-Templates may become outdated as frameworks evolve. Keeping them synchronized requires ongoing effort.
+**Description:** Templates may become outdated as frameworks evolve. Keeping
+them synchronized requires ongoing effort.
 
 **Impact:**
 
@@ -77,8 +77,8 @@ Templates may become outdated as frameworks evolve. Keeping them synchronized re
 | **Likelihood** | LOW      |
 | **Status**     | WATCHING |
 
-**Description:**
-Many commands across multiple subgroups. Risk of inconsistency or overlap.
+**Description:** Many commands across multiple subgroups. Risk of inconsistency
+or overlap.
 
 **Impact:**
 
@@ -102,8 +102,8 @@ Many commands across multiple subgroups. Risk of inconsistency or overlap.
 | **Likelihood** | LOW      |
 | **Status**     | WATCHING |
 
-**Description:**
-Service layer abstractions may not fit all use cases. Commands might need escape hatches.
+**Description:** Service layer abstractions may not fit all use cases. Commands
+might need escape hatches.
 
 **Impact:**
 

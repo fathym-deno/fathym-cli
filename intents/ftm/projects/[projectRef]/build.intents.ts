@@ -10,7 +10,11 @@ import CLI from '../../../../.cli.ts';
 // thrown during service initialization, which doesn't integrate cleanly with
 // the intent testing framework. This is tested via the CascadeRunner unit tests.
 
-CommandIntentSuite('projects:[projectRef]:build Command Suite', BuildCommand, CLI)
+CommandIntentSuite(
+  'projects:[projectRef]:build Command Suite',
+  BuildCommand,
+  CLI,
+)
   .Intent('Dry run with full override shows task delegation', (int) =>
     int
       .Segments({ projectRef: './deno.jsonc' })

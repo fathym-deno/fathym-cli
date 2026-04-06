@@ -9,7 +9,11 @@ import CLI from '../../../../.cli.ts';
 // With dynamic routing, the project reference comes from [projectRef] segment,
 // and the version comes from positional args.
 
-CommandIntentSuite('projects:[projectRef]:upgrade Command Suite', UpgradeCommand, CLI)
+CommandIntentSuite(
+  'projects:[projectRef]:upgrade Command Suite',
+  UpgradeCommand,
+  CLI,
+)
   .Intent('Dry run shows what would be upgraded', (int) =>
     int
       .Segments({

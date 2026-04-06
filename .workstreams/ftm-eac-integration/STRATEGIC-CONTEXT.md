@@ -16,15 +16,16 @@ References:
 
 # Strategic Context
 
-This document captures the strategic rationale for the ftm-eac-integration workstream.
+This document captures the strategic rationale for the ftm-eac-integration
+workstream.
 
 ---
 
 ## The Key Insight
 
-> **CLI is the developer's primary interface to EaC.**
-> **Unified commands across all micro frameworks creates a cohesive DX.**
-> **The CLI enables AI agents to work with EaC projects programmatically.**
+> **CLI is the developer's primary interface to EaC.** **Unified commands across
+> all micro frameworks creates a cohesive DX.** **The CLI enables AI agents to
+> work with EaC projects programmatically.**
 
 ---
 
